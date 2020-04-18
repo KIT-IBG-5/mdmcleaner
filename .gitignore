@@ -1,0 +1,11 @@
+*~
+*.bak
+*.tab
+*.txt
+*.ods
+*.xls
+*.xlsx
+delme*
+*.gz
+*.dmp
+*.tsv
