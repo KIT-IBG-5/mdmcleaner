@@ -10,3 +10,7 @@ delme*
 *.dmp
 *.tsv
 *.md5
+.*
+#pychache stuff
+__pycache__/
+*.py[cod]
