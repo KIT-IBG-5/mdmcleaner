@@ -53,13 +53,15 @@ _dbsource_dict = { 	"taxdmp" : ftp_source_taxdmp, \
 					"nucl_acc2taxid_dead" : ftp_source_nucl_acc2taxiddead }
 
 rank2index = { "no rank" : 0, \
-				"ignored rank" : 1, \
+				"ignored rank" : -1, \
 				"superkingdom" : 10, \
 				"phylum" : 20, \
 				"class" : 30, \
 				"order" : 40, \
-				"genus" : 50, \
-				"species" : 60 } # using increments of 10 in case i want to use the indermediate ranks (e.g. subfamily) at some later point also
+				"family" : 50, \
+				"genus" : 60, \
+				"species" : 70 } # using increments of 10 in case i want to use the indermediate ranks (e.g. subfamily) at some later point also
+				#rank "root" does not exist (as previously plannes. Instead checking for taxid=1 (= root)
 
 index2rank = { rank2index[key] : key for key in rank2index }
 
@@ -372,9 +374,10 @@ def json_taxdb_from_dmp(download_dir = "."):
 		infile = openfile(nodefile)
 		for line in infile:
 			tokens = line.rstrip().split("\t|\t") # convoluted delimiter, but that's what ncbi taxdump uses...
-			taxid = int(tokens[0])
-			parent = int(tokens[1])
-			rank =  rank2index.get(tokens[3], 1) # ranks other than the 7 major ranks will considered 1 = "ignored rank"
+			taxid = tokens[0]
+			parent = tokens[1]
+			#assert tokens[2] in rank2index, "\nNO OFFICIAL RANK: -{}- for taxid -{}-. maybe you meant this: -{}-".format(tokens[2], taxid, tokens[3])
+			rank =  rank2index.get(tokens[2], -1) # ranks other than the 7 major ranks will considered 1 = "ignored rank"			
 			taxname = None
 			taxdict[taxid] = { "parent" : parent, \
 								"rank" : rank, \
@@ -386,7 +389,7 @@ def json_taxdb_from_dmp(download_dir = "."):
 		infile = openfile(namesfile)
 		for line in infile:
 			tokens = line.rstrip().rstrip("\t|").split("\t|\t") # convoluted delimiter, but that's what ncbi taxdump uses...
-			taxid = int(tokens[0])
+			taxid = tokens[0]
 			taxname = tokens[1]
 			taxname_class = tokens[3]
 			if taxname_class != "scientific name":
@@ -396,24 +399,31 @@ def json_taxdb_from_dmp(download_dir = "."):
 			#print("--> {}".format(taxname))
 			assert taxdict[taxid]["taxname"] == None, "{} There are different scientific names for the same taxid. Need to look into this and choose which one to take...".format(taxid)
 			taxdict[taxid]["taxname"] = taxname
+		infile.close()
 		return taxdict
 		
 	def taxdict2json(taxdict, targetdir): #assume that targetdir = downloaddir
 		import json
-		outdbfilename = od.path.join(targetdir, acc2taxid_outfilebasename)
-		with open(outdbfilename, 'wb') as outfile:
+		outdbfilename = os.path.join(targetdir, taxdb_outfilebasename)
+		with open(outdbfilename, 'w') as outfile:
 			json.dump(taxdict, outfile)
 		return outdbfilename
+
+	# ~ def taxdict2yaml(taxdict, targetdir): #assume that targetdir = downloaddir #optional in cas i decide to switch to yaml
+		# ~ import yaml
+		# ~ outdbfilename = os.path.join(targetdir, taxdb_outfilebasename + ".yaml")
+		# ~ with open(outdbfilename, 'w') as outfile:
+			# ~ yaml.dump(taxdict, outfile)
+		# ~ return outdbfilename
 		
 	##### end of encapsulated subfunctions ################################
 	taxdict = read_nodesdmp(os.path.join(download_dir, "nodes.dmp"))
 	taxdict = read_namesdmp(os.path.join(download_dir, "names.dmp"), taxdict)
-	infile.close()
+	
 	return taxdict2json(taxdict, download_dir) #is smaller than kronas db. herfore do not attempt to build kronas db
 
-def json_taxdb_from_kronadb(kronadb_dir = "."):
-	ktdb_basename = "taxonomy.tab"
-	kronadb = os.path.join(kronadb_dir, ktdb_basename)
+def json_taxdb_from_kronadb(kronadb):
+	raise Exception("This function does not exist yet")
 	infile = openfile(kronadb)
 	for line in infile:
 		pass #finish this sometime
@@ -460,7 +470,8 @@ def _create_sorted_acc2taxid_lookup(acc2taxidfilelist, acc2taxid_outfilename):
 		if serr != None:
 			raise RuntimeError("...extraction exited with Error:\n{}\n".format(serr))
 		os.remove(f)
-		os.remove(f + ".md5")
+		if os.path.exists(f + ".md5"):
+			os.remove(f + ".md5")
 		tempfilelist.append(tempfile)
 	sys.stderr.write("combining sorted tempfiles\n")
 	sout,serr = subprocess.Popen(["bash", "-c", finalsortcmd.format(filelist=" ".join(tempfilelist), finaldb=acc2taxid_outfilename)], stdout=subprocess.PIPE).communicate()
@@ -472,21 +483,51 @@ def _create_sorted_acc2taxid_lookup(acc2taxidfilelist, acc2taxid_outfilename):
 		os.remove(f)
 
 class taxdb(object):
-	def __init__(self, acc2taxid_lookupfile, taxdbfile):
+	def __init__(self, acc2taxid_lookupfile, taxdbfile = None):
 		#self.taxdict = self.read_taxddbfile(taxdbfile) #todo: write tis!
 		self.acc_lookup_handle = openfile(acc2taxid_lookupfile) #keep in mind that this function will be moved to another module
-		self.acc_lookup_handle_filesize = self.acc_lookup_handle.seek(0,2) #jump to end of file and give bytesize (alternative to "os.path.getsize()" which hopefully should also work with compressed files)
-		self.taxdict = None
-		#reminer to self: do NOT use compressed acc2taxid_lookupfile. It increases time for binary search ca 200x!
-
+		self.acc_lookup_handle_filesize = self.acc_lookup_handle.seek(0,2) #jump to end of file and give bytesize (alternative to "os.path.getsize()")
+		if taxdbfile != None:
+			try:
+				self.read_taxdb(taxdbfile)
+				
+			except Exception as e: #TODO: replace this with the specific exception throen when there was actually an problem parsing the file as json
+				sys.stderr.write("\n{}\n".format(e, traceback.print_exc()))
+				sys.stderr.write("\nperhabs the taxdbfile is not in json-format? Assuming a krona-taxonomydb and trying to covert it to json\n")
+				self.taxdbfile = json_taxdb_from_kronadb(taxdbfile)
+				self.read_taxdb(self.taxdbfile)
+		else:
+			self.taxdict = None
+	
+	def build_lca_db():
+		#stump for later creating a more sophisticated LCA method based on a lca method for n-ary trees using "Range Minimum Query"
+		#but for now handle LCA downstream by doing pairwise comparisons of the taxpaths returned for each accession
+		#  --> will be slow and clunky (just to get this startet. optimize later
+		#the planned later method can be used to get lca BEFORE getting full path for each acc
+		#	(just need to lookup taxid for accession, not full path)
+		#	then query taxids against this lca-db-object to get the corrwsponding lca
+		#	can this be done weighted?
+		pass  
+	
+			
 	def read_taxdb(self, taxdbfile):#needs to be json format. Krona taxdbs need to be converted to this format first, using the kronadb2json function above
 		import json
+		# ~ def keystoint(x): #sumb json format does not allow integers as keys (WHYYY=!) and converts them to strings during dump (WHYY?). doing this in the hope this saves RAM. otherwise just go with stupid strings...
+			# ~ replace_dict = {}
+			# ~ for k, v in x.items():
+				# ~ if type(v) == dict:
+					# ~ replace_dict[int(k)] = v
+				# ~ else:
+					# ~ replace_dict[k] = v
+			# ~ return replace_dict
 		infile = openfile(taxdbfile)
+		# ~ self.taxdict = json.load(infile, object_hook = keystoint) #converting to int does NOT save much RAM BUT costs a LOT of speed!
 		self.taxdict = json.load(infile)
+		#print(list(self.taxdict.keys()))
 		infile.close()
 	
 	def acc2taxid(self, queryacc,start = 0):
-		#for using binary search on a simple (maybe compressed?) sorted textfile
+		#for using binary search on a simple sorted textfile #reminer to self: do NOT use compressed acc2taxid_lookupfile. It increases time for binary search ca 200x!
 		start = 0
 		stop = self.acc_lookup_handle_filesize
 		subjectacc = None
@@ -513,19 +554,70 @@ class taxdb(object):
 		outdict = {}
 		for queryacc in sorted(queryacclist): #VERY important that queries are sorted as well!
 			outdict[queryacc], start = self.acc2taxid(queryacc, start)
-		return outdict 
-		
-def _test_modulewide_globals(): # to reassure me that global variables within modules really function as intended. Left in here to remind me of that until this whole thing is completed
-	print("hi can you see this")
-	print(rank2index)
-	print("hope you do...")
+		return outdict
+	
+	def taxid2taxpath(self, taxid, fullpath = True, unofficials = True): #may skip the outformat and return all levels as tuples (taxname, taxid, rank). MAy change fullpath default to False AFTER i checked how to best deal with "unofficial candidate phyla"
+		# ~ id_candidate_phyla = 1783234
+		# ~ id_bacteria_incertae_sedis = 2323 
+		assert self.taxdict != None, "\nError in taxid2taxpath: you must provide a taxdb-file\n"
+		assert isinstance(fullpath, bool), "\nError in taxid2taxpath: 'fullpath' must be either True or False\n"
+		assert isinstance(unofficials, bool), "\nError in taxid2taxpath: 'unofficials' must be either True or False\n"
 
-def _test_download():
-	sys.stderr.write("_test_dowload\n")
-	sys.stderr.flush()
-	download_accessiondb(".", "minimal", False)
-	sys.stderr.write("\nfinished\n")
-	sys.stderr.flush()
+		taxpath = []
+		# ~ is_candidate_phylum = False
+		# ~ is_incertae_sedis = False
+		
+		official_phylum_level_set = False
+		placeholder_phylum = None
+		placeholder_phylum_listindex = None
+		#print("0000000000000")
+		#print(taxid)
+		#print(type(taxid))
+		#sys.stderr.write("\n______\n{}\n".format(taxid))
+		#loopcounter = 0
+		while int(taxid) > 1: #assuming ALL taxpaths lead down to "root" (taxid=1); otherwise implement a maximum iteration counter
+			#loopcounter += 1
+			tax = self.taxdict[taxid]
+			taxname = tax["taxname"]
+			taxrank = tax["rank"]
+			sys.stderr.write("   --> taxname: {} --> rank: {} \n".format(taxname, taxrank)) # somehow all ranks turn out to be 0?? look into that!
+			sys.stderr.flush()
+			taxparent = tax["parent"]
+			#workaround for candidate phyla unrecognized by ncbi taxonomy (when limiting filtering to major ranks such as phylum):
+			#will probably drop this here and integrate it in the LCA portion instead, because most candidate phyla actually have an official "phylum rank" and i just want to make sure the "candidate phyla" info is not lost, when the LCA ends up below that rank
+			if  unofficials and "Candidate phyla" in taxname and not official_phylum_level_set:
+				# ~ is_candidate_phylum = True
+				placeholder_phylum = "Candidate phylum " + taxpath[-1][0] #use the lowest level clade in ncbi as "placeholder" for phylum
+				placeholder_taxid = taxpath[-1][1]
+			if unofficials and "incertae sedis" in taxname and not official_phylum_level_set: 
+				# ~ is_incertae_sedis = True
+				if placeholder_phylum == None:
+					placeholder_phylum = "{} {}".format(taxname, taxpath[-1][0]) #use the lowest level clade in ncbi as "placeholder" for phylum
+				else:
+					placeholder_phylum = "{} {}".format(taxname, placeholder_phylum)
+					placeholder_taxid = taxpath[-1][1]
+				if placeholder_phylum_listindex != None: #make sure that only the lowest level instance of "incertae sedis" is interpreted as phylum
+					taxpath.pop(placeholder_phylum_listindex)
+				placeholder_phylum_listindex = len(taxpath)
+				taxpath.append((placeholder_phylum, placeholder_taxid, 20))	
+			if taxrank == 20: #safeguard to make sure only one phylum-level entry is in taxpath even when looking at current "inofficials", in case ncbi Taxonomy changes e.g. in regard to "Bacteria candidate phyla"
+				phylum_level_set = True
+				if placeholder_phylum_listindex != None: #if an placeholder-phylum was set BUT now we find an official ncbi-taxonomy-recognized phylum, delete the placeholder
+					taxpath.pop(placeholder_phylum_listindex)
+			#end of workaround for candidate phyla. may likely drop the above portion here, and instead adapt it for the LCA portion later? ALthough this is probably mostly used for filtering anyay. so would fit better here...?
+			taxpath.append((taxname, taxid, taxrank)) 	
+			#if taxparent == 620:
+			#	sys.stderr.write("\n\nWTF: ({}, {}, {})".format(taxname, taxid, taxrank)) 		
+			taxid = taxparent
+
+			
+		if fullpath:
+			return list(reversed(taxpath))
+		else:
+			return list(reversed([ t for t in taxpath if t[2] > 0 ])) #only ranks with indices larger than zero == the 7 official ranks
+			
+
+################################################################		
 
 def _test_download2():
 	sys.stderr.write("_test_dowload2\n")
@@ -541,5 +633,69 @@ def _test_makeaccdb():
 	acc2taxid_outfilename = "sorted_shit_yeah.db"
 	_create_sorted_acc2taxid_lookup(acc2taxidfilelist, acc2taxid_outfilename)
 	sys.stderr.write("\nFINISHED\n")
+	
+def _test_lookup():#check how fast accession2taxid lookup actually is for different numbers of input data
+	import time
+	sys.stderr.write("\ncreating database_object...\n")
+	db = taxdb("sorted_shit_yeah.db")
+	for infilename in ["100.acc", "1000.acc", "100000.acc"]:
+		infile=openfile(infilename)
+		acclist=[acc.strip() for acc in infile]
+		infile.close()
+		sys.stderr.write("\n\n{}\n{}\n".format("-"*20, infilename))
+		start_time = time.time()
+		taxiddict = db.acclist2taxiddict(acclist)
+		stop_time = time.time()
+		sys.stderr.write("  this took {} seconds ---\n".format(stop_time - start_time))
+		outfile = openfile(infilename + "_taxids.tsv", "wt")
+		outfile.write("{}".format("\n".join(["{}\t{}".format(a, taxiddict[a]) for a in acclist] )))
+		outfile.close()
+
+def _test_taxpath():#assumes "nodes.dmp" and "names.dmp" "sorted_shit_yeah.db" and "100.acc" are in current working directory
+	import time
+	# ~ sys.stderr.write("\ncreating json_taxdb from dmp-files\n")
+	# ~ start_time = time.time()
+	# ~ json_taxdb_from_dmp()
+	# ~ stop_time = time.time()
+	# ~ sys.stderr.write("  --> Done. This took {} seconds\n".format(stop_time - start_time))
+
+	sys.stderr.write("\nrcreating db-object and readig taxdb from json_file\n")	
+	start_time = time.time()	
+	db = taxdb("sorted_shit_yeah.db", taxdbfile = taxdb_outfilebasename)
+	stop_time = time.time()
+	sys.stderr.write("  --> Done. This took {} seconds ---\n".format(stop_time - start_time))		
+	
+	accfile = "100.acc"
+	infile = openfile(accfile)
+	acclist = [acc.strip() for acc in infile]
+	infile.close()
+	
+	sys.stderr.write("\ngetting taxids for sample-accessions\n")
+	start_time = time.time()
+	taxiddict = db.acclist2taxiddict(acclist)
+	stop_time = time.time()
+	sys.stderr.write("  --> Done. This took {} seconds ---\n".format(stop_time - start_time))	
+	
+	sys.stderr.write("\nNow getting full taxpath for each taxid\n")
+	outlines = []
+	start_time = time.time()
+	for acc in acclist:
+		#print(acc)
+		#print(taxiddict[acc])
+		fuck = db.taxid2taxpath(taxiddict[acc])
+		#print("-"*60)
+		#print(fuck)
+		#print("====")
+		pathstring="\t".join([";".join([str(y) for y in x]) for x in fuck] )
+		outlines.append("{}\t{}".format(acc, pathstring))
+	stop_time = time.time()
+	sys.stderr.write("  --> Done. This took {} seconds ---\n".format(stop_time - start_time))
+	
+	sys.stderr.write("\nwriting results to file...\n")
+	outfile = openfile("testfulltaxpath.out.tsv", "wt")
+	outfile.write("\n".join(outlines))
+	
+	
 if __name__ == '__main__':	
-	_test_download2()
+	#_test_lookup()
+	_test_taxpath()
