@@ -6,7 +6,8 @@ Uses the following files of the ncbi taxonomy database
 	- "nodes.dmp" (from "taxdump.tar.gz" or "new_taxdump.tar.gz")
 	- "names.dmp" (from "taxdump.tar.gz" or "new_taxdump.tar.gz")
 	- "prot.accession2taxid" (and, optionally, "dead_prot.accession2taxid.gz")
-To decrease memory consumption, taxonomix ranks are converted to integer-indices.
+To decrease memory consumption, taxonomix ranks are converted to integer-indices (although sonly minimal amout of RAM saved this way).
+Taxids were als supposed to be represented as intergers, but this was incompatible with json, slowed down database construction and saved only little RAM --> dropped
 These indices can be mapped back and forth using the dictionaries "getdb.rank2index" and/or "getdb.index2rank"
 """
 
@@ -15,6 +16,7 @@ import sys
 import time
 import traceback
 
+from misc import openfile
 '''
 module for downloading and parsing the ncbi taxonomy databases for bin refinerwork in progress
 things to consider:
