@@ -68,18 +68,9 @@ rank2index = { "no rank" : 0, \
 index2rank = { rank2index[key] : key for key in rank2index }
 
 
-taxdb_outfilebasename = "taxonomy_br.json" #using the same as krona but exporting it into a faster to read format
+taxdb_outfilebasename = "taxonomy_br.json.gz" #different from krona. additional wasteful "children" info per node (may get rid of it again after perfecting LCA). saved as compressed file because uncompression does not increase loading time much but decreases file size a LOT
 acc2taxid_outfilebasename = "all.accession2taxid.sorted" #using the same as krona
-
-
-def openfile(infilename, filemode = "rt"): #proably move this to a "basics" module since other steps need it too?
-	""" a convenience function that will be moved to another more general module later"""
-	if infilename.endswith(".gz"):
-		import gzip
-		filehandle = gzip.open(infilename, filemode)
-	else:
-		filehandle = open(infilename, filemode)
-	return filehandle 
+lcawalkdb_outfilebasename = "lcawalkdb_br.db"
 
 def  _download_db(dbtype, targetdir="."):
 	""" 
@@ -362,7 +353,7 @@ def _download_db3(dbtype, targetdir="."): #fuck it! urllib2 and ftlib don't work
 			
 			
 
-def json_taxdb_from_dmp(download_dir = "."):
+def lca_and_json_taxdb_from_dmp(download_dir = "."):
 	"""
 	Creates a taxonomy lookup file from downloaded or provided "nodes.dmp" and "names.dmp" files.
 	The files "nodes.dmp" and "names.dmp" should be located in "<download_dir>"
@@ -371,8 +362,9 @@ def json_taxdb_from_dmp(download_dir = "."):
 	#TODO: This should NOT return a dictionary. Instead it should create a Json or yaml or pickle or other suitable file for creating a taxdb object later
 	#should just return the filename forthis 
 	##### some encapsulated subfunctions: ##################################
-	def read_nodesdmp(nodefile):
+	def read_nodesdmp(nodefile): #test:keep track of parent AND children per node at the same time. Wasteful for RAM but easier for LCA...
 		taxdict =  {}
+		lca_walk_tree = {} #instead of wastefully adding the children info for each node directly to the taxonomy dict that are actually only needed to create the paht_lits for LCA later on, just make a second temporary dict for that 
 		infile = openfile(nodefile)
 		for line in infile:
 			tokens = line.rstrip().split("\t|\t") # convoluted delimiter, but that's what ncbi taxdump uses...
@@ -384,8 +376,19 @@ def json_taxdb_from_dmp(download_dir = "."):
 			taxdict[taxid] = { "parent" : parent, \
 								"rank" : rank, \
 								"taxname" : taxname }
+			if taxid not in lca_walk_tree: #necessary to make sure terminal leaves also have entry in lca_walk_tree
+				lca_walk_tree[taxid] = {	"level" : None, \
+											"children" : [] } 
+			
+			if parent in lca_walk_tree: #adding children info now also
+				if parent == "1" and taxid == "1": #no need to link root to itself (would lead to "maximum recursion error during eulers walk)
+					continue
+				lca_walk_tree[parent]["children"].append(taxid)
+			elif not (parent == "1" and taxid == "1"): #no need to link root to itself (would lead to "maximum recursion error during eulers walk)
+				lca_walk_tree[parent] = { 	"level" : None, \
+											"children" : [taxid] }
 		infile.close()
-		return taxdict
+		return taxdict, lca_walk_tree
 		
 	def read_namesdmp(namesfile, taxdict):
 		infile = openfile(namesfile)
@@ -399,16 +402,64 @@ def json_taxdb_from_dmp(download_dir = "."):
 				continue
 			#print("{} -> yes".format(taxid))
 			#print("--> {}".format(taxname))
+			#print(type(taxdict))
+			#print(len(taxdict))
+			#print(taxdict[1])
 			assert taxdict[taxid]["taxname"] == None, "{} There are different scientific names for the same taxid. Need to look into this and choose which one to take...".format(taxid)
 			taxdict[taxid]["taxname"] = taxname
 		infile.close()
 		return taxdict
+
+	def get_level(taxdict, taxid, level = 0): #get level (=depth) of taxon within ncbi taxonomy-tree. Required for LCA later on...
+		level += 1
+		if taxid == "1":
+			return level
+		elif taxdict[taxid]["parent"] in taxdict:
+			return get_level(taxdict, taxdict[taxid]["parent"], level)
+		else:
+			return None
+	
+	def add_levelinfo(taxdict, lca_walk_tree):
+		for taxid in lca_walk_tree:
+			lca_walk_tree[taxid]["level"] = get_level(taxdict, taxid)
+		return lca_walk_tree
+			
+	def build_lca_db(lca_walk_tree, targetdir):
+		"""
+		iterates through lca_walk_tree from root to each branch in the form of a "eulers walk". 
+		stores the visited nodes of this eulers walk in a list. stores corresponding node-depths in a second list
+		thoses lists form the actual lookup-table for lca queries
+		"""
+		def walk(lca_walk_tree, walk_list, depth_list, currnode = "1"): #simple attempt to get eulers walk across taxdict
+			walk_list.append(currnode)
+			# ~ print("=========")
+			# ~ print(currnode)
+			# ~ print(lca_walk_tree[currnode])
+			depth_list.append(lca_walk_tree[currnode]["level"])
+			for child in sorted(lca_walk_tree[currnode]["children"]):
+				#print("{} --> {}".format(currnode, child))
+				walk_list, depth_list = walk(lca_walk_tree, walk_list, depth_list, child)
+				walk_list.append(currnode)
+				depth_list.append(lca_walk_tree[currnode]["level"])
+			return walk_list, depth_list
 		
+		walk_list = []
+		depth_list = []
+		walk_list, depth_list = walk(lca_walk_tree, walk_list, depth_list)
+		
+		outfilename = os.path.join(targetdir, lcawalkdb_outfilebasename)
+		outfile = openfile(outfilename, "wt")
+		outfile.write("\t".join(walk_list) + "\n")
+		outfile.write("\t".join([str(l) for l in depth_list]))
+		outfile.close()
+		return outfilename
+
 	def taxdict2json(taxdict, targetdir): #assume that targetdir = downloaddir
 		import json
 		outdbfilename = os.path.join(targetdir, taxdb_outfilebasename)
-		with open(outdbfilename, 'w') as outfile:
-			json.dump(taxdict, outfile)
+		outfile = openfile(outdbfilename, 'wt')
+		json.dump(taxdict, outfile)
+		outfile.close()
 		return outdbfilename
 
 	# ~ def taxdict2yaml(taxdict, targetdir): #assume that targetdir = downloaddir #optional in cas i decide to switch to yaml
@@ -419,10 +470,24 @@ def json_taxdb_from_dmp(download_dir = "."):
 		# ~ return outdbfilename
 		
 	##### end of encapsulated subfunctions ################################
-	taxdict = read_nodesdmp(os.path.join(download_dir, "nodes.dmp"))
+	sys.stderr.write(" reading nodes.dmp\n")
+	taxdict, lca_walk_tree = read_nodesdmp(os.path.join(download_dir, "nodes.dmp"))
+	#print(lca_walk_tree)
+	sys.stderr.write(" reading names.dmp\n")
 	taxdict = read_namesdmp(os.path.join(download_dir, "names.dmp"), taxdict)
-	
-	return taxdict2json(taxdict, download_dir) #is smaller than kronas db. herfore do not attempt to build kronas db
+	#print(lca_walk_tree)
+	sys.stderr.write(" adding level-info\n")
+	lca_walk_tree = add_levelinfo(taxdict, lca_walk_tree)
+	#print(lca_walk_tree)
+	sys.stderr.write(" created! now only have to write to file...\n")
+	taxdictjson_file = taxdict2json(taxdict, download_dir)
+	print("taxdict")
+	print(taxdict['375451'])
+	print("----------")
+	print("lca_walk_tree")
+	print(lca_walk_tree['375451'])
+	lca_paths_file = build_lca_db(lca_walk_tree, download_dir)
+	return taxdictjson_file, lca_paths_file 
 
 def json_taxdb_from_kronadb(kronadb):
 	raise Exception("This function does not exist yet")
@@ -485,14 +550,17 @@ def _create_sorted_acc2taxid_lookup(acc2taxidfilelist, acc2taxid_outfilename):
 		os.remove(f)
 
 class taxdb(object):
-	def __init__(self, acc2taxid_lookupfile, taxdbfile = None):
+	def __init__(self, acc2taxid_lookupfile, taxdbfile = None, lca_pathsfile = None):
 		#self.taxdict = self.read_taxddbfile(taxdbfile) #todo: write tis!
-		self.acc_lookup_handle = openfile(acc2taxid_lookupfile) #keep in mind that this function will be moved to another module
+		self.acc_lookup_handle = openfile(acc2taxid_lookupfile)
 		self.acc_lookup_handle_filesize = self.acc_lookup_handle.seek(0,2) #jump to end of file and give bytesize (alternative to "os.path.getsize()")
 		if taxdbfile != None:
 			try:
 				self.read_taxdb(taxdbfile)
-				
+				if lca_pathsfile == None:
+					self.read_lca_paths(os.path.join(os.path.dirname(taxdbfile), lcawalkdb_outfilebasename))
+				else:
+					self.read_lca_paths(os.path.join(lca_pathsfile))
 			except Exception as e: #TODO: replace this with the specific exception throen when there was actually an problem parsing the file as json
 				sys.stderr.write("\n{}\n".format(e, traceback.print_exc()))
 				sys.stderr.write("\nperhabs the taxdbfile is not in json-format? Assuming a krona-taxonomydb and trying to covert it to json\n")
@@ -501,16 +569,23 @@ class taxdb(object):
 		else:
 			self.taxdict = None
 	
-	def build_lca_db():
-		#stump for later creating a more sophisticated LCA method based on a lca method for n-ary trees using "Range Minimum Query"
-		#but for now handle LCA downstream by doing pairwise comparisons of the taxpaths returned for each accession
-		#  --> will be slow and clunky (just to get this startet. optimize later
-		#the planned later method can be used to get lca BEFORE getting full path for each acc
-		#	(just need to lookup taxid for accession, not full path)
-		#	then query taxids against this lca-db-object to get the corrwsponding lca
-		#	can this be done weighted?
-		pass  
+	def read_lca_paths(self, lca_pathsfile):
+		infile = openfile(lca_pathsfile)
+		#only two lines are recognized. if there is anything else, it will be ignored
+		self.walk_list = infile.readline().strip().split("\t")
+		self.depth_list = [ str(l) for l in infile.readline().strip().split("\t") ]
+		
 	
+	def get_lca(self, taxA, taxB):
+		indexA = self.walk_list.index(taxA)
+		indexB = self.walk_list.index(taxB)
+		walk_slice = self.walk_list[min([indexA, indexB]):max([indexA, indexB])]
+		depth_slice = self.depth_list[min([indexA, indexB]):max([indexA, indexB])]
+		print("Walk slice:")
+		print(walk_slice)
+		slice_tuples = sorted([ (w,d) for w,d in zip(walk_slice, depth_slice) ], key = lambda x:x[1])
+		lca = slice_tuples[0][0]
+		print("LCA of '{}' & '{}' is '{}'".format(taxA, taxB, lca))
 			
 	def read_taxdb(self, taxdbfile):#needs to be json format. Krona taxdbs need to be converted to this format first, using the kronadb2json function above
 		import json
@@ -655,11 +730,11 @@ def _test_lookup():#check how fast accession2taxid lookup actually is for differ
 
 def _test_taxpath():#assumes "nodes.dmp" and "names.dmp" "sorted_shit_yeah.db" and "100.acc" are in current working directory
 	import time
-	# ~ sys.stderr.write("\ncreating json_taxdb from dmp-files\n")
-	# ~ start_time = time.time()
-	# ~ json_taxdb_from_dmp()
-	# ~ stop_time = time.time()
-	# ~ sys.stderr.write("  --> Done. This took {} seconds\n".format(stop_time - start_time))
+	sys.stderr.write("\ncreating json_taxdb from dmp-files\n")
+	start_time = time.time()
+	lca_and_json_taxdb_from_dmp()
+	stop_time = time.time()
+	sys.stderr.write("  --> Done. This took {} seconds\n".format(stop_time - start_time))
 
 	sys.stderr.write("\nrcreating db-object and readig taxdb from json_file\n")	
 	start_time = time.time()	
@@ -696,8 +771,30 @@ def _test_taxpath():#assumes "nodes.dmp" and "names.dmp" "sorted_shit_yeah.db" a
 	sys.stderr.write("\nwriting results to file...\n")
 	outfile = openfile("testfulltaxpath.out.tsv", "wt")
 	outfile.write("\n".join(outlines))
-	
-	
+
+def test_opentaxdbspeed():
+	sys.stderr.write("\nrcreating db-object and readig taxdb from json_file\n")	
+	start_time = time.time()	
+	db = taxdb("dummy.tab", taxdbfile = taxdb_outfilebasename)
+	stop_time = time.time()
+	sys.stderr.write("  --> Done. This took {} seconds ---\n".format(stop_time - start_time))		
+
+def test_lcawalk():
+	import time
+	sys.stderr.write("\ncreating json_taxdb from dmp-files\n")
+	start_time = time.time()
+	lca_and_json_taxdb_from_dmp()
+	stop_time = time.time()
+	sys.stderr.write("  --> Done. This took {} seconds\n".format(stop_time - start_time))
+	sys.stderr.write("\nrcreating db-object and readig taxdb from json_file\n")	
+	start_time = time.time()	
+	db = taxdb("sorted_shit_yeah.db", taxdbfile = taxdb_outfilebasename)
+	stop_time = time.time()
+	sys.stderr.write("  --> Done. This took {} seconds ---\n".format(stop_time - start_time))		
+	db.get_lca("375451","453582")
+
 if __name__ == '__main__':	
 	#_test_lookup()
-	_test_taxpath()
+	#~ _test_taxpath()
+	#~ test_opentaxdbspeed()
+	test_lcawalk()
