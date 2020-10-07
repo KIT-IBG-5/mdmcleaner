@@ -482,10 +482,10 @@ def lca_and_json_taxdb_from_dmp(download_dir = "."):
 	sys.stderr.write(" created! now only have to write to file...\n")
 	taxdictjson_file = taxdict2json(taxdict, download_dir)
 	print("taxdict")
-	print(taxdict['375451'])
+	#print(taxdict['375451'])
 	print("----------")
 	print("lca_walk_tree")
-	print(lca_walk_tree['375451'])
+	print(lca_walk_tree)
 	lca_paths_file = build_lca_db(lca_walk_tree, download_dir)
 	return taxdictjson_file, lca_paths_file 
 
@@ -573,7 +573,7 @@ class taxdb(object):
 		infile = openfile(lca_pathsfile)
 		#only two lines are recognized. if there is anything else, it will be ignored
 		self.walk_list = infile.readline().strip().split("\t")
-		self.depth_list = [ str(l) for l in infile.readline().strip().split("\t") ]
+		self.depth_list = [ int(l) for l in infile.readline().strip().split("\t") ]
 		
 	
 	def get_lca(self, taxA, taxB):
@@ -783,15 +783,17 @@ def test_lcawalk():
 	import time
 	sys.stderr.write("\ncreating json_taxdb from dmp-files\n")
 	start_time = time.time()
-	lca_and_json_taxdb_from_dmp()
+	taxdictjson_file, lca_paths_file = lca_and_json_taxdb_from_dmp()
 	stop_time = time.time()
 	sys.stderr.write("  --> Done. This took {} seconds\n".format(stop_time - start_time))
 	sys.stderr.write("\nrcreating db-object and readig taxdb from json_file\n")	
 	start_time = time.time()	
-	db = taxdb("sorted_shit_yeah.db", taxdbfile = taxdb_outfilebasename)
+	db = taxdb(taxdictjson_file, taxdbfile = taxdb_outfilebasename)
 	stop_time = time.time()
 	sys.stderr.write("  --> Done. This took {} seconds ---\n".format(stop_time - start_time))		
-	db.get_lca("375451","453582")
+	tax1 = sys.argv[1]
+	tax2 = sys.argv[2]
+	db.get_lca(tax1,tax2)
 
 if __name__ == '__main__':	
 	#_test_lookup()
