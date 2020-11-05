@@ -1,0 +1,43 @@
+GTDB R95 class	Number of genomes	Number of NCBI classes	List of NCBI classes
+c__Halobacteria	469	3	c__Halobacteria(p__Euryarchaeota) 98.08%, c__(p__Euryarchaeota) 1.71%, c__Nanohaloarchaea(p__Euryarchaeota) 0.21%
+c__Poseidoniia	466	2	c__(p__Euryarchaeota) 99.79%, c__Thermoplasmata(p__Euryarchaeota) 0.21%
+c__Methanosarcinia	256	2	c__Methanomicrobia(p__Euryarchaeota) 99.61%, c__(p__Euryarchaeota) 0.39%
+c__Thermoproteia	255	2	c__Thermoprotei(p__Crenarchaeota) 92.94%, c__(p__Euryarchaeota) 7.06%
+c__Thermoplasmata	217	3	c__Thermoplasmata(p__Euryarchaeota) 83.41%, c__(p__Euryarchaeota) 15.21%, c__Methanomicrobia(p__Euryarchaeota) 1.38%
+c__Nitrososphaeria	180	2	c__(p__Euryarchaeota) 88.89%, c__Nitrososphaeria(p__Thaumarchaeota) 11.11%
+c__Nanoarchaeia	164	1	c__(p__Euryarchaeota) 100.0%
+c__Bathyarchaeia	101	1	c__(p__Euryarchaeota) 100.0%
+c__Thermococci	72	3	c__Thermococci(p__Euryarchaeota) 86.11%, c__Methanomicrobia(p__Euryarchaeota) 12.5%, c__(p__Euryarchaeota) 1.39%
+c__Bog-38	50	2	c__(p__Euryarchaeota) 98.0%, c__Methanomicrobia(p__Euryarchaeota) 2.0%
+c__Archaeoglobi	42	2	c__Archaeoglobi(p__Euryarchaeota) 95.24%, c__(p__Euryarchaeota) 4.76%
+c__Micrarchaeia	35	2	c__(p__Euryarchaeota) 97.14%, c__Thermoplasmata(p__Euryarchaeota) 2.86%
+c__Methanococci	27	2	c__Methanococci(p__Euryarchaeota) 96.3%, c__Methanomicrobia(p__Euryarchaeota) 3.7%
+c__E2	22	2	c__Thermoplasmata(p__Euryarchaeota) 72.73%, c__(p__Euryarchaeota) 27.27%
+c__Methanomethylicia	20	3	c__(p__Euryarchaeota) 60.0%, c__Candidatus Methanomethylia(p__Candidatus Verstraetearchaeota) 25.0%, c__Thermoprotei(p__Crenarchaeota) 15.0%
+c__Aenigmatarchaeia	18	1	c__(p__Euryarchaeota) 100.0%
+c__Altarchaeia	18	1	c__(p__Euryarchaeota) 100.0%
+c__Thorarchaeia	16	1	c__(p__Euryarchaeota) 100.0%
+c__Iainarchaeia	15	1	c__(p__Euryarchaeota) 100.0%
+c__Lokiarchaeia	15	1	c__(p__Euryarchaeota) 100.0%
+c__Nanosalinia	12	1	c__Nanohaloarchaea(p__Euryarchaeota) 100.0%
+c__Syntropharchaeia	12	1	c__Methanomicrobia(p__Euryarchaeota) 100.0%
+c__Korarchaeia	10	1	c__(p__Euryarchaeota) 100.0%
+c__Huberarchaeia	9	1	c__(p__Euryarchaeota) 100.0%
+c__Hydrothermarchaeia	8	1	c__(p__Euryarchaeota) 100.0%
+c__EX4484-6	7	1	c__Thermoplasmata(p__Euryarchaeota) 100.0%
+c__Heimdallarchaeia	6	1	c__(p__Euryarchaeota) 100.0%
+c__PWEA01	6	1	c__(p__Euryarchaeota) 100.0%
+c__Methanocellia	5	1	c__Methanomicrobia(p__Euryarchaeota) 100.0%
+c__Hadarchaeia	5	1	c__Hadesarchaea(p__Euryarchaeota) 100.0%
+c__Undinarchaeia	5	1	c__(p__Euryarchaeota) 100.0%
+c__Methanonatronarchaeia	5	2	c__Methanonatronarchaeia(p__Euryarchaeota) 80.0%, c__(p__Euryarchaeota) 20.0%
+c__EX4484-52	3	1	c__(p__Euryarchaeota) 100.0%
+c__UBA186	2	1	c__(p__Euryarchaeota) 100.0%
+c__SW-10-69-26	2	1	c__Thermoplasmata(p__Euryarchaeota) 100.0%
+c__QMZS01	2	1	c__(p__Euryarchaeota) 100.0%
+c__B47-G6	2	1	c__Thermoplasmata(p__Euryarchaeota) 100.0%
+c__Methanoliparia	2	1	c__Candidatus Methanoliparia(p__Euryarchaeota) 100.0%
+c__Gammaproteobacteria	2	2	c__(p__Euryarchaeota) 50.0%, c__Halobacteria(p__Euryarchaeota) 50.0%
+c__Bacteroidia	1	1	c__(p__Euryarchaeota) 100.0%
+c__UBA1135	1	1	c__(p__Euryarchaeota) 100.0%
+c__B88-G9	1	1	c__Thermococci(p__Euryarchaeota) 100.0%

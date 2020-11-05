@@ -1,0 +1,1373 @@
+GTDB R95 species	Number of genomes	Number of NCBI species	List of NCBI species
+s__Methanosarcina mazei	69	2	s__Methanosarcina mazei 98.55%, s__Methanosarcina soligelidi 1.45%
+s__Bog-38 sp003162175	29	1	s__(g__) 100.0%
+s__Saccharolobus islandicus	21	1	s__Sulfolobus islandicus 100.0%
+s__Cuniculiplasma divulgatum	20	2	s__(g__) 90.0%, s__Cuniculiplasma divulgatum 10.0%
+s__Methanobacterium_C sp002498385	18	1	s__(g__) 100.0%
+s__UBA509 sp002498845	17	1	s__(g__) 100.0%
+s__Bog-38 sp003139855	17	1	s__(g__) 100.0%
+s__Halorubrum ezzemoulense	17	3	s__Halorubrum ezzemoulense 52.94%, s__(g__) 35.29%, s__Halorubrum chaoviator 11.76%
+s__Methanosarcina sp002499445	15	1	s__(g__) 100.0%
+s__Methanobacterium_A sp002494495	15	1	s__(g__) 100.0%
+s__Methanobrevibacter_A smithii	15	2	s__Methanobrevibacter smithii 93.33%, s__(g__) 6.67%
+s__Methanobrevibacter_A smithii_A	14	1	s__Methanobrevibacter smithii 100.0%
+s__RumEn-M2 sp001421175	14	1	s__(g__) 100.0%
+s__Methanoculleus sp002508705	14	1	s__(g__) 100.0%
+s__Haloferax volcanii	13	4	s__(g__) 69.23%, s__Haloferax volcanii 15.38%, s__Haloferax alexandrinus 7.69%, s__Haloferax lucentense 7.69%
+s__VadinCA11 sp002498365	12	1	s__(g__) 100.0%
+s__UBA412 sp002495685	12	1	s__(g__) 100.0%
+s__MGIIb-N1 sp002499585	11	1	s__(g__) 100.0%
+s__MGIIb-O1 sp002502175	10	1	s__(g__) 100.0%
+s__DTU008 sp002504525	10	1	s__(g__) 100.0%
+s__Methanohalophilus euhalobius	10	2	s__(g__) 60.0%, s__Methanohalophilus euhalobius 40.0%
+s__MGIIb-O5 sp002498925	9	1	s__(g__) 100.0%
+s__Methanothrix soehngenii	9	2	s__(g__) 88.89%, s__Methanothrix soehngenii 11.11%
+s__Huberarchaeum crystalense	9	2	s__Candidatus Huberiarchaeum crystalense 88.89%, s__(g__) 11.11%
+s__Metallosphaera sedula	9	3	s__Metallosphaera sedula 77.78%, s__(g__) 11.11%, s__Metallosphaera prunae 11.11%
+s__Nitrososphaera sp002501845	8	1	s__(g__) 100.0%
+s__Thalassarchaeum sp002501885	8	1	s__(g__) 100.0%
+s__Micrarchaeum acidiphilum	8	2	s__(g__) 87.5%, s__Candidatus Micrarchaeum acidiphilum 12.5%
+s__Methanosarcina sp000979455	7	1	s__(g__) 100.0%
+s__Nitrosopumilus sp002737455	7	1	s__(g__) 100.0%
+s__Saccharolobus sp001719125	7	1	s__(g__) 100.0%
+s__CG10238-14 sp002789635	7	1	s__(g__) 100.0%
+s__Poseidonia sp002714305	7	1	s__(g__) 100.0%
+s__UBA447 sp002503205	7	1	s__(g__) 100.0%
+s__Halorubrum tropicale	7	2	s__(g__) 85.71%, s__Halorubrum tropicale 14.29%
+s__Methanobacterium subterraneum	7	2	s__(g__) 71.43%, s__Methanobacterium subterraneum 28.57%
+s__Methanosarcina thermophila	7	2	s__(g__) 57.14%, s__Methanosarcina thermophila 42.86%
+s__Haloarcula hispanica	7	3	s__Haloarcula hispanica 42.86%, s__(g__) 42.86%, s__Haloarcula salaria 14.29%
+s__SCGC-AAA471-B05 sp000380705	6	1	s__(g__) 100.0%
+s__UBA93 sp002792915	6	1	s__(g__) 100.0%
+s__CG1-02-35-32 sp002792635	6	1	s__(g__) 100.0%
+s__MGIIb-N1 sp002505695	6	1	s__(g__) 100.0%
+s__Methanolinea sp002506105	6	1	s__(g__) 100.0%
+s__MGIIa-L1 sp002729095	6	1	s__(g__) 100.0%
+s__MGIIb-O2 sp002504905	6	1	s__(g__) 100.0%
+s__Methanoregula sp002502245	6	1	s__(g__) 100.0%
+s__VadinCA11 sp002505345	6	1	s__(g__) 100.0%
+s__UBA71 sp002506425	6	1	s__(g__) 100.0%
+s__Parvarchaeum sp002503215	6	1	s__(g__) 100.0%
+s__UBA10452 sp002501855	6	1	s__(g__) 100.0%
+s__ECH-B-1 sp003019535	6	1	s__(g__) 100.0%
+s__Methanobacterium formicicum	6	2	s__Methanobacterium formicicum 66.67%, s__(g__) 33.33%
+s__Methanothrix_A sp001602645	6	2	s__(g__) 50.0%, s__Methanosaeta harundinacea 50.0%
+s__Haloarcula marismortui	6	5	s__Haloarcula marismortui 33.33%, s__Haloarcula sinaiiensis 16.67%, s__Haloarcula californiae 16.67%, s__Haloarcula quadrata 16.67%, s__Haloarcula salaria 16.67%
+s__GW2011-AR1 sp002762735	5	1	s__(g__) 100.0%
+s__Methanoculleus marisnigri_B	5	1	s__Methanoculleus marisnigri 100.0%
+s__Nitrosopelagicus sp001627235	5	1	s__(g__) 100.0%
+s__MGIIb-O3 sp002725315	5	1	s__(g__) 100.0%
+s__MGIIb-O3 sp001628485	5	1	s__(g__) 100.0%
+s__Nitrosotalea sp001917995	5	1	s__(g__) 100.0%
+s__Altarchaeum sp001873845	5	1	s__(g__) 100.0%
+s__UBA95 sp002499405	5	1	s__(g__) 100.0%
+s__Archaeoglobus sp002507545	5	1	s__(g__) 100.0%
+s__Halorubrum sp002252755	5	1	s__(g__) 100.0%
+s__MGIIb-O5 sp002501805	5	1	s__(g__) 100.0%
+s__MGIIa-K2 sp002719395	5	1	s__(g__) 100.0%
+s__Thalassarchaeum sp002503055	5	1	s__(g__) 100.0%
+s__Thalassarchaeum betae	5	1	s__(g__) 100.0%
+s__MGIIa-L2 sp002698145	5	1	s__(g__) 100.0%
+s__MGIIb-O2 sp002686525	5	1	s__(g__) 100.0%
+s__MGIIa-L2 sp002499195	5	1	s__(g__) 100.0%
+s__Thalassarchaeum sp002714745	5	1	s__(g__) 100.0%
+s__MGIIb-O2 sp002494975	5	1	s__(g__) 100.0%
+s__MGIIb-O5 sp002505775	5	1	s__(g__) 100.0%
+s__Parvarchaeum sp002502045	5	1	s__(g__) 100.0%
+s__MGIIb-P sp002498455	5	1	s__(g__) 100.0%
+s__EX4484-36 sp002254765	5	1	s__(g__) 100.0%
+s__Methanobrevibacter_A sp900314695	5	1	s__(g__) 100.0%
+s__Methanobacterium_B sp003158115	5	1	s__(g__) 100.0%
+s__Methanosarcina barkeri	5	2	s__Methanosarcina barkeri 80.0%, s__(g__) 20.0%
+s__Methanoculleus bourgensis	5	2	s__(g__) 60.0%, s__Methanoculleus bourgensis 40.0%
+s__Haloferax prahovense	5	3	s__(g__) 60.0%, s__Haloferax prahovense 20.0%, s__Haloferax alexandrinus 20.0%
+s__Acidiplasma aeolicum	5	3	s__Acidiplasma aeolicum 40.0%, s__Acidiplasma cupricumulans 40.0%, s__(g__) 20.0%
+s__Halorubrum distributum	5	4	s__Halorubrum distributum 40.0%, s__Halorubrum litoreum 20.0%, s__Halorubrum terrestre 20.0%, s__Halorubrum arcis 20.0%
+s__Acidilobus sp000495735	4	1	s__(g__) 100.0%
+s__MGIIb-O3 sp001629255	4	1	s__(g__) 100.0%
+s__40CM-2-53-6 sp001915065	4	1	s__(g__) 100.0%
+s__CG1-02-33-12 sp002762865	4	1	s__(g__) 100.0%
+s__CG1-02-31-27 sp002763115	4	1	s__(g__) 100.0%
+s__Archaeoglobus_A sp002494625	4	1	s__(g__) 100.0%
+s__Methanothrix_A harundinacea_B	4	1	s__Methanosaeta harundinacea 100.0%
+s__MGIIb-O3 sp002722735	4	1	s__(g__) 100.0%
+s__MGIIa-L3 sp002722135	4	1	s__(g__) 100.0%
+s__MGIIb-N2 sp002713585	4	1	s__(g__) 100.0%
+s__UBA57 sp002495905	4	1	s__(g__) 100.0%
+s__MGIIb-N1 sp002505455	4	1	s__(g__) 100.0%
+s__SM1-50 sp002496355	4	1	s__(g__) 100.0%
+s__MGIIb-O5 sp002730095	4	1	s__(g__) 100.0%
+s__Methanobrevibacter sp900314635	4	1	s__(g__) 100.0%
+s__MGIIb-O1 sp002498725	4	1	s__(g__) 100.0%
+s__Methanobacterium sp002496805	4	1	s__(g__) 100.0%
+s__MGIIa-L2 sp002722615	4	1	s__(g__) 100.0%
+s__MGIIb-N1 sp002504845	4	1	s__(g__) 100.0%
+s__MGIIa-I sp002720095	4	1	s__(g__) 100.0%
+s__CG-Epi1 sp002506485	4	1	s__(g__) 100.0%
+s__MGIIb-O5 sp002501605	4	1	s__(g__) 100.0%
+s__MGIIb-O1 sp002497025	4	1	s__(g__) 100.0%
+s__MGIIb-O5 sp002502095	4	1	s__(g__) 100.0%
+s__MGIIb-O1 sp002497895	4	1	s__(g__) 100.0%
+s__MGIIa-L1 sp002687075	4	1	s__(g__) 100.0%
+s__Fen-7 sp003162615	4	1	s__(g__) 100.0%
+s__Methanobacterium_A sp003166335	4	1	s__(g__) 100.0%
+s__Methanobrevibacter_B sp900314605	4	1	s__(g__) 100.0%
+s__BE-D sp003019595	4	1	s__(g__) 100.0%
+s__Natronococcus sp003559215	4	1	s__(g__) 100.0%
+s__Cenarchaeum sp003352285	4	1	s__(g__) 100.0%
+s__Nitrosarchaeum sp005798405	4	1	s__(g__) 100.0%
+s__Methanobrevibacter_B boviskoreani	4	2	s__(g__) 75.0%, s__Methanobrevibacter boviskoreani 25.0%
+s__Haladaptatus paucihalophilus	4	2	s__Haladaptatus paucihalophilus 75.0%, s__(g__) 25.0%
+s__Methanothrix_A harundinacea_E	4	2	s__Methanosaeta harundinacea 75.0%, s__(g__) 25.0%
+s__Methermicoccus shengliensis	4	2	s__(g__) 75.0%, s__Methermicoccus shengliensis 25.0%
+s__Methanomethylophilus sp001481295	4	2	s__(g__) 75.0%, s__Candidatus Methanomethylophilus alvus 25.0%
+s__Haloarcula taiwanensis	4	2	s__(g__) 75.0%, s__Haloarcula taiwanensis 25.0%
+s__Haloferax gibbonsii	4	2	s__Haloferax gibbonsii 50.0%, s__(g__) 50.0%
+s__Methanosphaera stadtmanae	4	2	s__Methanosphaera stadtmanae 50.0%, s__(g__) 50.0%
+s__Methanomassiliicoccus intestinalis	3	1	s__Candidatus Methanomassiliicoccus intestinalis 100.0%
+s__Methanobrevibacter_A oralis	3	1	s__Methanobrevibacter oralis 100.0%
+s__Methanoperedens sp002487355	3	1	s__(g__) 100.0%
+s__GCA-000496135 sp000496135	3	1	s__(g__) 100.0%
+s__Methanofastidiosum sp001587575	3	1	s__(g__) 100.0%
+s__Nitrosopumilus sp000746765	3	1	s__(g__) 100.0%
+s__Methanothrix_A harundinacea_D	3	1	s__Methanosaeta harundinacea 100.0%
+s__Methanofastidiosum sp001587595	3	1	s__(g__) 100.0%
+s__Thermoproteus sp002077075	3	1	s__(g__) 100.0%
+s__SCGC-AAA011-G17 sp000402515	3	1	s__(g__) 100.0%
+s__MGIIb-O3 sp001629235	3	1	s__(g__) 100.0%
+s__B26-1 sp001593925	3	1	s__(g__) 100.0%
+s__PFCU01 sp001872185	3	1	s__(g__) 100.0%
+s__MGIIa-L3 sp11892u	3	1	s__(g__) 100.0%
+s__MGIIa-L1 sp002702945	3	1	s__(g__) 100.0%
+s__MGIIb-N2 sp002502625	3	1	s__(g__) 100.0%
+s__MGIIb-O3 sp002457145	3	1	s__(g__) 100.0%
+s__MGIIb-O5 sp002506825	3	1	s__(g__) 100.0%
+s__MGIIa-L2 sp002502215	3	1	s__(g__) 100.0%
+s__EX4572-44 sp002254825	3	1	s__(g__) 100.0%
+s__MGIIa-L3 sp002731395	3	1	s__(g__) 100.0%
+s__MGIIb-N2 sp002712285	3	1	s__(g__) 100.0%
+s__MGIIb-O2 sp002498985	3	1	s__(g__) 100.0%
+s__MGIIb-O5 sp002718995	3	1	s__(g__) 100.0%
+s__Methanosarcina sp002496565	3	1	s__(g__) 100.0%
+s__UBA12382 sp002503845	3	1	s__(g__) 100.0%
+s__UBA55 sp002687935	3	1	s__(g__) 100.0%
+s__UBA8886 sp002509165	3	1	s__(g__) 100.0%
+s__MGIIb-O2 sp002495525	3	1	s__(g__) 100.0%
+s__UBA492 sp002688315	3	1	s__(g__) 100.0%
+s__MGIIb-O5 sp002499345	3	1	s__(g__) 100.0%
+s__Poseidonia sp002726495	3	1	s__(g__) 100.0%
+s__Poseidonia sp002725275	3	1	s__(g__) 100.0%
+s__Methanoregula sp002495055	3	1	s__(g__) 100.0%
+s__MGIIa-K1 sp002498185	3	1	s__(g__) 100.0%
+s__CG-Epi1 sp002724775	3	1	s__(g__) 100.0%
+s__MGIIb-O5 sp002499865	3	1	s__(g__) 100.0%
+s__Poseidonia sp002497765	3	1	s__(g__) 100.0%
+s__Geoglobus sp002494725	3	1	s__(g__) 100.0%
+s__UBA581 sp002501775	3	1	s__(g__) 100.0%
+s__MGIIb-O1 sp8684u	3	1	s__(g__) 100.0%
+s__Methanobrevibacter_A sp900320515	3	1	s__(g__) 100.0%
+s__Methanocorpusculum sp002498375	3	1	s__(g__) 100.0%
+s__MGIIa-L1 sp002496955	3	1	s__(g__) 100.0%
+s__MGIIb-O1 sp002498525	3	1	s__(g__) 100.0%
+s__Methanobacterium_B sp003162115	3	1	s__(g__) 100.0%
+s__CBA1134 sp003021785	3	1	s__(g__) 100.0%
+s__Methanoregula sp003154335	3	1	s__(g__) 100.0%
+s__Methanoregula sp003157895	3	1	s__(g__) 100.0%
+s__Methanocalculus sp003838185	3	1	s__(g__) 100.0%
+s__PWHV01 sp003557905	3	1	s__(g__) 100.0%
+s__Cenarchaeum sp003724275	3	1	s__(g__) 100.0%
+s__40CM-2-53-6 sp005882905	3	1	s__(g__) 100.0%
+s__UBA183 sp005877225	3	1	s__(g__) 100.0%
+s__TA-21 sp005877075	3	1	s__(g__) 100.0%
+s__RBG-16-68-12 sp005879065	3	1	s__(g__) 100.0%
+s__Salinigranum sp004916945	3	1	s__(g__) 100.0%
+s__Natrinema gari	3	2	s__(g__) 66.67%, s__Natrinema gari 33.33%
+s__Thermococcus_A sibiricus	3	2	s__Thermococcus sibiricus 66.67%, s__(g__) 33.33%
+s__Natronorubrum bangense	3	2	s__Natronorubrum bangense 66.67%, s__(g__) 33.33%
+s__Methanomethylophilus alvus	3	2	s__Candidatus Methanomethylophilus alvus 66.67%, s__(g__) 33.33%
+s__Methanomethylicus mesodigestum	3	2	s__Candidatus Methanomethylicus mesodigestum 66.67%, s__(g__) 33.33%
+s__Methanothermococcus thermolithotrophicus	3	2	s__(g__) 66.67%, s__Methanothermococcus thermolithotrophicus 33.33%
+s__Methanobrevibacter_A gottschalkii	3	2	s__Methanobrevibacter gottschalkii 66.67%, s__(g__) 33.33%
+s__Methanococcoides vulcani	3	2	s__Methanococcoides vulcani 66.67%, s__(g__) 33.33%
+s__Methanomethylovorans hollandica	3	2	s__(g__) 66.67%, s__Methanomethylovorans hollandica 33.33%
+s__Methanodesulfokores washburnensis	3	2	s__Candidatus Methanodesulfokores washburnensis 66.67%, s__(g__) 33.33%
+s__Halorubrum sodomense	3	2	s__(g__) 66.67%, s__Halorubrum sodomense 33.33%
+s__Methanothermobacter thermautotrophicus	3	3	s__Methanothermobacter thermautotrophicus 33.33%, s__(g__) 33.33%, s__Methanothermobacter defluvii 33.33%
+s__Nitrosocaldus cavascurensis	3	3	s__Candidatus Nitrosocaldus islandicus 33.33%, s__Candidatus Nitrosocaldus cavascurensis 33.33%, s__(g__) 33.33%
+s__Thermococcus_A litoralis	2	1	s__Thermococcus litoralis 100.0%
+s__Nitrosopelagicus brevis	2	1	s__Candidatus Nitrosopelagicus brevis 100.0%
+s__Korarchaeum cryptofilum	2	1	s__Candidatus Korarchaeum cryptofilum 100.0%
+s__Methanobrevibacter_C arboriphilus_A	2	1	s__Methanobrevibacter arboriphilus 100.0%
+s__Thermococcus_B barophilus	2	1	s__Thermococcus barophilus 100.0%
+s__Methanosarcina barkeri_B	2	1	s__Methanosarcina barkeri 100.0%
+s__Thermococcus_A sp000430485	2	1	s__(g__) 100.0%
+s__Methanocaldococcus_A villosus	2	1	s__Methanocaldococcus villosus 100.0%
+s__Natrinema salifodinae	2	1	s__Halopiger salifodinae 100.0%
+s__Acidianus_A hospitalis	2	1	s__Acidianus hospitalis 100.0%
+s__Methanosarcina sp000969965	2	1	s__(g__) 100.0%
+s__Nitrosarchaeum limnae	2	1	s__Candidatus Nitrosarchaeum limnium 100.0%
+s__BA2 sp001399795	2	1	s__(g__) 100.0%
+s__Nitrosopumilus sp001437625	2	1	s__(g__) 100.0%
+s__Halonotius sp000496215	2	1	s__(g__) 100.0%
+s__Caldivirga sp001663375	2	1	s__(g__) 100.0%
+s__Aramenus sulfurataquae	2	1	s__Candidatus Aramenus sulfurataquae 100.0%
+s__Nitrosopumilus sp000746785	2	1	s__(g__) 100.0%
+s__Vulcanisaeta sp001516765	2	1	s__(g__) 100.0%
+s__Haloferax sp001469875	2	1	s__(g__) 100.0%
+s__Nitrosopelagicus sp000484935	2	1	s__(g__) 100.0%
+s__Halohasta sp001563795	2	1	s__(g__) 100.0%
+s__PL-Br10-E2g29 sp001563965	2	1	s__(g__) 100.0%
+s__AWOC01 sp000494185	2	1	s__(g__) 100.0%
+s__Tc-Br11 sp001564275	2	1	s__(g__) 100.0%
+s__Tc-Br11-E2g8 sp001564115	2	1	s__(g__) 100.0%
+s__JGI-OTU-1 sp000494145	2	1	s__(g__) 100.0%
+s__B1-Br10-U2g19 sp001563875	2	1	s__(g__) 100.0%
+s__Halovenus sp001564135	2	1	s__(g__) 100.0%
+s__Methanobrevibacter_C arboriphilus	2	1	s__Methanobrevibacter arboriphilus 100.0%
+s__Halorubrum sp001564205	2	1	s__(g__) 100.0%
+s__Tc-Br11-E2g1 sp001564255	2	1	s__(g__) 100.0%
+s__DTU008 sp001512965	2	1	s__(g__) 100.0%
+s__Acd1 sp000389735	2	1	s__(g__) 100.0%
+s__B24 sp001593865	2	1	s__(g__) 100.0%
+s__Pyrococcus chitonophagus	2	1	s__Thermococcus chitonophagus 100.0%
+s__CG1-02-47-40 sp001871475	2	1	s__(g__) 100.0%
+s__CG-Epi1 sp002497685	2	1	s__(g__) 100.0%
+s__RBG-13-33-26 sp001786415	2	1	s__(g__) 100.0%
+s__40CM-2-53-6 sp001918745	2	1	s__(g__) 100.0%
+s__CG1-02-47-18 sp002763335	2	1	s__(g__) 100.0%
+s__CG1-02-39-14 sp001872315	2	1	s__(g__) 100.0%
+s__UBA97 sp001871595	2	1	s__(g__) 100.0%
+s__UBA92 sp002497285	2	1	s__(g__) 100.0%
+s__UBA8471 sp001871535	2	1	s__(g__) 100.0%
+s__Nitrosotalea sp001920395	2	1	s__(g__) 100.0%
+s__40CM-2-53-6 sp001919285	2	1	s__(g__) 100.0%
+s__CG1-02-57-44 sp001871415	2	1	s__(g__) 100.0%
+s__Natronorubrum daqingense	2	1	s__Haloterrigena daqingensis 100.0%
+s__Methanopyrus sp002201895	2	1	s__(g__) 100.0%
+s__CBA1134 sp001950595	2	1	s__(g__) 100.0%
+s__Archaeoglobus_A sp002010195	2	1	s__(g__) 100.0%
+s__JdFR-11 sp002011035	2	1	s__(g__) 100.0%
+s__JdFR-42 sp002010305	2	1	s__(g__) 100.0%
+s__JdFR-21 sp002011165	2	1	s__(g__) 100.0%
+s__MGIIa-L1 sp002172355	2	1	s__(g__) 100.0%
+s__MGIIb-O3 sp002172185	2	1	s__(g__) 100.0%
+s__MGIIa-L3 sp002496845	2	1	s__(g__) 100.0%
+s__Methanobacterium_A sp002495625	2	1	s__(g__) 100.0%
+s__MGIIa-L1 sp002697705	2	1	s__(g__) 100.0%
+s__MGIIb-Q1 sp002727675	2	1	s__(g__) 100.0%
+s__EX4484-218 sp002254975	2	1	s__(g__) 100.0%
+s__Methanothrix sp002256595	2	1	s__(g__) 100.0%
+s__MGIIb-P sp002505685	2	1	s__(g__) 100.0%
+s__MGIIa-L3 sp002723635	2	1	s__(g__) 100.0%
+s__MGIIb-O3 sp002506755	2	1	s__(g__) 100.0%
+s__Poseidonia sp002495645	2	1	s__(g__) 100.0%
+s__Nitrosopumilus sp002690535	2	1	s__(g__) 100.0%
+s__Nitrosopumilus sp002506665	2	1	s__(g__) 100.0%
+s__MGIIb-O3 sp002716085	2	1	s__(g__) 100.0%
+s__MGIIa-K1 sp002715725	2	1	s__(g__) 100.0%
+s__RumEn-M2 sp002502965	2	1	s__(g__) 100.0%
+s__UBA147 sp002499085	2	1	s__(g__) 100.0%
+s__EX4484-6 sp002254385	2	1	s__(g__) 100.0%
+s__B24-2 sp002490245	2	1	s__(g__) 100.0%
+s__MGIIa-I sp002720275	2	1	s__(g__) 100.0%
+s__Methanosphaera sp002509095	2	1	s__(g__) 100.0%
+s__Nitrosotenuis sp002499525	2	1	s__(g__) 100.0%
+s__MGIIb-O1 sp002457555	2	1	s__(g__) 100.0%
+s__MGIIb-O3 sp002503285	2	1	s__(g__) 100.0%
+s__Poseidonia alphae	2	1	s__(g__) 100.0%
+s__UBA213 sp002713325	2	1	s__(g__) 100.0%
+s__MGIIa-K1 sp002710015	2	1	s__(g__) 100.0%
+s__CG08-08-20-14 sp002762705	2	1	s__(g__) 100.0%
+s__MGIIa-K1 sp002706615	2	1	s__(g__) 100.0%
+s__MGIIa-K1 sp002507425	2	1	s__(g__) 100.0%
+s__UBA328 sp002506905	2	1	s__(g__) 100.0%
+s__CG07-land sp002779595	2	1	s__(g__) 100.0%
+s__MGIIb-N2 sp002697105	2	1	s__(g__) 100.0%
+s__MGIIb-O1 sp002496905	2	1	s__(g__) 100.0%
+s__UBA285 sp002495025	2	1	s__(g__) 100.0%
+s__Methanothrix_A harundinacea_A	2	1	s__Methanosaeta harundinacea 100.0%
+s__MGIIb-O5 sp002504435	2	1	s__(g__) 100.0%
+s__MGIIb-O5 sp002499325	2	1	s__(g__) 100.0%
+s__MGIIa-L1 sp002726395	2	1	s__(g__) 100.0%
+s__MGIIb-P sp002724815	2	1	s__(g__) 100.0%
+s__UBA207 sp002503135	2	1	s__(g__) 100.0%
+s__MGIIb-O3 sp002496485	2	1	s__(g__) 100.0%
+s__Methanosphaera sp11921u	2	1	s__(g__) 100.0%
+s__MGIIa-K1 sp12207u	2	1	s__(g__) 100.0%
+s__MGIIa-L1 sp002495945	2	1	s__(g__) 100.0%
+s__UBA9949 sp002499905	2	1	s__(g__) 100.0%
+s__Thalassarchaeum sp002698225	2	1	s__(g__) 100.0%
+s__MGIIa-L1 sp002499545	2	1	s__(g__) 100.0%
+s__MGIIb-O5 sp002496725	2	1	s__(g__) 100.0%
+s__UBA588 sp002509085	2	1	s__(g__) 100.0%
+s__MGIIa-I sp002696315	2	1	s__(g__) 100.0%
+s__Poseidonia sp002728035	2	1	s__(g__) 100.0%
+s__MGIIb-N2 sp002497905	2	1	s__(g__) 100.0%
+s__MGIIb-Q1 sp002685895	2	1	s__(g__) 100.0%
+s__ANME1a sp003194425	2	1	s__(g__) 100.0%
+s__MGIIb-O2 sp002497245	2	1	s__(g__) 100.0%
+s__UBA117 sp002494785	2	1	s__(g__) 100.0%
+s__UBA8886 sp002731655	2	1	s__(g__) 100.0%
+s__MGIIb-N2 sp002506875	2	1	s__(g__) 100.0%
+s__Poseidonia sp002722695	2	1	s__(g__) 100.0%
+s__UBA489 sp002505585	2	1	s__(g__) 100.0%
+s__AG1 sp003116855	2	1	s__(g__) 100.0%
+s__Methanobrevibacter_A sp900319535	2	1	s__(g__) 100.0%
+s__Halococcus sp003022685	2	1	s__(g__) 100.0%
+s__BMS3B sp003229935	2	1	s__(g__) 100.0%
+s__SM1-50 sp002900555	2	1	s__(g__) 100.0%
+s__Halovenus sp003022845	2	1	s__(g__) 100.0%
+s__Halosimplex sp003023165	2	1	s__(g__) 100.0%
+s__Bog-38 sp003170935	2	1	s__(g__) 100.0%
+s__Nanopusillus stetteri_A	2	1	s__Candidatus Nanobsidianus stetteri 100.0%
+s__PALSA-986 sp003141855	2	1	s__(g__) 100.0%
+s__Methanobrevibacter_A sp900317865	2	1	s__(g__) 100.0%
+s__Bog-38 sp003158275	2	1	s__(g__) 100.0%
+s__Halovenus sp003021015	2	1	s__(g__) 100.0%
+s__Methanobrevibacter_A sp900319985	2	1	s__(g__) 100.0%
+s__BOG-1369 sp003164815	2	1	s__(g__) 100.0%
+s__HR1 sp002926195	2	1	s__(g__) 100.0%
+s__SW-7-71-33 sp003022865	2	1	s__(g__) 100.0%
+s__SZUA-236 sp002923215	2	1	s__(g__) 100.0%
+s__MGIIa-L1 sp8160u	2	1	s__(g__) 100.0%
+s__MGIIa-L1 sp9596u	2	1	s__(g__) 100.0%
+s__Methanolobus sp003565715	2	1	s__(g__) 100.0%
+s__SKVC01 sp007129655	2	1	s__(g__) 100.0%
+s__B12-G16 sp003650925	2	1	s__(g__) 100.0%
+s__B15-G2 sp003650815	2	1	s__(g__) 100.0%
+s__Thermococcus_A sp003663525	2	1	s__(g__) 100.0%
+s__PWWA01 sp007131205	2	1	s__(g__) 100.0%
+s__B65-G9 sp003662765	2	1	s__(g__) 100.0%
+s__PWKY01 sp003553085	2	1	s__(g__) 100.0%
+s__B14-G17 sp003649515	2	1	s__(g__) 100.0%
+s__B25 sp003662515	2	1	s__(g__) 100.0%
+s__B29-G17 sp003649145	2	1	s__(g__) 100.0%
+s__B3-G16 sp003649665	2	1	s__(g__) 100.0%
+s__PIYA01 sp003601785	2	1	s__(g__) 100.0%
+s__Halorubrum sp003554605	2	1	s__(g__) 100.0%
+s__PWHR01 sp003551675	2	1	s__(g__) 100.0%
+s__B17-G15 sp003649495	2	1	s__(g__) 100.0%
+s__QMZY01 sp003663415	2	1	s__(g__) 100.0%
+s__QMZM01 sp003663175	2	1	s__(g__) 100.0%
+s__Methanonatronarchaeum sp004212035	2	1	s__(g__) 100.0%
+s__Methanocalculus sp003838065	2	1	s__(g__) 100.0%
+s__B14-G2 sp003661385	2	1	s__(g__) 100.0%
+s__PWHV01 sp003560875	2	1	s__(g__) 100.0%
+s__Nitrosopumilus sp003724285	2	1	s__(g__) 100.0%
+s__Nitrosopumilus sp003724325	2	1	s__(g__) 100.0%
+s__Poseidonia sp8339u	2	1	s__(g__) 100.0%
+s__JdFR-07 sp003601605	2	1	s__(g__) 100.0%
+s__UBA183 sp005877365	2	1	s__(g__) 100.0%
+s__RBG-16-68-12 sp005878385	2	1	s__(g__) 100.0%
+s__40CM-2-53-6 sp005882895	2	1	s__(g__) 100.0%
+s__RBG-16-68-12 sp005878635	2	1	s__(g__) 100.0%
+s__TA-20 sp005877305	2	1	s__(g__) 100.0%
+s__RBG-16-68-12 sp005878615	2	1	s__(g__) 100.0%
+s__BA-19 sp005888735	2	1	s__(g__) 100.0%
+s__SOKP01 sp005223125	2	1	s__(g__) 100.0%
+s__40CM-2-53-6 sp005883075	2	1	s__(g__) 100.0%
+s__WYZ-LMO8 sp004347965	2	1	s__(g__) 100.0%
+s__WYZ-LMO2 sp004347825	2	1	s__(g__) 100.0%
+s__SOJZ01 sp004376295	2	1	s__(g__) 100.0%
+s__WYZ-LMO11 sp004348015	2	1	s__(g__) 100.0%
+s__Natronomonas sp007122455	2	1	s__(g__) 100.0%
+s__SKXI01 sp007129135	2	1	s__(g__) 100.0%
+s__SKIA01 sp007128245	2	1	s__(g__) 100.0%
+s__SKSH01 sp007118145	2	1	s__(g__) 100.0%
+s__Nitrosopelagicus sp007037745	2	1	s__(g__) 100.0%
+s__Methanolinea sp11423u	2	1	s__(g__) 100.0%
+s__Methanoregula sp002067035	2	1	s__(g__) 100.0%
+s__MVQI01 sp002067795	2	1	s__(g__) 100.0%
+s__Methanothrix sp002067755	2	1	s__(g__) 100.0%
+s__Natronolimnobius_B sp003430805	2	1	s__(g__) 100.0%
+s__Haloprofundus sp005155585	2	1	s__(g__) 100.0%
+s__Haloplanus sp003342695	2	1	s__(g__) 100.0%
+s__Natronorubrum sp003670115	2	1	s__(g__) 100.0%
+s__Halorussus sp004765795	2	1	s__(g__) 100.0%
+s__Halostella sp005954745	2	1	s__(g__) 100.0%
+s__Halorubrum halophilum	2	2	s__Halorubrum saccharovorum 50.0%, s__Halorubrum halophilum 50.0%
+s__Methanospirillum hungatei	2	2	s__Methanospirillum hungatei 50.0%, s__(g__) 50.0%
+s__Nitrosopumilus koreensis	2	2	s__(g__) 50.0%, s__Candidatus Nitrosopumilus koreensis 50.0%
+s__Methanoperedens nitroreducens	2	2	s__Candidatus Methanoperedens nitroreducens 50.0%, s__(g__) 50.0%
+s__Natrinema thermotolerans	2	2	s__Haloterrigena thermotolerans 50.0%, s__Haloterrigena jeotgali 50.0%
+s__Thermococcus kodakarensis	2	2	s__Thermococcus kodakarensis 50.0%, s__(g__) 50.0%
+s__Picrophilus oshimae	2	2	s__Picrophilus torridus 50.0%, s__Picrophilus oshimae 50.0%
+s__Methanobacterium_D veterum	2	2	s__Methanobacterium arcticum 50.0%, s__Methanobacterium veterum 50.0%
+s__Halogranum rubrum	2	2	s__Halogranum salarium 50.0%, s__Halogranum rubrum 50.0%
+s__Methanosarcina vacuolata	2	2	s__(g__) 50.0%, s__Methanosarcina vacuolata 50.0%
+s__Halorubrum californiense	2	2	s__Halorubrum californiense 50.0%, s__(g__) 50.0%
+s__Methanocorpusculum parvum	2	2	s__Methanocorpusculum bavaricum 50.0%, s__Methanocorpusculum parvum 50.0%
+s__Halopenitus persicus	2	2	s__(g__) 50.0%, s__Halopenitus persicus 50.0%
+s__Methanoculleus thermophilus	2	2	s__(g__) 50.0%, s__Methanoculleus thermophilus 50.0%
+s__Methanoculleus thermohydrogenotrophicum	2	2	s__Candidatus Methanoculleus thermohydrogenotrophicum 50.0%, s__(g__) 50.0%
+s__Methanobacterium_D bryantii	2	2	s__(g__) 50.0%, s__Methanobacterium bryantii 50.0%
+s__Methanomethylicus oleusabulum	2	2	s__Candidatus Methanomethylicus oleusabulum 50.0%, s__(g__) 50.0%
+s__Methanobacterium_C congolense	2	2	s__Methanobacterium congolense 50.0%, s__(g__) 50.0%
+s__Syntropharchaeum butanivorans	2	2	s__Candidatus Syntrophoarchaeum butanivorans 50.0%, s__(g__) 50.0%
+s__Thermococcus radiotolerans	2	2	s__(g__) 50.0%, s__Thermococcus radiotolerans 50.0%
+s__Methanosarcina spelaei	2	2	s__Methanosarcina spelaei 50.0%, s__(g__) 50.0%
+s__Nanoclepta minutus	2	2	s__Candidatus Nanoclepta minutus 50.0%, s__(g__) 50.0%
+s__UBA974 sp002723115	1	1	s__(g__) 100.0%
+s__GCA-2720975 sp002720975	1	1	s__(g__) 100.0%
+s__Marinobacter lutaoensis	1	1	s__(g__) 100.0%
+s__Aliidiomarina sp007097585	1	1	s__(g__) 100.0%
+s__Thermococcus_B paralvinellae	1	1	s__Thermococcus paralvinellae 100.0%
+s__Methanocaldococcus_A infernus	1	1	s__Methanocaldococcus infernus 100.0%
+s__Halopiger_B djelfimassiliensis	1	1	s__Halopiger djelfimassiliensis 100.0%
+s__Pyrococcus sp000263735	1	1	s__(g__) 100.0%
+s__Methanoplasma termitum	1	1	s__Candidatus Methanoplasma termitum 100.0%
+s__Methanocella_A arvoryzae	1	1	s__Methanocella arvoryzae 100.0%
+s__Sulfolobus_B metallicus	1	1	s__Sulfolobus metallicus 100.0%
+s__Archaeoglobus_B profundus	1	1	s__Archaeoglobus profundus 100.0%
+s__Nitrosopumilus salaria	1	1	s__Candidatus Nitrosopumilus salaria 100.0%
+s__Halobacterium sp000230955	1	1	s__(g__) 100.0%
+s__Methanobacterium_B lacus	1	1	s__Methanobacterium lacus 100.0%
+s__Methanobacterium sp000499765	1	1	s__(g__) 100.0%
+s__Nitrosotenuis sp000723185	1	1	s__(g__) 100.0%
+s__Nitrosotenuis chungbukensis	1	1	s__Candidatus Nitrosotenuis chungbukensis 100.0%
+s__Natrinema limicola	1	1	s__Haloterrigena limicola 100.0%
+s__Methanobacterium_B sp000744455	1	1	s__(g__) 100.0%
+s__Natronolimnobius_A innermongolicus	1	1	s__Natronolimnobius innermongolicus 100.0%
+s__Methanothermococcus_A okinawensis	1	1	s__Methanothermococcus okinawensis 100.0%
+s__Nitrosopumilus sediminis	1	1	s__Candidatus Nitrosopumilus sediminis 100.0%
+s__Methanosarcina barkeri_A	1	1	s__Methanosarcina barkeri 100.0%
+s__Methanoculleus sp000691865	1	1	s__(g__) 100.0%
+s__Halolamina pelagica_B	1	1	s__Halolamina pelagica 100.0%
+s__Halopiger_A goleimassiliensis	1	1	s__Halopiger goleimassiliensis 100.0%
+s__Nitrosotenuis cloacae	1	1	s__Candidatus Nitrosotenuis cloacae 100.0%
+s__Nitrosopumilus adriaticus	1	1	s__Candidatus Nitrosopumilus adriaticus 100.0%
+s__Archaeoglobus_A sulfaticallidus	1	1	s__Archaeoglobus sulfaticallidus 100.0%
+s__Halorubrum sp000296615	1	1	s__(g__) 100.0%
+s__Methanococcus maripaludis_C	1	1	s__Methanococcus maripaludis 100.0%
+s__Methanobacterium formicicum_A	1	1	s__Methanobacterium formicicum 100.0%
+s__Methanococcoides methylutens_A	1	1	s__Methanococcoides methylutens 100.0%
+s__Thermofilum_A uzonense	1	1	s__Thermofilum uzonense 100.0%
+s__Halobaculum tyrrellense	1	1	s__Candidatus Halobonum tyrrellensis 100.0%
+s__Salinarchaeum sp000403645	1	1	s__(g__) 100.0%
+s__Halorubrum sp000746205	1	1	s__(g__) 100.0%
+s__MTP4 sp000970045	1	1	s__(g__) 100.0%
+s__Halolamina sp000224475	1	1	s__(g__) 100.0%
+s__Methanobrevibacter_B wolinii	1	1	s__Methanobrevibacter wolinii 100.0%
+s__Methanothermobacter sp000828575	1	1	s__(g__) 100.0%
+s__Sulfolobus_B sp001316085	1	1	s__(g__) 100.0%
+s__Thermococcus sp000221185	1	1	s__(g__) 100.0%
+s__Methanococcus maripaludis_A	1	1	s__Methanococcus maripaludis 100.0%
+s__Archaeoglobus_C veneficus	1	1	s__Archaeoglobus veneficus 100.0%
+s__Pyrococcus sp000211475	1	1	s__(g__) 100.0%
+s__Acidianus_A copahuensis	1	1	s__Candidatus Acidianus copahuensis 100.0%
+s__Halostagnicola sp000691505	1	1	s__(g__) 100.0%
+s__Ignicoccus_A hospitalis	1	1	s__Ignicoccus hospitalis 100.0%
+s__Methanobacterium_C paludis	1	1	s__Methanobacterium paludis 100.0%
+s__Thermococcus_A sp001317345	1	1	s__(g__) 100.0%
+s__Methanomethylophilus sp000350305	1	1	s__(g__) 100.0%
+s__Methanocaldococcus sp000025525	1	1	s__(g__) 100.0%
+s__Methanococcus maripaludis_D	1	1	s__Methanococcus maripaludis 100.0%
+s__Aciduliprofundum sp000327505	1	1	s__(g__) 100.0%
+s__Methanothermococcus_A aeolicus	1	1	s__Methanococcus aeolicus 100.0%
+s__Thermococcus sp000151205	1	1	s__(g__) 100.0%
+s__LKUD01 sp001412355	1	1	s__(g__) 100.0%
+s__UBA9989 sp9989u	1	1	s__(g__) 100.0%
+s__Nitrosopumilus piranensis	1	1	s__Candidatus Nitrosopumilus piranensis 100.0%
+s__GW2011-AR13 sp9966u	1	1	s__(g__) 100.0%
+s__JWKY01 sp000806015	1	1	s__(g__) 100.0%
+s__GCA-965745 sp000965745	1	1	s__(g__) 100.0%
+s__GW2011-AR20 sp000830315	1	1	s__(g__) 100.0%
+s__CSP1-1 sp001443365	1	1	s__(g__) 100.0%
+s__Nitrosocosmicus oleophilus	1	1	s__Candidatus Nitrosocosmicus oleophilus 100.0%
+s__AD8-1 sp001273385	1	1	s__(g__) 100.0%
+s__SG8-32-3 sp001273335	1	1	s__(g__) 100.0%
+s__GW2011-AR17 sp10136u	1	1	s__(g__) 100.0%
+s__MGIIa-L1 sp000246735	1	1	s__(g__) 100.0%
+s__DTU008 sp001421185	1	1	s__(g__) 100.0%
+s__Pyrobaculum sp001189275	1	1	s__(g__) 100.0%
+s__GW2011-AR11 sp12027u	1	1	s__(g__) 100.0%
+s__SD8 sp001412335	1	1	s__(g__) 100.0%
+s__GW2011-AR18 sp000806155	1	1	s__(g__) 100.0%
+s__Nitrososphaera evergladensis	1	1	s__Candidatus Nitrososphaera evergladensis 100.0%
+s__GW2011-AR5 sp000806115	1	1	s__(g__) 100.0%
+s__GW2011-AR9 sp10194u	1	1	s__(g__) 100.0%
+s__GW2011-AR10 sp000830275	1	1	s__(g__) 100.0%
+s__GW2011-AR15 sp000830295	1	1	s__(g__) 100.0%
+s__BA1 sp001399805	1	1	s__(g__) 100.0%
+s__J07HR59 sp000496235	1	1	s__(g__) 100.0%
+s__Methanobacterium sp000309865	1	1	s__(g__) 100.0%
+s__Nitrososphaera gargensis	1	1	s__Candidatus Nitrososphaera gargensis 100.0%
+s__ISO4-G1 sp001563305	1	1	s__(g__) 100.0%
+s__SMTZ1-83 sp001563325	1	1	s__(g__) 100.0%
+s__Nanosalina sp000220375	1	1	s__(g__) 100.0%
+s__Haloquadratum sp000416005	1	1	s__(g__) 100.0%
+s__Methanothermobacter_A sp001507955	1	1	s__(g__) 100.0%
+s__Hadarchaeum yellowstonense	1	1	s__(g__) 100.0%
+s__Thermocladium sp001516585	1	1	s__(g__) 100.0%
+s__Haloquadratum walsbyi_B	1	1	s__Haloquadratum walsbyi 100.0%
+s__Caldarchaeum subterraneum	1	1	s__Candidatus Caldiarchaeum subterraneum 100.0%
+s__Halovenus sp000416085	1	1	s__(g__) 100.0%
+s__Methanocalculus sp9912u	1	1	s__(g__) 100.0%
+s__DG-33 sp001515185	1	1	s__(g__) 100.0%
+s__Methanolobus sp001577565	1	1	s__(g__) 100.0%
+s__Nitrosopelagicus sp000746705	1	1	s__(g__) 100.0%
+s__Methanofastidiosum sp001587675	1	1	s__(g__) 100.0%
+s__A07HB70 sp000496195	1	1	s__(g__) 100.0%
+s__Thermoproteus sp000960885	1	1	s__(g__) 100.0%
+s__SMTZ1-45 sp001563335	1	1	s__(g__) 100.0%
+s__Nanopusillus acidilobi	1	1	s__Candidatus Nanopusillus acidilobi 100.0%
+s__Nitrosopumilus sp000746685	1	1	s__(g__) 100.0%
+s__Haloquadratum walsbyi_A	1	1	s__Haloquadratum walsbyi 100.0%
+s__Methanothrix_B thermoacetophila	1	1	s__Methanothrix thermoacetophila 100.0%
+s__Nanopusillus stetteri	1	1	s__Candidatus Nanobsidianus stetteri 100.0%
+s__Nanosalinarum sp000220355	1	1	s__(g__) 100.0%
+s__Halorubrum sp000496175	1	1	s__(g__) 100.0%
+s__Methanofastidiosum sp001587715	1	1	s__(g__) 100.0%
+s__Thermococcus_A sp001484685	1	1	s__(g__) 100.0%
+s__Haloarcula sp001485575	1	1	s__(g__) 100.0%
+s__Haloferax sp001482285	1	1	s__(g__) 100.0%
+s__Haloferax sp001469865	1	1	s__(g__) 100.0%
+s__Halobacterium sp001485535	1	1	s__(g__) 100.0%
+s__Methanobrevibacter_A millerae	1	1	s__Methanobrevibacter millerae 100.0%
+s__SG8-52-3 sp001595915	1	1	s__(g__) 100.0%
+s__Vulcanisaeta distributa_C	1	1	s__Vulcanisaeta distributa 100.0%
+s__SM1-50 sp001595945	1	1	s__(g__) 100.0%
+s__Iainarchaeum andersonii	1	1	s__Candidatus Iainarchaeum andersonii 100.0%
+s__Natronolimnobius_B sp001563885	1	1	s__(g__) 100.0%
+s__SG8-5 sp001595885	1	1	s__(g__) 100.0%
+s__B23 sp001593875	1	1	s__(g__) 100.0%
+s__Natronolimnobius_B sp001563805	1	1	s__(g__) 100.0%
+s__B1-Br10-U2g21 sp001563915	1	1	s__(g__) 100.0%
+s__Vulcanisaeta distributa_B	1	1	s__Vulcanisaeta distributa 100.0%
+s__B25 sp001593855	1	1	s__(g__) 100.0%
+s__SM23-78 sp001595785	1	1	s__(g__) 100.0%
+s__Tc-Br11 sp001564285	1	1	s__(g__) 100.0%
+s__B1-Br10-U2g21 sp001564145	1	1	s__(g__) 100.0%
+s__B1-Br10-U2g21 sp001564035	1	1	s__(g__) 100.0%
+s__AAA261-N23 sp000375685	1	1	s__(g__) 100.0%
+s__Nitrosopelagicus sp001510295	1	1	s__(g__) 100.0%
+s__ASMP01 sp000405225	1	1	s__(g__) 100.0%
+s__B63 sp001593845	1	1	s__(g__) 100.0%
+s__PL-Br10-U2g16 sp001563995	1	1	s__(g__) 100.0%
+s__Nitrosopumilus sp001543015	1	1	s__(g__) 100.0%
+s__Aenigmatarchaeum subterraneum	1	1	s__Candidatus Aenigmarchaeum subterraneum 100.0%
+s__Nitrosopelagicus sp000402075	1	1	s__(g__) 100.0%
+s__Vulcanisaeta distributa_E	1	1	s__Vulcanisaeta distributa 100.0%
+s__JGI-0000106-J15 sp000405685	1	1	s__(g__) 100.0%
+s__Nitrosopumilus sp001510275	1	1	s__(g__) 100.0%
+s__B26-1 sp001593935	1	1	s__(g__) 100.0%
+s__Nitrosopumilus sp000484975	1	1	s__(g__) 100.0%
+s__B1-Br10-U2g19 sp001563905	1	1	s__(g__) 100.0%
+s__MGIIb-O3 sp001629205	1	1	s__(g__) 100.0%
+s__SCGC-AAA252-I15 sp000402775	1	1	s__(g__) 100.0%
+s__Natrinema mahii	1	1	s__Haloterrigena mahii 100.0%
+s__Methanomethylophilus sp001560915	1	1	s__(g__) 100.0%
+s__Methanosphaera sp001729965	1	1	s__(g__) 100.0%
+s__Methanobrevibacter_D curvatus	1	1	s__Methanobrevibacter curvatus 100.0%
+s__Haladaptatus sp001625445	1	1	s__(g__) 100.0%
+s__Methanobrevibacter_A sp001548675	1	1	s__(g__) 100.0%
+s__Methanobrevibacter_C cuticularis	1	1	s__Methanobrevibacter cuticularis 100.0%
+s__Nitrosopumilus sp001541925	1	1	s__(g__) 100.0%
+s__Methanobrevibacter_D filiformis	1	1	s__Methanobrevibacter filiformis 100.0%
+s__Methanosarcina sp001714685	1	1	s__(g__) 100.0%
+s__IMC4 sp001742785	1	1	s__(g__) 100.0%
+s__WOR-SM1-SCG sp001723855	1	1	s__(g__) 100.0%
+s__WOR-SM1-SCG-A sp001723845	1	1	s__(g__) 100.0%
+s__WOR-SM1-SCG sp001723835	1	1	s__(g__) 100.0%
+s__Methanosuratus petracarbonis	1	1	s__Candidatus Methanosuratus petracarbonis 100.0%
+s__Methanoculleus chikugoensis_A	1	1	s__Methanoculleus chikugoensis 100.0%
+s__Vulcanisaeta_B thermophila	1	1	s__Vulcanisaeta thermophila 100.0%
+s__Natrialba sp001861355	1	1	s__(g__) 100.0%
+s__UBA8941 sp001774245	1	1	s__(g__) 100.0%
+s__Syntropharchaeum_A caldarius	1	1	s__Candidatus Syntrophoarchaeum caldarius 100.0%
+s__FEN-987 sp001768965	1	1	s__(g__) 100.0%
+s__RBG-13-38-9 sp001775955	1	1	s__(g__) 100.0%
+s__Methanocorpusculum sp001940805	1	1	s__(g__) 100.0%
+s__RBG-16-68-12 sp001800745	1	1	s__(g__) 100.0%
+s__RBG-16-49-10 sp001784635	1	1	s__(g__) 100.0%
+s__RBG-16-57-9 sp001776015	1	1	s__(g__) 100.0%
+s__GCA-001856825 sp001856825	1	1	s__(g__) 100.0%
+s__UBA460 sp001940755	1	1	s__(g__) 100.0%
+s__40CM-2-53-6 sp001918765	1	1	s__(g__) 100.0%
+s__SG9 sp001761425	1	1	s__(g__) 100.0%
+s__Methanomethylovorans sp001896725	1	1	s__(g__) 100.0%
+s__LC-2 sp001940725	1	1	s__(g__) 100.0%
+s__Methanohalarchaeum thermophilum	1	1	s__Candidatus Methanohalarchaeum thermophilum 100.0%
+s__Sulfolobus acidocaldarius_A	1	1	s__Sulfolobus acidocaldarius 100.0%
+s__CR-4 sp001940655	1	1	s__(g__) 100.0%
+s__COMBO-56-21 sp001800675	1	1	s__(g__) 100.0%
+s__LCB-4 sp001940665	1	1	s__(g__) 100.0%
+s__RBG-16-48-13 sp001775995	1	1	s__(g__) 100.0%
+s__Nitrosocosmicus exaquare	1	1	s__Candidatus Nitrosocosmicus exaquare 100.0%
+s__LC-3 sp001940645	1	1	s__(g__) 100.0%
+s__CG-Epi1 sp001875365	1	1	s__(g__) 100.0%
+s__MFWN01 sp001786395	1	1	s__(g__) 100.0%
+s__UBA102 sp001875425	1	1	s__(g__) 100.0%
+s__Methanoculleus sp001896715	1	1	s__(g__) 100.0%
+s__SMTZ1-45 sp001940705	1	1	s__(g__) 100.0%
+s__COMBO-56-21 sp001800815	1	1	s__(g__) 100.0%
+s__RBG-16-57-9 sp001775965	1	1	s__(g__) 100.0%
+s__CG-Epi1 sp001875345	1	1	s__(g__) 100.0%
+s__UBA8480 sp001871495	1	1	s__(g__) 100.0%
+s__RBG-16-68-12 sp001800825	1	1	s__(g__) 100.0%
+s__Natrinema saccharevitans	1	1	s__Haloterrigena saccharevitans 100.0%
+s__Halorientalis sp001989615	1	1	s__(g__) 100.0%
+s__Nitrosopumilus catalinensis	1	1	s__Candidatus Nitrosomarinus catalina 100.0%
+s__Mancarchaeum acidiphilum	1	1	s__Candidatus Mancarchaeum acidiphilum 100.0%
+s__Thermococcus sp002214525	1	1	s__(g__) 100.0%
+s__Halolamina sp002025255	1	1	s__(g__) 100.0%
+s__Methanobrevibacter_B sp002208625	1	1	s__(g__) 100.0%
+s__Natronolimnobius_B aegyptiacus	1	1	s__Natronolimnobius aegyptiacus 100.0%
+s__JdFR-37 sp002010215	1	1	s__(g__) 100.0%
+s__Archaeoglobus_A sp002011235	1	1	s__(g__) 100.0%
+s__Acidianus_A manzaensis	1	1	s__Acidianus manzaensis 100.0%
+s__JdFR-43 sp002011355	1	1	s__(g__) 100.0%
+s__JdFR-13 sp002011075	1	1	s__(g__) 100.0%
+s__Hydrothermarchaeum profundi	1	1	s__(g__) 100.0%
+s__Archaeoglobus_A sp002011215	1	1	s__(g__) 100.0%
+s__Vulcanisaeta sp001316265	1	1	s__(g__) 100.0%
+s__JdFR-19 sp002010075	1	1	s__(g__) 100.0%
+s__JdFR-41 sp002010285	1	1	s__(g__) 100.0%
+s__JdFR-22 sp002010045	1	1	s__(g__) 100.0%
+s__MGIIa-L1 sp002170315	1	1	s__(g__) 100.0%
+s__Vulcanisaeta sp001316285	1	1	s__(g__) 100.0%
+s__B-DKE sp002204705	1	1	s__(g__) 100.0%
+s__JdFR-45 sp002011395	1	1	s__(g__) 100.0%
+s__UBA233 sp002010925	1	1	s__(g__) 100.0%
+s__MGIIa-L2 sp002171315	1	1	s__(g__) 100.0%
+s__MGIIb-N1 sp002170775	1	1	s__(g__) 100.0%
+s__JdFR-07 sp002010975	1	1	s__(g__) 100.0%
+s__Altarchaeum sp002083985	1	1	s__(g__) 100.0%
+s__Vulcanisaeta sp001316245	1	1	s__(g__) 100.0%
+s__Nitrosotalea devanaterra	1	1	s__Candidatus Nitrosotalea devanaterra 100.0%
+s__Thermococcus_C sp002009975	1	1	s__(g__) 100.0%
+s__JDFR-14 sp002011085	1	1	s__(g__) 100.0%
+s__MGIIb-O3 sp002172375	1	1	s__(g__) 100.0%
+s__Halopenitus persicus_A	1	1	s__Halopenitus persicus 100.0%
+s__Nitrosotalea sinensis	1	1	s__Candidatus Nitrosotalea sinensis 100.0%
+s__Natrinema hispanicum_A	1	1	s__Haloterrigena hispanica 100.0%
+s__Methanoperedens nitroreducens_A	1	1	s__Candidatus Methanoperedens nitroreducens 100.0%
+s__Halorubrum sp002286985	1	1	s__(g__) 100.0%
+s__Natrinema sp002572525	1	1	s__(g__) 100.0%
+s__Thermococcus sp900198835	1	1	s__(g__) 100.0%
+s__Nitrosotenuis aquarius	1	1	s__Candidatus Nitrosotenuis aquarius 100.0%
+s__Nitrosotalea bavarica	1	1	s__Candidatus Nitrosotalea bavarica 100.0%
+s__Natronobacterium_A texcoconense	1	1	s__Natronobacterium texcoconense 100.0%
+s__Halogranum sp002844195	1	1	s__(g__) 100.0%
+s__Halorubrum sp001261915	1	1	s__(g__) 100.0%
+s__UBA543 sp002502135	1	1	s__(g__) 100.0%
+s__UBA583 sp002506365	1	1	s__(g__) 100.0%
+s__UBA587 sp002504725	1	1	s__(g__) 100.0%
+s__Caldisphaera sp002506595	1	1	s__(g__) 100.0%
+s__ARS1285 sp002688335	1	1	s__(g__) 100.0%
+s__Nitrosopumilus sp002788515	1	1	s__(g__) 100.0%
+s__MGIIa-K1 sp002707335	1	1	s__(g__) 100.0%
+s__UBA114 sp002506335	1	1	s__(g__) 100.0%
+s__Methanoculleus sp002506585	1	1	s__(g__) 100.0%
+s__GCA-2688925 sp002688925	1	1	s__(g__) 100.0%
+s__MGIIa-L1 sp002505355	1	1	s__(g__) 100.0%
+s__Nitrosarchaeum sp002737445	1	1	s__(g__) 100.0%
+s__Methanomethylophilus sp002495325	1	1	s__(g__) 100.0%
+s__UBA202 sp002502685	1	1	s__(g__) 100.0%
+s__ARS23 sp002686195	1	1	s__(g__) 100.0%
+s__MGIIb-P sp002701965	1	1	s__(g__) 100.0%
+s__ARS1160 sp002688415	1	1	s__(g__) 100.0%
+s__Nitrosopelagicus sp002709285	1	1	s__(g__) 100.0%
+s__MGIIb-O3 sp002457155	1	1	s__(g__) 100.0%
+s__VadinCA11 sp002509405	1	1	s__(g__) 100.0%
+s__ARS50 sp002687255	1	1	s__(g__) 100.0%
+s__NP1466 sp002731115	1	1	s__(g__) 100.0%
+s__MGIIa-L1 sp002502605	1	1	s__(g__) 100.0%
+s__MGIIa-L3 sp002694585	1	1	s__(g__) 100.0%
+s__Methanoculleus sp002499455	1	1	s__(g__) 100.0%
+s__EX4484-204 sp002255065	1	1	s__(g__) 100.0%
+s__UBA582 sp002502705	1	1	s__(g__) 100.0%
+s__GCA-2687795 sp002687795	1	1	s__(g__) 100.0%
+s__MGIIb-O2 sp002730775	1	1	s__(g__) 100.0%
+s__UBA119 sp002505945	1	1	s__(g__) 100.0%
+s__MGIIa-K2 sp002699425	1	1	s__(g__) 100.0%
+s__SP79 sp002715545	1	1	s__(g__) 100.0%
+s__20-14-0-80-47-9 sp002779555	1	1	s__(g__) 100.0%
+s__1-14-0-10-31-34 sp002763225	1	1	s__(g__) 100.0%
+s__GCA-2686855 sp002686855	1	1	s__(g__) 100.0%
+s__EX4484-71 sp002254395	1	1	s__(g__) 100.0%
+s__MGIIb-Q1 sp002725475	1	1	s__(g__) 100.0%
+s__RumEn-M2 sp002506255	1	1	s__(g__) 100.0%
+s__PEVX01 sp002780285	1	1	s__(g__) 100.0%
+s__0-14-0-20-59-11 sp002763345	1	1	s__(g__) 100.0%
+s__UBA73 sp002496015	1	1	s__(g__) 100.0%
+s__MP8T-1 sp002825535	1	1	s__(g__) 100.0%
+s__Sulfolobus_B sp002495845	1	1	s__(g__) 100.0%
+s__Ferroplasma sp002505185	1	1	s__(g__) 100.0%
+s__UBA206 sp002503105	1	1	s__(g__) 100.0%
+s__UBA71 sp002504495	1	1	s__(g__) 100.0%
+s__EX4484-135 sp002255025	1	1	s__(g__) 100.0%
+s__MGIIb-O3 sp002719615	1	1	s__(g__) 100.0%
+s__GCA-2688355 sp002688355	1	1	s__(g__) 100.0%
+s__Methanoregula sp002508495	1	1	s__(g__) 100.0%
+s__Poseidonia sp002704515	1	1	s__(g__) 100.0%
+s__Methanoregula sp002839675	1	1	s__(g__) 100.0%
+s__MGIIa-K1 sp002701145	1	1	s__(g__) 100.0%
+s__UBA226 sp002505935	1	1	s__(g__) 100.0%
+s__PCYB01 sp002762845	1	1	s__(g__) 100.0%
+s__Methanocalculus sp002496395	1	1	s__(g__) 100.0%
+s__GCA-2687185 sp002687185	1	1	s__(g__) 100.0%
+s__UBA184 sp002495185	1	1	s__(g__) 100.0%
+s__PEZQ01 sp002763265	1	1	s__(g__) 100.0%
+s__GCA-2726865 sp002726865	1	1	s__(g__) 100.0%
+s__CG-Epi1 sp002718915	1	1	s__(g__) 100.0%
+s__Nitrosopelagicus sp002698885	1	1	s__(g__) 100.0%
+s__MGIIb-N1 sp002507175	1	1	s__(g__) 100.0%
+s__Methanoculleus sp002839645	1	1	s__(g__) 100.0%
+s__ARS1403 sp002687825	1	1	s__(g__) 100.0%
+s__MGIIb-O3 sp002730445	1	1	s__(g__) 100.0%
+s__NP1466 sp002689985	1	1	s__(g__) 100.0%
+s__Methanosarcina sp002509325	1	1	s__(g__) 100.0%
+s__GCA-2688265 sp002688265	1	1	s__(g__) 100.0%
+s__MP8T-1 sp002825465	1	1	s__(g__) 100.0%
+s__MGIIb-O3 sp002728565	1	1	s__(g__) 100.0%
+s__UBA57 sp002713205	1	1	s__(g__) 100.0%
+s__UBA472 sp002497075	1	1	s__(g__) 100.0%
+s__MGIIa-K1 sp002689345	1	1	s__(g__) 100.0%
+s__UBA11998 sp002762785	1	1	s__(g__) 100.0%
+s__Thermoproteus sp002497345	1	1	s__(g__) 100.0%
+s__MGIIa-L4 sp002495405	1	1	s__(g__) 100.0%
+s__Vulcanisaeta distributa_D	1	1	s__Vulcanisaeta distributa 100.0%
+s__MGIIa-K1 sp002727695	1	1	s__(g__) 100.0%
+s__GCA-2688095 sp002688095	1	1	s__(g__) 100.0%
+s__UBA493 sp002762975	1	1	s__(g__) 100.0%
+s__MGIIa-L1 sp002721085	1	1	s__(g__) 100.0%
+s__MGIIb-N2 sp002503665	1	1	s__(g__) 100.0%
+s__GCA-2687815 sp002687815	1	1	s__(g__) 100.0%
+s__EX4484-15 sp002254595	1	1	s__(g__) 100.0%
+s__UBA8886 sp002687355	1	1	s__(g__) 100.0%
+s__EX4572-44 sp002255135	1	1	s__(g__) 100.0%
+s__UBA148 sp002495885	1	1	s__(g__) 100.0%
+s__Poseidonia sp002694525	1	1	s__(g__) 100.0%
+s__Nitrosopumilus sp002317795	1	1	s__(g__) 100.0%
+s__UBA141 sp002495315	1	1	s__(g__) 100.0%
+s__MGIIb-O3 sp002713185	1	1	s__(g__) 100.0%
+s__MGIIa-L1 sp002495535	1	1	s__(g__) 100.0%
+s__MGIIa-I sp002498205	1	1	s__(g__) 100.0%
+s__ARS10 sp002690445	1	1	s__(g__) 100.0%
+s__MGIIa-K1 sp002689565	1	1	s__(g__) 100.0%
+s__UBA431 sp002505525	1	1	s__(g__) 100.0%
+s__Methanoregula sp002495065	1	1	s__(g__) 100.0%
+s__UBA102 sp002509225	1	1	s__(g__) 100.0%
+s__MGIIa-K1 sp002710205	1	1	s__(g__) 100.0%
+s__UBA147 sp002496385	1	1	s__(g__) 100.0%
+s__MGIIb-O3 sp002723045	1	1	s__(g__) 100.0%
+s__UBA525 sp002498125	1	1	s__(g__) 100.0%
+s__ARS1309 sp002688015	1	1	s__(g__) 100.0%
+s__MGIIb-O5 sp002497985	1	1	s__(g__) 100.0%
+s__Methanomethylovorans sp002508425	1	1	s__(g__) 100.0%
+s__UBA349 sp002509745	1	1	s__(g__) 100.0%
+s__MGIIa-K1 sp002720115	1	1	s__(g__) 100.0%
+s__EX4484-31 sp002254805	1	1	s__(g__) 100.0%
+s__ARS21 sp002725495	1	1	s__(g__) 100.0%
+s__ISO4-G1 sp002506175	1	1	s__(g__) 100.0%
+s__MGIIb-N1 sp002717835	1	1	s__(g__) 100.0%
+s__MGIIa-L2 sp002719815	1	1	s__(g__) 100.0%
+s__ARS1285 sp002688165	1	1	s__(g__) 100.0%
+s__MGIIa-L2 sp002726845	1	1	s__(g__) 100.0%
+s__SM1-50 sp002506745	1	1	s__(g__) 100.0%
+s__Nitrosopumilus sp002730325	1	1	s__(g__) 100.0%
+s__MGIIa-L1 sp002506275	1	1	s__(g__) 100.0%
+s__Methanobacterium_D sp002505765	1	1	s__(g__) 100.0%
+s__MGIIb-O3 sp002718695	1	1	s__(g__) 100.0%
+s__Methanoregula sp002502735	1	1	s__(g__) 100.0%
+s__MGIIa-L1 sp002727485	1	1	s__(g__) 100.0%
+s__EX4572-165 sp002254885	1	1	s__(g__) 100.0%
+s__Methanocorpusculum sp002506085	1	1	s__(g__) 100.0%
+s__Methanoregula sp002839605	1	1	s__(g__) 100.0%
+s__Methanoperedens_A sp002839545	1	1	s__(g__) 100.0%
+s__GCA-002792115 sp002792115	1	1	s__(g__) 100.0%
+s__MGIIb-O1 sp002685415	1	1	s__(g__) 100.0%
+s__Methanoculleus sp002497965	1	1	s__(g__) 100.0%
+s__SD8 sp002509485	1	1	s__(g__) 100.0%
+s__MGIIb-P sp002722595	1	1	s__(g__) 100.0%
+s__EX4484-52 sp002254415	1	1	s__(g__) 100.0%
+s__MGIIb-O1 sp002708385	1	1	s__(g__) 100.0%
+s__SMTZ1-45 sp002825515	1	1	s__(g__) 100.0%
+s__MGIIb-O5 sp002726275	1	1	s__(g__) 100.0%
+s__MGIIb-N2 sp002718215	1	1	s__(g__) 100.0%
+s__MGIIa-I sp002692465	1	1	s__(g__) 100.0%
+s__UBA288 sp002495225	1	1	s__(g__) 100.0%
+s__Methanolobus sp002501695	1	1	s__(g__) 100.0%
+s__UBA71 sp002504405	1	1	s__(g__) 100.0%
+s__EX4484-58 sp002254665	1	1	s__(g__) 100.0%
+s__Thalassarchaeum sp002505325	1	1	s__(g__) 100.0%
+s__ARS1285 sp002688875	1	1	s__(g__) 100.0%
+s__MGIIb-Q1 sp002505495	1	1	s__(g__) 100.0%
+s__UBA233 sp002507245	1	1	s__(g__) 100.0%
+s__UBA55 sp002495465	1	1	s__(g__) 100.0%
+s__1-14-0-10-45-29 sp002778455	1	1	s__(g__) 100.0%
+s__MGIIa-L1 sp002499705	1	1	s__(g__) 100.0%
+s__GCA-2687275 sp002687275	1	1	s__(g__) 100.0%
+s__Nitrosotalea okcheonensis	1	1	s__Candidatus Nitrosotalea okcheonensis 100.0%
+s__GCA-2688775 sp002688775	1	1	s__(g__) 100.0%
+s__Methanobacterium_A sp002502855	1	1	s__(g__) 100.0%
+s__EX4484-121 sp002255105	1	1	s__(g__) 100.0%
+s__PFCY01 sp002763085	1	1	s__(g__) 100.0%
+s__0-14-0-80-44-23 sp002779235	1	1	s__(g__) 100.0%
+s__MGIIb-P sp002457195	1	1	s__(g__) 100.0%
+s__PFCU01 sp002763155	1	1	s__(g__) 100.0%
+s__40CM-2-53-6 sp002495485	1	1	s__(g__) 100.0%
+s__MGIIa-K1 sp002709705	1	1	s__(g__) 100.0%
+s__MGIIa-K1 sp002727515	1	1	s__(g__) 100.0%
+s__MGIIa-L4 sp002718195	1	1	s__(g__) 100.0%
+s__MGIIa-L2 sp002706065	1	1	s__(g__) 100.0%
+s__MGIIb-N2 sp002708695	1	1	s__(g__) 100.0%
+s__Methanofollis sp002498315	1	1	s__(g__) 100.0%
+s__1-14-0-10-32-24 sp002763025	1	1	s__(g__) 100.0%
+s__UBA460 sp002505645	1	1	s__(g__) 100.0%
+s__MGIIa-I sp002699515	1	1	s__(g__) 100.0%
+s__Methanoregula sp002497485	1	1	s__(g__) 100.0%
+s__MGIIa-K1 sp002506705	1	1	s__(g__) 100.0%
+s__MGIIb-N2 sp002708015	1	1	s__(g__) 100.0%
+s__UBA284 sp002499185	1	1	s__(g__) 100.0%
+s__UBA349 sp002839705	1	1	s__(g__) 100.0%
+s__VadinCA11 sp002498605	1	1	s__(g__) 100.0%
+s__0-14-0-20-30-16 sp002779075	1	1	s__(g__) 100.0%
+s__Acidilobus sp002496425	1	1	s__(g__) 100.0%
+s__MGIIb-O3 sp002731195	1	1	s__(g__) 100.0%
+s__MGIIb-O3 sp002697065	1	1	s__(g__) 100.0%
+s__MGIIb-O5 sp002719635	1	1	s__(g__) 100.0%
+s__MGIIb-O3 sp002683155	1	1	s__(g__) 100.0%
+s__Methanobacterium_D sp002494885	1	1	s__(g__) 100.0%
+s__UBA186 sp002494765	1	1	s__(g__) 100.0%
+s__Methanolinea sp002509495	1	1	s__(g__) 100.0%
+s__UBA493 sp002687735	1	1	s__(g__) 100.0%
+s__ARS21 sp002686215	1	1	s__(g__) 100.0%
+s__UBA493 sp002499505	1	1	s__(g__) 100.0%
+s__MGIIb-O3 sp002712575	1	1	s__(g__) 100.0%
+s__21-14-0-10-32-9 sp002762915	1	1	s__(g__) 100.0%
+s__Methanobacterium_D sp002509665	1	1	s__(g__) 100.0%
+s__MGIIb-O1 sp002457595	1	1	s__(g__) 100.0%
+s__ARS1403 sp002688395	1	1	s__(g__) 100.0%
+s__GCA-2686295 sp002686295	1	1	s__(g__) 100.0%
+s__1-14-0-10-44-13 sp002762985	1	1	s__(g__) 100.0%
+s__UBA204 sp002501765	1	1	s__(g__) 100.0%
+s__Thalassarchaeum sp002727275	1	1	s__(g__) 100.0%
+s__UBA60 sp002503395	1	1	s__(g__) 100.0%
+s__UBA467 sp002503825	1	1	s__(g__) 100.0%
+s__GCA-2688965 sp002688965	1	1	s__(g__) 100.0%
+s__1-14-0-10-34-76 sp002763075	1	1	s__(g__) 100.0%
+s__ARS1301 sp002686355	1	1	s__(g__) 100.0%
+s__DTU008 sp002498285	1	1	s__(g__) 100.0%
+s__Thermocladium sp002508315	1	1	s__(g__) 100.0%
+s__EX4572-64 sp002254895	1	1	s__(g__) 100.0%
+s__GCA-2688035 sp002688035	1	1	s__(g__) 100.0%
+s__UBA183 sp002495205	1	1	s__(g__) 100.0%
+s__1-14-0-10-37-12 sp002762795	1	1	s__(g__) 100.0%
+s__EX4484-217-1 sp002254745	1	1	s__(g__) 100.0%
+s__UBA226 sp002719475	1	1	s__(g__) 100.0%
+s__UBA160 sp002506605	1	1	s__(g__) 100.0%
+s__Methanoregula sp002835825	1	1	s__(g__) 100.0%
+s__Thalassarchaeum sp002495735	1	1	s__(g__) 100.0%
+s__MGIIb-O3 sp002720055	1	1	s__(g__) 100.0%
+s__Methanoculleus sp002498065	1	1	s__(g__) 100.0%
+s__PFDC01 sp002763035	1	1	s__(g__) 100.0%
+s__Poseidonia sp002494645	1	1	s__(g__) 100.0%
+s__UBA153 sp002503705	1	1	s__(g__) 100.0%
+s__Methanoculleus sp002501655	1	1	s__(g__) 100.0%
+s__Methanolinea sp002501965	1	1	s__(g__) 100.0%
+s__EX4484-2 sp002254565	1	1	s__(g__) 100.0%
+s__Methanosarcina sp002505485	1	1	s__(g__) 100.0%
+s__GCA-2685855 sp002685855	1	1	s__(g__) 100.0%
+s__MGIIb-N2 sp002503045	1	1	s__(g__) 100.0%
+s__EX4484-224 sp002254545	1	1	s__(g__) 100.0%
+s__ARS1178 sp002688325	1	1	s__(g__) 100.0%
+s__UBA57 sp002693165	1	1	s__(g__) 100.0%
+s__MGIIb-N1 sp002495675	1	1	s__(g__) 100.0%
+s__GCA-002838935 sp002838935	1	1	s__(g__) 100.0%
+s__Thalassarchaeum sp002507125	1	1	s__(g__) 100.0%
+s__Methanomethylophilus sp002503545	1	1	s__(g__) 100.0%
+s__Poseidonia sp002502295	1	1	s__(g__) 100.0%
+s__MGIIa-K1 sp002694245	1	1	s__(g__) 100.0%
+s__Methanolobus sp002508635	1	1	s__(g__) 100.0%
+s__UBA11998 sp002686315	1	1	s__(g__) 100.0%
+s__MGIIb-N2 sp002702985	1	1	s__(g__) 100.0%
+s__Methanolobus sp002507205	1	1	s__(g__) 100.0%
+s__UBA168 sp002507085	1	1	s__(g__) 100.0%
+s__Methanomassiliicoccus sp002508545	1	1	s__(g__) 100.0%
+s__GCA-2728275 sp002728275	1	1	s__(g__) 100.0%
+s__Nitrosarchaeum_A sp002781805	1	1	s__(g__) 100.0%
+s__UBA8886 sp002731905	1	1	s__(g__) 100.0%
+s__Methanobrevibacter_A sp002496065	1	1	s__(g__) 100.0%
+s__MGIIb-N1 sp002712645	1	1	s__(g__) 100.0%
+s__MGIIb-N1 sp002497295	1	1	s__(g__) 100.0%
+s__MGIIb-O2 sp002499785	1	1	s__(g__) 100.0%
+s__Caldivirga sp002506515	1	1	s__(g__) 100.0%
+s__UBA57 sp002494565	1	1	s__(g__) 100.0%
+s__MGIIb-O2 sp002685315	1	1	s__(g__) 100.0%
+s__UBA203 sp002503595	1	1	s__(g__) 100.0%
+s__UBA472 sp8940u	1	1	s__(g__) 100.0%
+s__NZBF01 sp002687775	1	1	s__(g__) 100.0%
+s__MGIIa-L1 sp002688825	1	1	s__(g__) 100.0%
+s__UBA203 sp002506015	1	1	s__(g__) 100.0%
+s__Vulcanisaeta sp002496475	1	1	s__(g__) 100.0%
+s__MGIIb-O1 sp002502365	1	1	s__(g__) 100.0%
+s__Thalassarchaeum sp002457605	1	1	s__(g__) 100.0%
+s__EX4484-205 sp002255045	1	1	s__(g__) 100.0%
+s__Methanoculleus sp002839575	1	1	s__(g__) 100.0%
+s__UBA287 sp002495235	1	1	s__(g__) 100.0%
+s__MGIIa-L2 sp002496635	1	1	s__(g__) 100.0%
+s__Nitrososphaera sp002494895	1	1	s__(g__) 100.0%
+s__Thermofilum_A sp002855745	1	1	s__(g__) 100.0%
+s__UBA184 sp002503985	1	1	s__(g__) 100.0%
+s__Methanothrix sp002505805	1	1	s__(g__) 100.0%
+s__MGIIa-L1 sp002499015	1	1	s__(g__) 100.0%
+s__0-14-0-20-34-12 sp002779065	1	1	s__(g__) 100.0%
+s__EX4484-2 sp002254405	1	1	s__(g__) 100.0%
+s__MGIIa-L1 sp002506025	1	1	s__(g__) 100.0%
+s__Altarchaeum sp002841105	1	1	s__(g__) 100.0%
+s__UBA164 sp002499005	1	1	s__(g__) 100.0%
+s__HARCEL1 sp003058365	1	1	s__(g__) 100.0%
+s__Acidianus_B brierleyi	1	1	s__Acidianus brierleyi 100.0%
+s__Acidianus_A sulfidivorans	1	1	s__Acidianus sulfidivorans 100.0%
+s__Nitrosopumilus sp003175215	1	1	s__(g__) 100.0%
+s__Thermoplasma sp003205235	1	1	s__(g__) 100.0%
+s__QH-10-67-22 sp003021305	1	1	s__(g__) 100.0%
+s__Natronomonas sp003021005	1	1	s__(g__) 100.0%
+s__PALSA-986 sp003165195	1	1	s__(g__) 100.0%
+s__QS-5-68-33 sp003023785	1	1	s__(g__) 100.0%
+s__Halococcus sp003021045	1	1	s__(g__) 100.0%
+s__Methanobrevibacter_A sp900320955	1	1	s__(g__) 100.0%
+s__FEN-33 sp003135935	1	1	s__(g__) 100.0%
+s__G60ANME1 sp003194435	1	1	s__(g__) 100.0%
+s__BIN-L-1 sp003096235	1	1	s__(g__) 100.0%
+s__Natronomonas sp003020965	1	1	s__(g__) 100.0%
+s__Methanobrevibacter_A sp900313645	1	1	s__(g__) 100.0%
+s__Methanobacterium_A sp003161815	1	1	s__(g__) 100.0%
+s__HRBIN01 sp002898355	1	1	s__(g__) 100.0%
+s__Methanosphaera sp003266105	1	1	s__(g__) 100.0%
+s__Methanosphaera sp900322125	1	1	s__(g__) 100.0%
+s__Halovenus sp003021335	1	1	s__(g__) 100.0%
+s__Halorussus sp003023465	1	1	s__(g__) 100.0%
+s__FEN-33 sp003153895	1	1	s__(g__) 100.0%
+s__BMS3B sp002897955	1	1	s__(g__) 100.0%
+s__PZKD01 sp003034855	1	1	s__(g__) 100.0%
+s__HRBIN02 sp002898395	1	1	s__(g__) 100.0%
+s__Methanospirillum hungatei_A	1	1	s__Methanospirillum hungatei 100.0%
+s__Halostella sp003023565	1	1	s__(g__) 100.0%
+s__PXRE01 sp003021085	1	1	s__(g__) 100.0%
+s__Methanobacterium_B sp003162655	1	1	s__(g__) 100.0%
+s__Halomicrobium sp003021685	1	1	s__(g__) 100.0%
+s__Caldisphaera sp002877855	1	1	s__(g__) 100.0%
+s__Methanobrevibacter_A sp900316895	1	1	s__(g__) 100.0%
+s__Natronomonas sp003021325	1	1	s__(g__) 100.0%
+s__ARK-15 sp002878135	1	1	s__(g__) 100.0%
+s__Methanoperedens sp003104905	1	1	s__(g__) 100.0%
+s__SW-9-67-25 sp003022745	1	1	s__(g__) 100.0%
+s__B3-JM-08 sp003144275	1	1	s__(g__) 100.0%
+s__Halococcus sp003021705	1	1	s__(g__) 100.0%
+s__SW-4-43-9 sp003009815	1	1	s__(g__) 100.0%
+s__UBA8886 sp003193815	1	1	s__(g__) 100.0%
+s__Natronomonas sp003023535	1	1	s__(g__) 100.0%
+s__Methanoregula sp003170075	1	1	s__(g__) 100.0%
+s__Methanobacterium_B sp003164415	1	1	s__(g__) 100.0%
+s__Halovenus sp003022725	1	1	s__(g__) 100.0%
+s__M9B1D sp002900535	1	1	s__(g__) 100.0%
+s__Natronomonas sp003021745	1	1	s__(g__) 100.0%
+s__Nitrosocaldus sp002898655	1	1	s__(g__) 100.0%
+s__Halomicroarcula sp003020925	1	1	s__(g__) 100.0%
+s__Natronomonas sp003022945	1	1	s__(g__) 100.0%
+s__PALSA-986 sp003151735	1	1	s__(g__) 100.0%
+s__Methanosarcina sp003157235	1	1	s__(g__) 100.0%
+s__FEN-987 sp003152955	1	1	s__(g__) 100.0%
+s__Methanosphaera sp003266075	1	1	s__(g__) 100.0%
+s__CBA1134 sp003021175	1	1	s__(g__) 100.0%
+s__BMS3ABIN17 sp002897655	1	1	s__(g__) 100.0%
+s__SW-7-43-1 sp003009795	1	1	s__(g__) 100.0%
+s__QEXZ01 sp003160755	1	1	s__(g__) 100.0%
+s__Halorubrum sp003023405	1	1	s__(g__) 100.0%
+s__PALSA-986 sp003133625	1	1	s__(g__) 100.0%
+s__Halovenus sp003022085	1	1	s__(g__) 100.0%
+s__Halovenus sp003021285	1	1	s__(g__) 100.0%
+s__QS-5-70-15 sp003022005	1	1	s__(g__) 100.0%
+s__Methanobacterium_B sp003151535	1	1	s__(g__) 100.0%
+s__Halococcus sp003022925	1	1	s__(g__) 100.0%
+s__CBA1134 sp003023185	1	1	s__(g__) 100.0%
+s__ARK-14 sp002899805	1	1	s__(g__) 100.0%
+s__Methanosphaera sp003266165	1	1	s__(g__) 100.0%
+s__NZ13-MG1 sp003056285	1	1	s__(g__) 100.0%
+s__BOG-1369 sp003135575	1	1	s__(g__) 100.0%
+s__BIN-L-1 sp003096255	1	1	s__(g__) 100.0%
+s__UBA203 sp003194445	1	1	s__(g__) 100.0%
+s__SW-10-69-26 sp003009755	1	1	s__(g__) 100.0%
+s__Halomicroarcula sp003021755	1	1	s__(g__) 100.0%
+s__Methanosphaera sp003266145	1	1	s__(g__) 100.0%
+s__Methanosarcina sp003164755	1	1	s__(g__) 100.0%
+s__QS-4-70-19 sp003020985	1	1	s__(g__) 100.0%
+s__QS-1-68-17 sp003021105	1	1	s__(g__) 100.0%
+s__Halococcus sp003021235	1	1	s__(g__) 100.0%
+s__Halococcus sp003021725	1	1	s__(g__) 100.0%
+s__SW-7-71-33 sp003023195	1	1	s__(g__) 100.0%
+s__UBA10452 sp003176995	1	1	s__(g__) 100.0%
+s__Methanosphaera sp003266065	1	1	s__(g__) 100.0%
+s__Methanobrevibacter_A sp900318035	1	1	s__(g__) 100.0%
+s__Methanoregula sp003141335	1	1	s__(g__) 100.0%
+s__Methanobrevibacter_A sp900314615	1	1	s__(g__) 100.0%
+s__Halobaculum sp003020945	1	1	s__(g__) 100.0%
+s__SW-10-68-16 sp003023485	1	1	s__(g__) 100.0%
+s__PALSA-986 sp003164295	1	1	s__(g__) 100.0%
+s__Natronomonas sp003022905	1	1	s__(g__) 100.0%
+s__Natronomonas sp003022815	1	1	s__(g__) 100.0%
+s__BM511 sp002867475	1	1	s__(g__) 100.0%
+s__Methanoregula sp003136075	1	1	s__(g__) 100.0%
+s__QS-4-69-31 sp003021655	1	1	s__(g__) 100.0%
+s__SZUA-236 sp003230355	1	1	s__(g__) 100.0%
+s__QEFN01 sp003086555	1	1	s__(g__) 100.0%
+s__Halomarina sp003021975	1	1	s__(g__) 100.0%
+s__Methanobrevibacter sp900321995	1	1	s__(g__) 100.0%
+s__B48-G16 sp003660605	1	1	s__(g__) 100.0%
+s__MGIIa-L1 sp9513u	1	1	s__(g__) 100.0%
+s__Pyrococcus sp003660485	1	1	s__(g__) 100.0%
+s__B79-G9 sp003660865	1	1	s__(g__) 100.0%
+s__Palaeococcus sp003660495	1	1	s__(g__) 100.0%
+s__MGIIa-L1 sp8734u	1	1	s__(g__) 100.0%
+s__MGIIb-O1 sp12570u	1	1	s__(g__) 100.0%
+s__MGIIa-L1 sp9354u	1	1	s__(g__) 100.0%
+s__B33-G15 sp003660925	1	1	s__(g__) 100.0%
+s__MGIIa-L3 sp12206u	1	1	s__(g__) 100.0%
+s__B47-G15 sp003660975	1	1	s__(g__) 100.0%
+s__MGIIa-L1 sp8725u	1	1	s__(g__) 100.0%
+s__B9-G16 sp003660965	1	1	s__(g__) 100.0%
+s__EX4484-52 sp003660905	1	1	s__(g__) 100.0%
+s__EX4484-121 sp003660635	1	1	s__(g__) 100.0%
+s__B88-G9 sp003660555	1	1	s__(g__) 100.0%
+s__MGIIa-L2 sp8574u	1	1	s__(g__) 100.0%
+s__Nitrosarchaeum sp003569705	1	1	s__(g__) 100.0%
+s__J156 sp003693875	1	1	s__(g__) 100.0%
+s__B91-G9 sp003650935	1	1	s__(g__) 100.0%
+s__J091 sp003695045	1	1	s__(g__) 100.0%
+s__B29-G17 sp003650625	1	1	s__(g__) 100.0%
+s__B72-G16 sp003650545	1	1	s__(g__) 100.0%
+s__J101 sp003695435	1	1	s__(g__) 100.0%
+s__J152 sp003694525	1	1	s__(g__) 100.0%
+s__PWWA01 sp003562145	1	1	s__(g__) 100.0%
+s__J096 sp003694965	1	1	s__(g__) 100.0%
+s__PWVY01 sp003561665	1	1	s__(g__) 100.0%
+s__J144 sp003694055	1	1	s__(g__) 100.0%
+s__J104 sp003694495	1	1	s__(g__) 100.0%
+s__UBA153 sp003694385	1	1	s__(g__) 100.0%
+s__J060 sp003695745	1	1	s__(g__) 100.0%
+s__J110 sp003694805	1	1	s__(g__) 100.0%
+s__J072 sp003695265	1	1	s__(g__) 100.0%
+s__WYZ-LMO8 sp003650865	1	1	s__(g__) 100.0%
+s__PWVO01 sp003561825	1	1	s__(g__) 100.0%
+s__B67-G16 sp003650675	1	1	s__(g__) 100.0%
+s__B78-G9 sp003650975	1	1	s__(g__) 100.0%
+s__B29-G15 sp003650585	1	1	s__(g__) 100.0%
+s__B20-G17 sp003650785	1	1	s__(g__) 100.0%
+s__CSSED10-239 sp003559395	1	1	s__(g__) 100.0%
+s__B87-G9 sp003649695	1	1	s__(g__) 100.0%
+s__B1Sed10-29 sp003553825	1	1	s__(g__) 100.0%
+s__Tc-Br11-E2g8 sp003552885	1	1	s__(g__) 100.0%
+s__B82-G9 sp003649715	1	1	s__(g__) 100.0%
+s__B5-G16 sp003662995	1	1	s__(g__) 100.0%
+s__B66-G16 sp003649085	1	1	s__(g__) 100.0%
+s__PWGL01 sp003554465	1	1	s__(g__) 100.0%
+s__Halohasta sp003554115	1	1	s__(g__) 100.0%
+s__PWEA01 sp003553905	1	1	s__(g__) 100.0%
+s__B15-G16 sp003649205	1	1	s__(g__) 100.0%
+s__PWEA01 sp003554845	1	1	s__(g__) 100.0%
+s__B24-G1 sp003662535	1	1	s__(g__) 100.0%
+s__Archaeoglobus_A sp003662985	1	1	s__(g__) 100.0%
+s__WYZ-LMO8 sp003649565	1	1	s__(g__) 100.0%
+s__B31-G17 sp003649915	1	1	s__(g__) 100.0%
+s__B9-G17 sp003649225	1	1	s__(g__) 100.0%
+s__B69-G16 sp003649235	1	1	s__(g__) 100.0%
+s__T1SED10-213 sp003554235	1	1	s__(g__) 100.0%
+s__B8-G13 sp003649745	1	1	s__(g__) 100.0%
+s__B25 sp003662305	1	1	s__(g__) 100.0%
+s__B25 sp003662485	1	1	s__(g__) 100.0%
+s__B40-G2 sp003649615	1	1	s__(g__) 100.0%
+s__B17-G17 sp003662645	1	1	s__(g__) 100.0%
+s__PWHR01 sp003554965	1	1	s__(g__) 100.0%
+s__PIYA01 sp003662325	1	1	s__(g__) 100.0%
+s__B44-G15 sp003649845	1	1	s__(g__) 100.0%
+s__B1-G15 sp003662715	1	1	s__(g__) 100.0%
+s__PUNK01 sp003552585	1	1	s__(g__) 100.0%
+s__Tc-Br11 sp003552325	1	1	s__(g__) 100.0%
+s__B10-G16 sp003649185	1	1	s__(g__) 100.0%
+s__B46-G15 sp003662205	1	1	s__(g__) 100.0%
+s__B15-G2 sp003649445	1	1	s__(g__) 100.0%
+s__Archaeoglobus_C sp003663055	1	1	s__(g__) 100.0%
+s__QMZG01 sp003663045	1	1	s__(g__) 100.0%
+s__QMZS01 sp003663295	1	1	s__(g__) 100.0%
+s__Archaeoglobus_B sp003663025	1	1	s__(g__) 100.0%
+s__QMZP01 sp003663225	1	1	s__(g__) 100.0%
+s__UBA588 sp003558085	1	1	s__(g__) 100.0%
+s__Palaeococcus sp003663695	1	1	s__(g__) 100.0%
+s__B50-G16 sp003663345	1	1	s__(g__) 100.0%
+s__B1SED10-34 sp003551065	1	1	s__(g__) 100.0%
+s__B47-G6 sp003663565	1	1	s__(g__) 100.0%
+s__CSSED10-269 sp003558235	1	1	s__(g__) 100.0%
+s__Methanofastidiosum sp003558335	1	1	s__(g__) 100.0%
+s__Halovenus sp003551265	1	1	s__(g__) 100.0%
+s__QMZT01 sp003663325	1	1	s__(g__) 100.0%
+s__B47-G6 sp003663585	1	1	s__(g__) 100.0%
+s__QMZZ01 sp003663445	1	1	s__(g__) 100.0%
+s__QMZS01 sp003663355	1	1	s__(g__) 100.0%
+s__B54-G15 sp003648985	1	1	s__(g__) 100.0%
+s__QMZJ01 sp003663115	1	1	s__(g__) 100.0%
+s__B1Sed10-29 sp003551125	1	1	s__(g__) 100.0%
+s__N1521 sp003551725	1	1	s__(g__) 100.0%
+s__Thermococcus_A sp003663535	1	1	s__(g__) 100.0%
+s__Halovenus sp003551945	1	1	s__(g__) 100.0%
+s__QMVU01 sp003661365	1	1	s__(g__) 100.0%
+s__PWHR01 sp003555395	1	1	s__(g__) 100.0%
+s__B63 sp003661975	1	1	s__(g__) 100.0%
+s__EX4484-204 sp003661745	1	1	s__(g__) 100.0%
+s__EX4484-58 sp003661825	1	1	s__(g__) 100.0%
+s__QMWT01 sp003661775	1	1	s__(g__) 100.0%
+s__CSSed11-243R1 sp003563585	1	1	s__(g__) 100.0%
+s__EX4484-218 sp003661965	1	1	s__(g__) 100.0%
+s__B109-G9 sp003661525	1	1	s__(g__) 100.0%
+s__B75-G9 sp003661465	1	1	s__(g__) 100.0%
+s__UBA203 sp003661105	1	1	s__(g__) 100.0%
+s__PWEA01 sp003555465	1	1	s__(g__) 100.0%
+s__PWHV01 sp003555025	1	1	s__(g__) 100.0%
+s__B39-G2 sp003661185	1	1	s__(g__) 100.0%
+s__QMWT01 sp003661865	1	1	s__(g__) 100.0%
+s__QMWL01 sp003661605	1	1	s__(g__) 100.0%
+s__Korarchaeum sp003344655	1	1	s__(g__) 100.0%
+s__Methanosalsum sp003555325	1	1	s__(g__) 100.0%
+s__UBA233 sp003661945	1	1	s__(g__) 100.0%
+s__B12-G17 sp003661905	1	1	s__(g__) 100.0%
+s__B1SED10-69 sp003550625	1	1	s__(g__) 100.0%
+s__PWWA01 sp003560545	1	1	s__(g__) 100.0%
+s__PWHV01 sp003550345	1	1	s__(g__) 100.0%
+s__QMVU01 sp003661265	1	1	s__(g__) 100.0%
+s__PWKY01 sp003560595	1	1	s__(g__) 100.0%
+s__Archaeoglobus_C sp003978865	1	1	s__(g__) 100.0%
+s__B109-G9 sp003661505	1	1	s__(g__) 100.0%
+s__QEXZ01 sp003661125	1	1	s__(g__) 100.0%
+s__QNYQ01 sp003978665	1	1	s__(g__) 100.0%
+s__JdFR-19 sp003661015	1	1	s__(g__) 100.0%
+s__PIYB01 sp003601835	1	1	s__(g__) 100.0%
+s__MGIIa-L1 sp003602605	1	1	s__(g__) 100.0%
+s__Poseidonia sp002689105	1	1	s__(g__) 100.0%
+s__MGIIb-O3 sp003602595	1	1	s__(g__) 100.0%
+s__Nitrosopumilus sp003702545	1	1	s__(g__) 100.0%
+s__Nitrosopumilus sp003702525	1	1	s__(g__) 100.0%
+s__PIYF01 sp003601875	1	1	s__(g__) 100.0%
+s__B63 sp003601695	1	1	s__(g__) 100.0%
+s__Poseidonia sp003602475	1	1	s__(g__) 100.0%
+s__PIYN01 sp003601775	1	1	s__(g__) 100.0%
+s__MGIIb-O3 sp003602515	1	1	s__(g__) 100.0%
+s__MGIIa-L3 sp003602635	1	1	s__(g__) 100.0%
+s__Poseidonia sp003602485	1	1	s__(g__) 100.0%
+s__MGIIa-L1 sp003602645	1	1	s__(g__) 100.0%
+s__Nitrosopumilus sp003702465	1	1	s__(g__) 100.0%
+s__MGIIa-K1 sp003602535	1	1	s__(g__) 100.0%
+s__MGIIa-L2 sp003602665	1	1	s__(g__) 100.0%
+s__B63 sp003601725	1	1	s__(g__) 100.0%
+s__PXDW01 sp003564925	1	1	s__(g__) 100.0%
+s__MGIIa-K1 sp003602415	1	1	s__(g__) 100.0%
+s__UBA203 sp003601535	1	1	s__(g__) 100.0%
+s__MGIIa-L1 sp003602575	1	1	s__(g__) 100.0%
+s__SURF-58 sp003599145	1	1	s__(g__) 100.0%
+s__Nitrosopumilus sp003702495	1	1	s__(g__) 100.0%
+s__SURF-65 sp003599055	1	1	s__(g__) 100.0%
+s__QEXZ01 sp003601795	1	1	s__(g__) 100.0%
+s__OWC5 sp003345595	1	1	s__(g__) 100.0%
+s__Methanobrevibacter_C sp003315655	1	1	s__(g__) 100.0%
+s__Methanothrix sp003857025	1	1	s__(g__) 100.0%
+s__MP8T-1 sp003345545	1	1	s__(g__) 100.0%
+s__UBA183 sp005877185	1	1	s__(g__) 100.0%
+s__Methanocorpusculum sp003315675	1	1	s__(g__) 100.0%
+s__40CM-2-53-6 sp005882955	1	1	s__(g__) 100.0%
+s__BA-13 sp005888675	1	1	s__(g__) 100.0%
+s__Methanobacterium sp003491305	1	1	s__(g__) 100.0%
+s__40CM-2-53-6 sp005888755	1	1	s__(g__) 100.0%
+s__B24-G9 sp003651045	1	1	s__(g__) 100.0%
+s__EA-19 sp005878955	1	1	s__(g__) 100.0%
+s__RBG-16-68-12 sp005878325	1	1	s__(g__) 100.0%
+s__40CM-2-53-6 sp005888635	1	1	s__(g__) 100.0%
+s__RBG-16-68-12 sp005878395	1	1	s__(g__) 100.0%
+s__Nitrosotalea sp005877205	1	1	s__(g__) 100.0%
+s__EA-27 sp005878375	1	1	s__(g__) 100.0%
+s__EA-19 sp005878915	1	1	s__(g__) 100.0%
+s__TA-21 sp005877345	1	1	s__(g__) 100.0%
+s__RBG-16-68-12 sp005878415	1	1	s__(g__) 100.0%
+s__RBG-16-68-12 sp005878985	1	1	s__(g__) 100.0%
+s__QENH01 sp003336485	1	1	s__(g__) 100.0%
+s__RBG-16-68-12 sp005878665	1	1	s__(g__) 100.0%
+s__RBG-16-68-12 sp005878515	1	1	s__(g__) 100.0%
+s__BA-13 sp005888695	1	1	s__(g__) 100.0%
+s__OWC5 sp003345555	1	1	s__(g__) 100.0%
+s__SM1-50 sp003942085	1	1	s__(g__) 100.0%
+s__B18-G2 sp003651105	1	1	s__(g__) 100.0%
+s__Methanothermobacter_A sp003584625	1	1	s__(g__) 100.0%
+s__RBG-16-68-12 sp005878995	1	1	s__(g__) 100.0%
+s__RBG-16-68-12 sp005878485	1	1	s__(g__) 100.0%
+s__RBG-16-68-12 sp005878525	1	1	s__(g__) 100.0%
+s__40CM-2-53-6 sp005888745	1	1	s__(g__) 100.0%
+s__40CM-2-53-6 sp005883695	1	1	s__(g__) 100.0%
+s__40CM-2-53-6 sp005881615	1	1	s__(g__) 100.0%
+s__40CM-2-53-6 sp005883085	1	1	s__(g__) 100.0%
+s__RBG-16-68-12 sp005879045	1	1	s__(g__) 100.0%
+s__SBBD01 sp005239845	1	1	s__(g__) 100.0%
+s__40CM-2-53-6 sp005881695	1	1	s__(g__) 100.0%
+s__UBA10205 sp005239615	1	1	s__(g__) 100.0%
+s__40CM-2-53-6 sp005884605	1	1	s__(g__) 100.0%
+s__RBG-16-68-12 sp005879015	1	1	s__(g__) 100.0%
+s__40CM-2-53-6 sp005884195	1	1	s__(g__) 100.0%
+s__HEL-GB-B sp005191425	1	1	s__(g__) 100.0%
+s__SOKP01 sp005222975	1	1	s__(g__) 100.0%
+s__WYZ-LMO6 sp004347925	1	1	s__(g__) 100.0%
+s__SOJC01 sp004376645	1	1	s__(g__) 100.0%
+s__HEL-GB-A sp005191415	1	1	s__(g__) 100.0%
+s__UBA203 sp004211975	1	1	s__(g__) 100.0%
+s__B3-WOES sp005222965	1	1	s__(g__) 100.0%
+s__SDNM01 sp004524515	1	1	s__(g__) 100.0%
+s__MP8T-1 sp004524595	1	1	s__(g__) 100.0%
+s__SOJA01 sp004376975	1	1	s__(g__) 100.0%
+s__TEKIR-12S sp004524435	1	1	s__(g__) 100.0%
+s__SDNM01 sp004524385	1	1	s__(g__) 100.0%
+s__Nitrosotenuis sp005240025	1	1	s__(g__) 100.0%
+s__SOKP01 sp004524725	1	1	s__(g__) 100.0%
+s__TEKIR-14 sp004524445	1	1	s__(g__) 100.0%
+s__SDNM01 sp004524535	1	1	s__(g__) 100.0%
+s__SDNM01 sp004524425	1	1	s__(g__) 100.0%
+s__TEKIR-8 sp004524365	1	1	s__(g__) 100.0%
+s__WYZ-LMO2 sp004347865	1	1	s__(g__) 100.0%
+s__MP8T-1 sp004524565	1	1	s__(g__) 100.0%
+s__SMTZ1-45 sp004376265	1	1	s__(g__) 100.0%
+s__AMARA-1 sp004524545	1	1	s__(g__) 100.0%
+s__BIN-L-1 sp004376385	1	1	s__(g__) 100.0%
+s__WYZ-LMO10 sp004347955	1	1	s__(g__) 100.0%
+s__SOIM01 sp004377185	1	1	s__(g__) 100.0%
+s__Thalassarchaeum sp004195715	1	1	s__(g__) 100.0%
+s__MGIIb-O3 sp004195615	1	1	s__(g__) 100.0%
+s__Methanobrevibacter ruminantium_A	1	1	s__Methanobrevibacter ruminantium 100.0%
+s__PSPT01 sp004195635	1	1	s__(g__) 100.0%
+s__RPGO01 sp004212095	1	1	s__(g__) 100.0%
+s__MGIIb-O2 sp004195525	1	1	s__(g__) 100.0%
+s__SCSR01 sp004297575	1	1	s__(g__) 100.0%
+s__Methanolliviera hydrocarbonicum	1	1	s__Candidatus Methanolliviera hydrocarbonicum 100.0%
+s__NM3 sp004212155	1	1	s__(g__) 100.0%
+s__RPGO01 sp004193545	1	1	s__(g__) 100.0%
+s__MGIIa-K1 sp004195515	1	1	s__(g__) 100.0%
+s__ANME-1-THS sp004212135	1	1	s__(g__) 100.0%
+s__UBA472 sp004525545	1	1	s__(g__) 100.0%
+s__Methanoliparum thermophilum	1	1	s__Candidatus Methanoliparum thermophilum 100.0%
+s__Nitrosarchaeum sp004297665	1	1	s__(g__) 100.0%
+s__Nitrosotenuis sp004322465	1	1	s__(g__) 100.0%
+s__PSPM01 sp004195435	1	1	s__(g__) 100.0%
+s__SOKP01 sp004375715	1	1	s__(g__) 100.0%
+s__CSBR16-154 sp007117405	1	1	s__(g__) 100.0%
+s__Methanosuratus subterraneum	1	1	s__Candidatus Methanosuratus subterraneum 100.0%
+s__PWHV01 sp007117455	1	1	s__(g__) 100.0%
+s__SKIA01 sp007117065	1	1	s__(g__) 100.0%
+s__SKGA01 sp007117735	1	1	s__(g__) 100.0%
+s__UBA288 sp004332335	1	1	s__(g__) 100.0%
+s__CSBR16-182 sp007117145	1	1	s__(g__) 100.0%
+s__DG-33 sp004375695	1	1	s__(g__) 100.0%
+s__Methanosalsum sp007127385	1	1	s__(g__) 100.0%
+s__SKIS01 sp007117755	1	1	s__(g__) 100.0%
+s__TA-20 sp007280335	1	1	s__(g__) 100.0%
+s__SKSH01 sp007118075	1	1	s__(g__) 100.0%
+s__Nitrosotalea sp007280465	1	1	s__(g__) 100.0%
+s__Natronomonas sp007121575	1	1	s__(g__) 100.0%
+s__QS-1-68-20 sp007122875	1	1	s__(g__) 100.0%
+s__Halovivax sp007119345	1	1	s__(g__) 100.0%
+s__SKNY01 sp007118975	1	1	s__(g__) 100.0%
+s__SKXI01 sp007128515	1	1	s__(g__) 100.0%
+s__Halovivax sp007135505	1	1	s__(g__) 100.0%
+s__Natronomonas sp007135435	1	1	s__(g__) 100.0%
+s__Nitrosopelagicus sp007037525	1	1	s__(g__) 100.0%
+s__Nitrosopumilus sp007037025	1	1	s__(g__) 100.0%
+s__Nitrosopelagicus sp007036345	1	1	s__(g__) 100.0%
+s__CSSed11-243R1 sp007133845	1	1	s__(g__) 100.0%
+s__Nitrosopumilus sp007036605	1	1	s__(g__) 100.0%
+s__PWHV01 sp007116915	1	1	s__(g__) 100.0%
+s__Nitrosopelagicus sp007037205	1	1	s__(g__) 100.0%
+s__Nitrosopelagicus sp007036525	1	1	s__(g__) 100.0%
+s__Methanocalculus sp007130455	1	1	s__(g__) 100.0%
+s__PWKY01 sp007133925	1	1	s__(g__) 100.0%
+s__SG8-32-3 sp007050895	1	1	s__(g__) 100.0%
+s__RBG-13-38-9 sp007050885	1	1	s__(g__) 100.0%
+s__SKIA01 sp007116645	1	1	s__(g__) 100.0%
+s__SKNY01 sp007123105	1	1	s__(g__) 100.0%
+s__SKIS01 sp007116295	1	1	s__(g__) 100.0%
+s__Methanobacterium_A sp002067325	1	1	s__(g__) 100.0%
+s__UBA472 sp002067045	1	1	s__(g__) 100.0%
+s__Methanomassiliicoccus sp002067635	1	1	s__(g__) 100.0%
+s__Methanothrix sp002067365	1	1	s__(g__) 100.0%
+s__Methanolinea sp002067155	1	1	s__(g__) 100.0%
+s__MVRE01 sp002067895	1	1	s__(g__) 100.0%
+s__UBA71 sp006954465	1	1	s__(g__) 100.0%
+s__Methanomethylovorans sp002067265	1	1	s__(g__) 100.0%
+s__Methanomethylovorans sp002067275	1	1	s__(g__) 100.0%
+s__Methanobacterium sp002067065	1	1	s__(g__) 100.0%
+s__MVRC01 sp002067865	1	1	s__(g__) 100.0%
+s__Methanothrix sp002067705	1	1	s__(g__) 100.0%
+s__Methanolobus vulcani_A	1	1	s__Methanolobus vulcani 100.0%
+s__Methanolinea sp002067685	1	1	s__(g__) 100.0%
+s__Methanobacterium_A sp002067565	1	1	s__(g__) 100.0%
+s__MX-02 sp006954405	1	1	s__(g__) 100.0%
+s__UBA71 sp006954425	1	1	s__(g__) 100.0%
+s__Methanocella_A sp002067315	1	1	s__(g__) 100.0%
+s__Methanolinea sp002067485	1	1	s__(g__) 100.0%
+s__Methanolinea sp002067095	1	1	s__(g__) 100.0%
+s__Methanothermobacter_A tenebrarum	1	1	s__Methanothermobacter tenebrarum 100.0%
+s__Methanobrevibacter_A thaueri	1	1	s__Methanobrevibacter thaueri 100.0%
+s__Halorubrum sp003287355	1	1	s__(g__) 100.0%
+s__Methanosphaera sp003268005	1	1	s__(g__) 100.0%
+s__Methanobrevibacter_A woesei	1	1	s__Methanobrevibacter woesei 100.0%
+s__Acidilobus sp003431325	1	1	s__(g__) 100.0%
+s__Halorubrum sp003666015	1	1	s__(g__) 100.0%
+s__Saliphagus sp003344565	1	1	s__(g__) 100.0%
+s__PALSA-986 sp003589585	1	1	s__(g__) 100.0%
+s__Haloterrigena sp003977755	1	1	s__(g__) 100.0%
+s__Haladaptatus sp003298465	1	1	s__(g__) 100.0%
+s__Halobellus sp003665925	1	1	s__(g__) 100.0%
+s__Halobellus sp003665935	1	1	s__(g__) 100.0%
+s__Natrarchaeobius chitinivorans_A	1	1	s__Natrarchaeobius chitinivorans 100.0%
+s__Halalkalicoccus sp003697815	1	1	s__(g__) 100.0%
+s__Halorubrum sp003697845	1	1	s__(g__) 100.0%
+s__Halorubrum sp003781945	1	1	s__(g__) 100.0%
+s__Halosimplex sp003730195	1	1	s__(g__) 100.0%
+s__Halonotius sp003605575	1	1	s__(g__) 100.0%
+s__Halorussus sp003382685	1	1	s__(g__) 100.0%
+s__Halarchaeum sp003721175	1	1	s__(g__) 100.0%
+s__Halorubrum sp003721435	1	1	s__(g__) 100.0%
+s__Halostella sp003675875	1	1	s__(g__) 100.0%
+s__Methanohalophilus sp003722075	1	1	s__(g__) 100.0%
+s__Halococcus sp003602035	1	1	s__(g__) 100.0%
+s__Halorubrum sp003990725	1	1	s__(g__) 100.0%
+s__Methanococcoides sp900774055	1	1	s__(g__) 100.0%
+s__Nitrosocosmicus franklandus	1	1	s__Candidatus Nitrosocosmicus franklandus 100.0%
+s__Nitrosopumilus sp900620265	1	1	s__(g__) 100.0%
+s__J07HR59 sp002952775	1	1	s__(g__) 100.0%
+s__Halorientalis sp004118325	1	1	s__(g__) 100.0%
+s__Halorubrum sp004114375	1	1	s__(g__) 100.0%
+s__Halorubrum sp004114995	1	1	s__(g__) 100.0%
+s__Halomicroarcula sp004681185	1	1	s__(g__) 100.0%
+s__Methanoculleus_A taiwanensis	1	1	s__Methanoculleus taiwanensis 100.0%
+s__Halogranum sp004116405	1	1	s__(g__) 100.0%
+s__Halostella sp004785955	1	1	s__(g__) 100.0%
+s__Methanolobus sp004745425	1	1	s__(g__) 100.0%
+s__Natrinema hispanicum	1	1	s__Haloterrigena hispanica 100.0%
+s__Methanohalophilus sp004137855	1	1	s__(g__) 100.0%
+s__Halovenus sp004015825	1	1	s__(g__) 100.0%
+s__Halorussus sp005239435	1	1	s__(g__) 100.0%
+s__Methanosarcina sp004099695	1	1	s__(g__) 100.0%
+s__N1521 sp005239175	1	1	s__(g__) 100.0%
+s__Natronomonas sp005239135	1	1	s__(g__) 100.0%
+s__Methanofollis sp004297185	1	1	s__(g__) 100.0%
+s__Halorhabdus sp004944975	1	1	s__(g__) 100.0%
+s__Halorussus sp004087835	1	1	s__(g__) 100.0%
+s__Halosimplex sp004698125	1	1	s__(g__) 100.0%
+s__HHB sp004310395	1	1	s__(g__) 100.0%
+s__Halorussus sp004765805	1	1	s__(g__) 100.0%
+s__Natrinema sp005938085	1	1	s__(g__) 100.0%
+s__Haloarcula sp005406125	1	1	s__(g__) 100.0%
+s__Halorubrum sp005435165	1	1	s__(g__) 100.0%
+s__N1521 sp005543295	1	1	s__(g__) 100.0%
+s__Natrinema versiforme_A	1	1	s__Natrinema versiforme 100.0%
+s__Halorientalis sp005049285	1	1	s__(g__) 100.0%
+s__XQ-INN-246 sp006543045	1	1	s__(g__) 100.0%
+s__Halonotius sp006861655	1	1	s__(g__) 100.0%
+s__Nitrosopumilus sp006740685	1	1	s__(g__) 100.0%
+s__Halonotius sp006861665	1	1	s__(g__) 100.0%
+s__Thermococcus sp006274605	1	1	s__(g__) 100.0%

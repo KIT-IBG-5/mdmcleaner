@@ -1,0 +1,333 @@
+GTDB R95 class	Number of genomes	Number of NCBI classes	List of NCBI classes
+c__Gammaproteobacteria	83161	15	c__Gammaproteobacteria 87.85%, c__Betaproteobacteria 11.83%, c__(p__Cyanobacteria) 0.19%, c__Acidithiobacillia 0.05%, c__Hydrogenophilalia 0.04%, c__Alphaproteobacteria 0.03%, c__Candidatus Muproteobacteria 0.01%, c__Bacilli(p__Firmicutes) 0.0%, c__Actinobacteria(p__Actinobacteria) 0.0%, c__Chlamydiia(p__Chlamydiae) 0.0%, c__Clostridia(p__Firmicutes) 0.0%, c__Aquificae(p__Aquificae) 0.0%, c__Sphingobacteriia(p__Bacteroidetes) 0.0%, c__Nitrospira(p__Nitrospirae) 0.0%, c__Epsilonproteobacteria 0.0%
+c__Bacilli	44844	11	c__Bacilli 96.87%, c__Mollicutes(p__Tenericutes) 1.77%, c__Erysipelotrichia 0.77%, c__(p__Cyanobacteria) 0.38%, c__Clostridia 0.17%, c__Actinobacteria(p__Actinobacteria) 0.01%, c__Alphaproteobacteria(p__Proteobacteria) 0.01%, c__Chlamydiia(p__Chlamydiae) 0.0%, c__Gammaproteobacteria(p__Proteobacteria) 0.0%, c__Bacteroidia(p__Bacteroidetes) 0.0%, c__Tissierellia 0.0%
+c__Actinomycetia	17443	10	c__Actinobacteria(p__Actinobacteria) 99.46%, c__Nitriliruptoria(p__Actinobacteria) 0.4%, c__(p__Cyanobacteria) 0.09%, c__Tissierellia(p__Firmicutes) 0.02%, c__Bacilli(p__Firmicutes) 0.02%, c__Rhodothermia(p__Rhodothermaeota) 0.01%, c__Gammaproteobacteria(p__Proteobacteria) 0.01%, c__Acidimicrobiia(p__Actinobacteria) 0.01%, c__Cytophagia(p__Bacteroidetes) 0.01%, c__Clostridia(p__Firmicutes) 0.01%
+c__Alphaproteobacteria	9386	8	c__Alphaproteobacteria 99.3%, c__(p__Cyanobacteria) 0.55%, c__Gammaproteobacteria 0.04%, c__Actinobacteria(p__Actinobacteria) 0.04%, c__Betaproteobacteria 0.02%, c__Bacilli(p__Firmicutes) 0.02%, c__Zetaproteobacteria 0.01%, c__Acidimicrobiia(p__Actinobacteria) 0.01%
+c__Clostridia	7534	10	c__Clostridia(p__Firmicutes) 95.42%, c__(p__Cyanobacteria) 2.36%, c__Tissierellia(p__Firmicutes) 2.03%, c__Bacteroidia(p__Bacteroidetes) 0.05%, c__Bacilli(p__Firmicutes) 0.03%, c__Erysipelotrichia(p__Firmicutes) 0.03%, c__Deltaproteobacteria(p__Proteobacteria) 0.03%, c__Fusobacteriia(p__Fusobacteria) 0.03%, c__Actinobacteria(p__Actinobacteria) 0.01%, c__Anaerolineae(p__Chloroflexi) 0.01%
+c__Bacteroidia	7337	11	c__Bacteroidia(p__Bacteroidetes) 50.16%, c__Flavobacteriia(p__Bacteroidetes) 31.76%, c__Cytophagia(p__Bacteroidetes) 5.59%, c__(p__Cyanobacteria) 4.7%, c__Sphingobacteriia(p__Bacteroidetes) 4.53%, c__Chitinophagia(p__Bacteroidetes) 2.41%, c__Saprospiria(p__Bacteroidetes) 0.74%, c__Alphaproteobacteria(p__Proteobacteria) 0.04%, c__Gammaproteobacteria(p__Proteobacteria) 0.04%, c__Epsilonproteobacteria(p__Proteobacteria) 0.03%, c__Synergistia(p__Synergistetes) 0.01%
+c__Campylobacteria	4985	2	c__Epsilonproteobacteria(p__Proteobacteria) 99.98%, c__(p__Cyanobacteria) 0.02%
+c__Cyanobacteriia	1235	3	c__ 99.76%, c__Gloeobacteria 0.16%, c__Actinobacteria(p__Actinobacteria) 0.08%
+c__Paceibacteria	993	2	c__(p__Cyanobacteria) 99.9%, c__Spirochaetia(p__Spirochaetes) 0.1%
+c__Coriobacteriia	809	3	c__Coriobacteriia(p__Actinobacteria) 95.92%, c__(p__Cyanobacteria) 2.47%, c__Actinobacteria(p__Actinobacteria) 1.61%
+c__Verrucomicrobiae	759	6	c__Verrucomicrobiae(p__Verrucomicrobia) 42.69%, c__Opitutae(p__Verrucomicrobia) 25.43%, c__(p__Cyanobacteria) 24.9%, c__Spartobacteria(p__Verrucomicrobia) 5.4%, c__Methylacidiphilae(p__Verrucomicrobia) 1.45%, c__Alphaproteobacteria(p__Proteobacteria) 0.13%
+c__Leptospirae	635	2	c__Spirochaetia(p__Spirochaetes) 99.69%, c__(p__Cyanobacteria) 0.31%
+c__Spirochaetia	616	2	c__Spirochaetia(p__Spirochaetes) 97.08%, c__(p__Cyanobacteria) 2.92%
+c__Acidimicrobiia	608	4	c__Acidimicrobiia(p__Actinobacteria) 83.06%, c__Actinobacteria(p__Actinobacteria) 13.98%, c__(p__Cyanobacteria) 2.8%, c__Dehalococcoidia(p__Chloroflexi) 0.16%
+c__Microgenomatia	555	2	c__(p__Cyanobacteria) 99.82%, c__Gammaproteobacteria(p__Proteobacteria) 0.18%
+c__Negativicutes	470	3	c__Negativicutes(p__Firmicutes) 98.94%, c__(p__Cyanobacteria) 0.85%, c__Bacilli(p__Firmicutes) 0.21%
+c__Acidobacteriae	466	2	c__Acidobacteriia(p__Acidobacteria) 73.82%, c__(p__Cyanobacteria) 26.18%
+c__Chlamydiia	447	2	c__Chlamydiia(p__Chlamydiae) 94.41%, c__(p__Cyanobacteria) 5.59%
+c__ABY1	389	1	c__(p__Cyanobacteria) 100.0%
+c__Dehalococcoidia	363	3	c__Dehalococcoidia(p__Chloroflexi) 58.13%, c__(p__Cyanobacteria) 41.6%, c__Thermoflexia(p__Chloroflexi) 0.28%
+c__Clostridia_A	346	5	c__Clostridia(p__Firmicutes) 91.62%, c__(p__Cyanobacteria) 7.23%, c__Negativicutes(p__Firmicutes) 0.58%, c__Deltaproteobacteria(p__Proteobacteria) 0.29%, c__Alphaproteobacteria(p__Proteobacteria) 0.29%
+c__Fusobacteriia	265	2	c__Fusobacteriia(p__Fusobacteria) 99.25%, c__(p__Cyanobacteria) 0.75%
+c__Anaerolineae	265	6	c__Anaerolineae(p__Chloroflexi) 66.79%, c__(p__Cyanobacteria) 23.4%, c__Thermoflexia(p__Chloroflexi) 4.15%, c__Ardenticatenia(p__Chloroflexi) 2.26%, c__Caldilineae(p__Chloroflexi) 2.26%, c__Candidatus Thermofonsia(p__Chloroflexi) 1.13%
+c__Rhodothermia	233	4	c__Balneolia(p__Balneolaeota) 65.24%, c__(p__Cyanobacteria) 30.47%, c__Rhodothermia(p__Rhodothermaeota) 3.86%, c__Chitinophagia(p__Bacteroidetes) 0.43%
+c__Planctomycetes	229	3	c__Planctomycetia(p__Planctomycetes) 84.28%, c__(p__Cyanobacteria) 15.28%, c__Phycisphaerae(p__Planctomycetes) 0.44%
+c__Gemmatimonadetes	207	3	c__(p__Cyanobacteria) 77.29%, c__Gemmatimonadetes(p__Gemmatimonadetes) 22.22%, c__Gammaproteobacteria(p__Proteobacteria) 0.48%
+c__Desulfovibrionia	197	2	c__Deltaproteobacteria(p__Proteobacteria) 99.49%, c__Bacteroidia(p__Bacteroidetes) 0.51%
+c__Deinococci	192	2	c__Deinococci(p__Deinococcus-Thermus) 99.48%, c__(p__Cyanobacteria) 0.52%
+c__Phycisphaerae	192	3	c__Phycisphaerae(p__Planctomycetes) 60.94%, c__Planctomycetia(p__Planctomycetes) 25.0%, c__(p__Cyanobacteria) 14.06%
+c__Dormibacteria	158	1	c__(p__Cyanobacteria) 100.0%
+c__Thermotogae	156	2	c__Thermotogae(p__Thermotogae) 97.44%, c__(p__Cyanobacteria) 2.56%
+c__Saccharimonadia	152	1	c__(p__Cyanobacteria) 100.0%
+c__Marinisomatia	152	1	c__(p__Cyanobacteria) 100.0%
+c__Vampirovibrionia	140	5	c__ 89.29%, c__Clostridia(p__Firmicutes) 5.71%, c__Gammaproteobacteria(p__Proteobacteria) 2.14%, c__Fusobacteriia(p__Fusobacteria) 1.43%, c__Spirochaetia(p__Spirochaetes) 1.43%
+c__Gracilibacteria	135	2	c__(p__Cyanobacteria) 66.67%, c__Candidatus Peribacteria(p__Candidatus Peregrinibacteria) 33.33%
+c__Desulfobacteria	131	2	c__Deltaproteobacteria(p__Proteobacteria) 99.24%, c__(p__Cyanobacteria) 0.76%
+c__Desulfuromonadia	124	1	c__Deltaproteobacteria(p__Proteobacteria) 100.0%
+c__Thermoleophilia	124	4	c__Actinobacteria(p__Actinobacteria) 59.68%, c__Thermoleophilia(p__Actinobacteria) 32.26%, c__(p__Cyanobacteria) 6.45%, c__Rubrobacteria(p__Actinobacteria) 1.61%
+c__Kiritimatiellae	123	3	c__(p__Cyanobacteria) 69.92%, c__Kiritimatiellae(p__Kiritimatiellaeota) 27.64%, c__Lentisphaeria(p__Lentisphaerae) 2.44%
+c__Koll11	117	2	c__(p__Cyanobacteria) 97.44%, c__Planctomycetia(p__Planctomycetes) 2.56%
+c__Syntrophia	115	1	c__Deltaproteobacteria(p__Proteobacteria) 100.0%
+c__Paceibacteria_A	111	1	c__(p__Cyanobacteria) 100.0%
+c__Ellin6529	106	2	c__(p__Cyanobacteria) 99.06%, c__Thermomicrobia(p__Chloroflexi) 0.94%
+c__Nitrospiria	104	3	c__Nitrospira(p__Nitrospirae) 67.31%, c__(p__Cyanobacteria) 29.81%, c__Betaproteobacteria(p__Proteobacteria) 2.88%
+c__Synergistia	103	3	c__Synergistia(p__Synergistetes) 96.12%, c__(p__Cyanobacteria) 2.91%, c__Alphaproteobacteria(p__Proteobacteria) 0.97%
+c__Myxococcia	97	2	c__Deltaproteobacteria(p__Proteobacteria) 98.97%, c__(p__Cyanobacteria) 1.03%
+c__Thermodesulfovibrionia	96	2	c__(p__Cyanobacteria) 52.08%, c__Nitrospira(p__Nitrospirae) 47.92%
+c__Polyangia	93	2	c__Deltaproteobacteria(p__Proteobacteria) 98.92%, c__(p__Cyanobacteria) 1.08%
+c__Dethiobacteria	92	2	c__Clostridia(p__Firmicutes) 90.22%, c__(p__Cyanobacteria) 9.78%
+c__Desulfotomaculia	90	2	c__Clostridia(p__Firmicutes) 83.33%, c__(p__Cyanobacteria) 16.67%
+c__Thermoanaerobacteria	86	1	c__Clostridia(p__Firmicutes) 100.0%
+c__Elusimicrobia	85	2	c__(p__Cyanobacteria) 92.94%, c__Elusimicrobia(p__Elusimicrobia) 7.06%
+c__WWE3	83	1	c__(p__Cyanobacteria) 100.0%
+c__Halanaerobiia	83	2	c__Clostridia(p__Firmicutes) 95.18%, c__(p__Cyanobacteria) 4.82%
+c__Desulfobulbia	80	2	c__Deltaproteobacteria(p__Proteobacteria) 96.25%, c__(p__Cyanobacteria) 3.75%
+c__Ignavibacteria	79	2	c__Ignavibacteria(p__Ignavibacteriae) 77.22%, c__(p__Cyanobacteria) 22.78%
+c__UBA10030	79	2	c__(p__Cyanobacteria) 74.68%, c__Ignavibacteria(p__Ignavibacteriae) 25.32%
+c__Bacteriovoracia	78	3	c__Oligoflexia(p__Proteobacteria) 93.59%, c__Deltaproteobacteria(p__Proteobacteria) 3.85%, c__Epsilonproteobacteria(p__Proteobacteria) 2.56%
+c__Fibrobacteria	77	2	c__Fibrobacteria(p__Fibrobacteres) 94.81%, c__(p__Cyanobacteria) 5.19%
+c__Vicinamibacteria	69	4	c__(p__Cyanobacteria) 95.65%, c__Gammaproteobacteria(p__Proteobacteria) 1.45%, c__Acidobacteriia(p__Acidobacteria) 1.45%, c__Vicinamibacteria(p__Acidobacteria) 1.45%
+c__Methylomirabilia	68	1	c__(p__Cyanobacteria) 100.0%
+c__Syntrophomonadia	67	2	c__Clostridia(p__Firmicutes) 98.51%, c__(p__Cyanobacteria) 1.49%
+c__Cloacimonadia	64	1	c__(p__Cyanobacteria) 100.0%
+c__Bdellovibrionia	61	2	c__Oligoflexia(p__Proteobacteria) 98.36%, c__(p__Cyanobacteria) 1.64%
+c__Desulfitobacteriia	59	1	c__Clostridia(p__Firmicutes) 100.0%
+c__Eremiobacteria	58	1	c__(p__Cyanobacteria) 100.0%
+c__SAR324	57	3	c__Deltaproteobacteria(p__Proteobacteria) 85.96%, c__Candidatus Lambdaproteobacteria(p__Proteobacteria) 8.77%, c__(p__Cyanobacteria) 5.26%
+c__Zetaproteobacteria	52	3	c__Zetaproteobacteria 92.31%, c__(p__Cyanobacteria) 5.77%, c__Alphaproteobacteria 1.92%
+c__Lentisphaeria	51	2	c__Lentisphaeria(p__Lentisphaerae) 54.9%, c__(p__Cyanobacteria) 45.1%
+c__Chloroflexia	51	3	c__Chloroflexia(p__Chloroflexi) 45.1%, c__Thermomicrobia(p__Chloroflexi) 27.45%, c__(p__Cyanobacteria) 27.45%
+c__Brachyspirae	50	1	c__Spirochaetia(p__Spirochaetes) 100.0%
+c__Brocadiae	46	3	c__Candidatus Brocadiae(p__Planctomycetes) 58.7%, c__(p__Cyanobacteria) 39.13%, c__Planctomycetia(p__Planctomycetes) 2.17%
+c__Blastocatellia	44	2	c__(p__Cyanobacteria) 54.55%, c__Blastocatellia(p__Acidobacteria) 45.45%
+c__Aquificae	42	3	c__Aquificae(p__Aquificae) 92.86%, c__(p__Cyanobacteria) 4.76%, c__Gammaproteobacteria(p__Proteobacteria) 2.38%
+c__Fimbriimonadia	41	3	c__(p__Cyanobacteria) 51.22%, c__Chthonomonadetes(p__Armatimonadetes) 46.34%, c__Fimbriimonadia(p__Armatimonadetes) 2.44%
+c__Kapabacteria	39	2	c__(p__Cyanobacteria) 51.28%, c__Ignavibacteria(p__Ignavibacteriae) 48.72%
+c__Dojkabacteria	38	1	c__(p__Cyanobacteria) 100.0%
+c__Alicyclobacillia	37	2	c__Bacilli 97.3%, c__(p__Cyanobacteria) 2.7%
+c__Binatia	37	2	c__Deltaproteobacteria(p__Proteobacteria) 83.78%, c__(p__Cyanobacteria) 16.22%
+c__Doudnabacteria	36	1	c__(p__Cyanobacteria) 100.0%
+c__Bipolaricaulia	35	1	c__(p__Cyanobacteria) 100.0%
+c__Babeliae	35	3	c__(p__Cyanobacteria) 91.43%, c__Candidatus Babeliae(p__) 5.71%, c__Epsilonproteobacteria(p__Proteobacteria) 2.86%
+c__Moorellia	34	2	c__Clostridia(p__Firmicutes) 94.12%, c__(p__Cyanobacteria) 5.88%
+c__UBA1135	33	2	c__(p__Cyanobacteria) 69.7%, c__Planctomycetia(p__Planctomycetes) 30.3%
+c__Aminicenantia	32	2	c__(p__Cyanobacteria) 96.88%, c__Chrysiogenetes(p__Chrysiogenetes) 3.12%
+c__Thermoanaerobaculia	31	3	c__(p__Cyanobacteria) 77.42%, c__Holophagae(p__Acidobacteria) 19.35%, c__Thermoanaerobaculia(p__Acidobacteria) 3.23%
+c__Limnochordia	31	3	c__Clostridia(p__Firmicutes) 41.94%, c__(p__Cyanobacteria) 41.94%, c__Limnochordia(p__Firmicutes) 16.13%
+c__UBA4882	30	1	c__(p__Cyanobacteria) 100.0%
+c__Leptospirillia	30	2	c__Nitrospira(p__Nitrospirae) 76.67%, c__(p__Cyanobacteria) 23.33%
+c__Caldisericia	29	3	c__(p__Cyanobacteria) 65.52%, c__Candidatus Cryosericia(p__Candidatus Cryosericota) 24.14%, c__Caldisericia(p__Caldiserica) 10.34%
+c__WOR-1	27	1	c__(p__Cyanobacteria) 100.0%
+c__GWC2-55-46	27	2	c__Deltaproteobacteria(p__Proteobacteria) 96.3%, c__(p__Cyanobacteria) 3.7%
+c__Syntrophorhabdia	26	1	c__Deltaproteobacteria(p__Proteobacteria) 100.0%
+c__Bradimonadia	26	2	c__Deltaproteobacteria(p__Proteobacteria) 92.31%, c__(p__Cyanobacteria) 7.69%
+c__UBA1384	25	1	c__(p__Cyanobacteria) 100.0%
+c__Peptococcia	25	2	c__Clostridia(p__Firmicutes) 96.0%, c__(p__Cyanobacteria) 4.0%
+c__UBA10199	25	2	c__Deltaproteobacteria(p__Proteobacteria) 96.0%, c__Nitrospira(p__Nitrospirae) 4.0%
+c__Nitrospinia	25	2	c__Nitrospinia(p__Nitrospinae) 68.0%, c__(p__Cyanobacteria) 32.0%
+c__BSN033	24	1	c__Deltaproteobacteria(p__Proteobacteria) 100.0%
+c__Kryptonia	24	1	c__(p__Cyanobacteria) 100.0%
+c__Thermodesulfobacteria	24	2	c__Thermodesulfobacteria(p__Thermodesulfobacteria) 95.83%, c__(p__Cyanobacteria) 4.17%
+c__UBA796	24	3	c__(p__Cyanobacteria) 50.0%, c__Deltaproteobacteria(p__Proteobacteria) 45.83%, c__Alphaproteobacteria(p__Proteobacteria) 4.17%
+c__Hydrogenedentia	23	1	c__(p__Cyanobacteria) 100.0%
+c__UBA2968	23	2	c__(p__Cyanobacteria) 91.3%, c__Gemmatimonadetes(p__Gemmatimonadetes) 8.7%
+c__SHA-98	23	2	c__(p__Cyanobacteria) 91.3%, c__Clostridia(p__Firmicutes) 8.7%
+c__Endomicrobia	23	3	c__(p__Cyanobacteria) 82.61%, c__Endomicrobia(p__Elusimicrobia) 8.7%, c__Elusimicrobia(p__Elusimicrobia) 8.7%
+c__UBA1144	23	4	c__(p__Cyanobacteria) 73.91%, c__Deltaproteobacteria(p__Proteobacteria) 17.39%, c__Spirochaetia(p__Spirochaetes) 4.35%, c__Thermodesulfobacteria(p__Thermodesulfobacteria) 4.35%
+c__Syntrophobacteria	22	1	c__Deltaproteobacteria(p__Proteobacteria) 100.0%
+c__CPR2	22	1	c__(p__Cyanobacteria) 100.0%
+c__Mahellia_A	22	2	c__(p__Cyanobacteria) 63.64%, c__Clostridia(p__Firmicutes) 36.36%
+c__Ktedonobacteria	22	2	c__Ktedonobacteria(p__Chloroflexi) 50.0%, c__(p__Cyanobacteria) 50.0%
+c__WGA-4E	21	1	c__(p__Cyanobacteria) 100.0%
+c__UBA4738	21	2	c__Actinobacteria(p__Actinobacteria) 76.19%, c__(p__Cyanobacteria) 23.81%
+c__JS1	19	1	c__(p__Cyanobacteria) 100.0%
+c__MBNT15	19	2	c__Deltaproteobacteria(p__Proteobacteria) 89.47%, c__(p__Cyanobacteria) 10.53%
+c__Thermosediminibacteria	19	2	c__Clostridia(p__Firmicutes) 84.21%, c__(p__Cyanobacteria) 15.79%
+c__UBA2214	19	3	c__(p__Cyanobacteria) 73.68%, c__Calditrichae(p__Calditrichaeota) 21.05%, c__Deferribacteres(p__Deferribacteres) 5.26%
+c__UBA9160	19	3	c__Deltaproteobacteria(p__Proteobacteria) 63.16%, c__(p__Cyanobacteria) 31.58%, c__Spirochaetia(p__Spirochaetes) 5.26%
+c__MSB-5A5	18	1	c__(p__Cyanobacteria) 100.0%
+c__UBA8108	18	2	c__(p__Cyanobacteria) 83.33%, c__Planctomycetia(p__Planctomycetes) 16.67%
+c__Proteinivoracia	18	2	c__(p__Cyanobacteria) 77.78%, c__Clostridia(p__Firmicutes) 22.22%
+c__Omnitrophia	17	1	c__(p__Cyanobacteria) 100.0%
+c__UBA9042	17	2	c__Deltaproteobacteria(p__Proteobacteria) 52.94%, c__(p__Cyanobacteria) 47.06%
+c__Marinamargulisbacteria	17	4	c__(p__Cyanobacteria) 52.94%, c__Actinobacteria(p__Actinobacteria) 17.65%, c__Candidatus Marinamargulisbacteria 17.65%, c__Alphaproteobacteria(p__Proteobacteria) 11.76%
+c__Sulfobacillia	16	1	c__Clostridia(p__Firmicutes) 100.0%
+c__Magnetococcia	16	1	c__Alphaproteobacteria 100.0%
+c__Bdellovibrionia_A	16	1	c__Oligoflexia(p__Proteobacteria) 100.0%
+c__AC1	16	1	c__(p__Cyanobacteria) 100.0%
+c__SLMV01	16	1	c__Clostridia(p__Firmicutes) 100.0%
+c__Kazan-3B-28	14	1	c__(p__Cyanobacteria) 100.0%
+c__Holophagae	14	2	c__Holophagae(p__Acidobacteria) 64.29%, c__(p__Cyanobacteria) 35.71%
+c__DTU015	14	2	c__(p__Cyanobacteria) 57.14%, c__Clostridia(p__Firmicutes) 42.86%
+c__UBA1414	13	2	c__Actinobacteria(p__Actinobacteria) 84.62%, c__(p__Cyanobacteria) 15.38%
+c__UBA9087	13	2	c__(p__Cyanobacteria) 76.92%, c__Actinobacteria(p__Actinobacteria) 23.08%
+c__Fermentibacteria	13	2	c__(p__Cyanobacteria) 76.92%, c__Candidatus Fermentibacteria (class)(p__Candidatus Fermentibacteria) 23.08%
+c__Andersenbacteria	12	1	c__(p__Cyanobacteria) 100.0%
+c__RBG-16-71-46	12	1	c__(p__Cyanobacteria) 100.0%
+c__WOR-3	11	1	c__(p__Cyanobacteria) 100.0%
+c__Mor1	11	1	c__(p__Cyanobacteria) 100.0%
+c__Krumholzibacteria	11	1	c__(p__Cyanobacteria) 100.0%
+c__UBP9	11	1	c__(p__Cyanobacteria) 100.0%
+c__UBA4802	11	2	c__(p__Cyanobacteria) 54.55%, c__Spirochaetia(p__Spirochaetes) 45.45%
+c__Desulfurobacteriia	10	1	c__Aquificae(p__Aquificae) 100.0%
+c__CSP1-3	10	1	c__(p__Cyanobacteria) 100.0%
+c__32-111	10	1	c__(p__Cyanobacteria) 100.0%
+c__UBA9942	10	1	c__(p__Cyanobacteria) 100.0%
+c__Oligoflexia	10	3	c__Oligoflexia(p__Proteobacteria) 80.0%, c__(p__Cyanobacteria) 10.0%, c__Deltaproteobacteria(p__Proteobacteria) 10.0%
+c__Thermincolia	10	2	c__Clostridia(p__Firmicutes) 70.0%, c__(p__Cyanobacteria) 30.0%
+c__Desulfurellia	9	1	c__Deltaproteobacteria(p__Proteobacteria) 100.0%
+c__CPR3	9	1	c__(p__Cyanobacteria) 100.0%
+c__UBA1551	9	1	c__(p__Cyanobacteria) 100.0%
+c__Sericytochromatia	9	2	c__ 66.67%, c__Candidatus Sericytochromatia(p__) 33.33%
+c__Desulfobaccia	8	1	c__Deltaproteobacteria(p__Proteobacteria) 100.0%
+c__Caldatribacteriia	8	1	c__(p__Cyanobacteria) 100.0%
+c__OXYB2-FULL-49-7	8	1	c__(p__Cyanobacteria) 100.0%
+c__UBA4055	8	1	c__(p__Cyanobacteria) 100.0%
+c__Dehalobacteriia	8	1	c__Clostridia(p__Firmicutes) 100.0%
+c__UBA727	8	1	c__Deltaproteobacteria(p__Proteobacteria) 100.0%
+c__UBA2242	8	1	c__(p__Cyanobacteria) 100.0%
+c__Rubrobacteria	8	2	c__Rubrobacteria(p__Actinobacteria) 87.5%, c__Actinobacteria(p__Actinobacteria) 12.5%
+c__Abditibacteria	8	2	c__(p__Cyanobacteria) 87.5%, c__Abditibacteria(p__Abditibacteriota) 12.5%
+c__Sumerlaeia	8	2	c__(p__Cyanobacteria) 87.5%, c__Candidatus Sumerlaeia 12.5%
+c__Nitrospiria_A	8	2	c__(p__Cyanobacteria) 75.0%, c__Nitrospira(p__Nitrospirae) 25.0%
+c__GWE2-31-10	8	2	c__(p__Cyanobacteria) 75.0%, c__Spirochaetia(p__Spirochaetes) 25.0%
+c__Riflemargulisbacteria	8	2	c__(p__Cyanobacteria) 75.0%, c__Candidatus Riflemargulisbacteria 25.0%
+c__Calditrichia	8	2	c__(p__Cyanobacteria) 75.0%, c__Calditrichae(p__Calditrichaeota) 25.0%
+c__Hydrothermia	7	1	c__(p__Cyanobacteria) 100.0%
+c__Aerophobia	7	1	c__(p__Cyanobacteria) 100.0%
+c__UBA8919	7	1	c__(p__Cyanobacteria) 100.0%
+c__GWA2-38-11	7	1	c__(p__Cyanobacteria) 100.0%
+c__O2-12-FULL-43-9	7	1	c__Deltaproteobacteria(p__Proteobacteria) 100.0%
+c__UBA5377	7	1	c__(p__Cyanobacteria) 100.0%
+c__SLGR01	7	1	c__(p__Cyanobacteria) 100.0%
+c__CG2-30-70-394	7	2	c__(p__Cyanobacteria) 85.71%, c__Chrysiogenetes(p__Chrysiogenetes) 14.29%
+c__Ozemobacteria	7	2	c__(p__Cyanobacteria) 85.71%, c__Candidatus Ozemobacteria 14.29%
+c__DTU065	7	2	c__(p__Cyanobacteria) 85.71%, c__Clostridia(p__Firmicutes) 14.29%
+c__Dissulfuribacteria	7	3	c__Deltaproteobacteria(p__Proteobacteria) 71.43%, c__(p__Cyanobacteria) 14.29%, c__Thermodesulfobacteria(p__Thermodesulfobacteria) 14.29%
+c__Desulfarculia	6	1	c__Deltaproteobacteria(p__Proteobacteria) 100.0%
+c__AB16	6	1	c__(p__Cyanobacteria) 100.0%
+c__Endomicrobia_A	6	1	c__(p__Cyanobacteria) 100.0%
+c__CG2-30-53-67	6	1	c__(p__Cyanobacteria) 100.0%
+c__UBA1177	6	1	c__(p__Cyanobacteria) 100.0%
+c__Thermaerobacteria	6	2	c__Clostridia(p__Firmicutes) 83.33%, c__(p__Cyanobacteria) 16.67%
+c__CG2-30-40-21	6	2	c__(p__Cyanobacteria) 83.33%, c__Nitrospira(p__Nitrospirae) 16.67%
+c__UBA8248	6	2	c__(p__Cyanobacteria) 66.67%, c__Nitrospinia(p__Nitrospinae) 33.33%
+c__GCA-002687715	6	2	c__Planctomycetia(p__Planctomycetes) 66.67%, c__(p__Cyanobacteria) 33.33%
+c__RBG-13-55-18	6	2	c__(p__Cyanobacteria) 50.0%, c__Actinobacteria(p__Actinobacteria) 50.0%
+c__Chitinivibrionia	6	4	c__Chitinispirillia(p__Fibrobacteres) 33.33%, c__(p__Cyanobacteria) 33.33%, c__Chitinivibrionia(p__Fibrobacteres) 16.67%, c__Fibrobacteria(p__Fibrobacteres) 16.67%
+c__UBA3072	5	1	c__(p__Cyanobacteria) 100.0%
+c__UBA3073	5	1	c__(p__Cyanobacteria) 100.0%
+c__CG03	5	1	c__(p__Cyanobacteria) 100.0%
+c__DTU084	5	2	c__(p__Cyanobacteria) 80.0%, c__Clostridia(p__Firmicutes) 20.0%
+c__UBA11346	5	2	c__(p__Cyanobacteria) 80.0%, c__Planctomycetia(p__Planctomycetes) 20.0%
+c__UBA9217	5	2	c__(p__Cyanobacteria) 60.0%, c__Nitrospira(p__Nitrospirae) 40.0%
+c__UBA3569	5	2	c__(p__Cyanobacteria) 60.0%, c__Clostridia(p__Firmicutes) 40.0%
+c__UBA2361	5	2	c__(p__Cyanobacteria) 60.0%, c__Deltaproteobacteria(p__Proteobacteria) 40.0%
+c__DG-26	4	1	c__(p__Cyanobacteria) 100.0%
+c__Entotheonellia	4	1	c__(p__Cyanobacteria) 100.0%
+c__Calescibacteriia	4	1	c__(p__Cyanobacteria) 100.0%
+c__D2-FULL-39-29	4	1	c__(p__Cyanobacteria) 100.0%
+c__UBA8468	4	1	c__(p__Cyanobacteria) 100.0%
+c__Desulfomonilia_A	4	1	c__Deltaproteobacteria(p__Proteobacteria) 100.0%
+c__Latescibacteria_A	4	1	c__(p__Cyanobacteria) 100.0%
+c__UBA6098	4	1	c__(p__Cyanobacteria) 100.0%
+c__UBA6777	4	1	c__Deltaproteobacteria(p__Proteobacteria) 100.0%
+c__UBA890	4	1	c__(p__Cyanobacteria) 100.0%
+c__UBA6624	4	1	c__(p__Cyanobacteria) 100.0%
+c__UBA6911	4	1	c__(p__Cyanobacteria) 100.0%
+c__UBA2235	4	1	c__(p__Cyanobacteria) 100.0%
+c__PGYV01	4	1	c__(p__Cyanobacteria) 100.0%
+c__Vicinamibacteria_A	4	1	c__(p__Cyanobacteria) 100.0%
+c__UBA994	4	2	c__(p__Cyanobacteria) 75.0%, c__Clostridia(p__Firmicutes) 25.0%
+c__Defferisomatia	4	2	c__Deltaproteobacteria(p__Proteobacteria) 75.0%, c__(p__Cyanobacteria) 25.0%
+c__SZUA-79	4	2	c__Deltaproteobacteria(p__Proteobacteria) 75.0%, c__(p__Cyanobacteria) 25.0%
+c__Thermodesulfobiia	3	1	c__Clostridia(p__Firmicutes) 100.0%
+c__SM23-31	3	1	c__(p__Cyanobacteria) 100.0%
+c__Moduliflexia	3	1	c__(p__Cyanobacteria) 100.0%
+c__UBA9980	3	1	c__(p__Cyanobacteria) 100.0%
+c__UBA8481	3	1	c__(p__Cyanobacteria) 100.0%
+c__MVCY01	3	1	c__(p__Cyanobacteria) 100.0%
+c__4484-211	3	1	c__(p__Cyanobacteria) 100.0%
+c__UBA3054	3	1	c__(p__Cyanobacteria) 100.0%
+c__UBA11872	3	1	c__(p__Cyanobacteria) 100.0%
+c__FAC87	3	1	c__Oligoflexia(p__Proteobacteria) 100.0%
+c__UBA6262	3	1	c__(p__Cyanobacteria) 100.0%
+c__UBA8742	3	1	c__(p__Cyanobacteria) 100.0%
+c__BMS3Abin14	3	1	c__(p__Cyanobacteria) 100.0%
+c__Palsa-1180	3	1	c__(p__Cyanobacteria) 100.0%
+c__B26-G2	3	1	c__(p__Cyanobacteria) 100.0%
+c__E44-bin80	3	1	c__(p__Cyanobacteria) 100.0%
+c__DTU014	3	2	c__Clostridia(p__Firmicutes) 66.67%, c__(p__Cyanobacteria) 33.33%
+c__Brevinematia	3	2	c__(p__Cyanobacteria) 66.67%, c__Spirochaetia(p__Spirochaetes) 33.33%
+c__TC1	3	2	c__(p__Cyanobacteria) 66.67%, c__Clostridia(p__Firmicutes) 33.33%
+c__UBA2394	3	2	c__Oligoflexia(p__Proteobacteria) 66.67%, c__Deltaproteobacteria(p__Proteobacteria) 33.33%
+c__DTU030	3	2	c__(p__Cyanobacteria) 66.67%, c__Clostridia(p__Firmicutes) 33.33%
+c__UBA6919	3	2	c__Spirochaetia(p__Spirochaetes) 66.67%, c__(p__Cyanobacteria) 33.33%
+c__Symbiobacteriia	3	2	c__(p__Cyanobacteria) 66.67%, c__Clostridia(p__Firmicutes) 33.33%
+c__PUPC01	3	2	c__(p__Cyanobacteria) 66.67%, c__Candidatus Brocadiae(p__Planctomycetes) 33.33%
+c__XYA12-FULL-58-9	3	2	c__Oligoflexia(p__Proteobacteria) 66.67%, c__Deltaproteobacteria(p__Proteobacteria) 33.33%
+c__SZUA-365	3	3	c__Gammaproteobacteria(p__Proteobacteria) 33.33%, c__Ignavibacteria(p__Ignavibacteriae) 33.33%, c__(p__Cyanobacteria) 33.33%
+c__Natranaerobiia	2	1	c__Clostridia(p__Firmicutes) 100.0%
+c__Desulfofervidia	2	1	c__Deltaproteobacteria(p__Proteobacteria) 100.0%
+c__GBS-1	2	1	c__(p__Cyanobacteria) 100.0%
+c__OLB16	2	1	c__(p__Cyanobacteria) 100.0%
+c__Desulfuribacillia	2	1	c__Bacilli 100.0%
+c__2-12-FULL-62-27	2	1	c__(p__Cyanobacteria) 100.0%
+c__AABM5-125-24	2	1	c__(p__Cyanobacteria) 100.0%
+c__4572-55	2	1	c__(p__Cyanobacteria) 100.0%
+c__4484-213	2	1	c__(p__Cyanobacteria) 100.0%
+c__UBA5359	2	1	c__(p__Cyanobacteria) 100.0%
+c__Bin61	2	1	c__(p__Cyanobacteria) 100.0%
+c__UBA5214	2	1	c__(p__Cyanobacteria) 100.0%
+c__UBA5177	2	1	c__(p__Cyanobacteria) 100.0%
+c__UBA6191	2	1	c__(p__Cyanobacteria) 100.0%
+c__UBA4092	2	1	c__(p__Cyanobacteria) 100.0%
+c__UBA6077	2	1	c__(p__Cyanobacteria) 100.0%
+c__SZUA-182	2	1	c__(p__Cyanobacteria) 100.0%
+c__SZUA-567	2	1	c__(p__Cyanobacteria) 100.0%
+c__PUNC01	2	1	c__(p__Cyanobacteria) 100.0%
+c__J058	2	1	c__(p__Cyanobacteria) 100.0%
+c__T1Sed10-126	2	1	c__(p__Cyanobacteria) 100.0%
+c__J132	2	1	c__(p__Cyanobacteria) 100.0%
+c__SURF-5	2	1	c__(p__Cyanobacteria) 100.0%
+c__B3-LCP	2	1	c__(p__Cyanobacteria) 100.0%
+c__Termititenacia	2	1	c__Candidatus Termititenacia 100.0%
+c__SYMT01	2	1	c__Actinobacteria(p__Actinobacteria) 100.0%
+c__SORT01	2	1	c__(p__Cyanobacteria) 100.0%
+c__DG-23	2	2	c__(p__Cyanobacteria) 50.0%, c__Candidatus Brocadiae(p__Planctomycetes) 50.0%
+c__Thermosulfidibacteria	2	2	c__Aquificae(p__Aquificae) 50.0%, c__(p__Cyanobacteria) 50.0%
+c__MHYJ01	2	2	c__(p__Cyanobacteria) 50.0%, c__Planctomycetia(p__Planctomycetes) 50.0%
+c__BOG-944	2	2	c__(p__Cyanobacteria) 50.0%, c__Armatimonadia(p__Armatimonadetes) 50.0%
+c__Poseidoniia	2	2	c__Alphaproteobacteria(p__Proteobacteria) 50.0%, c__Verrucomicrobiae(p__Verrucomicrobia) 50.0%
+c__Desulfomonilia	1	1	c__Deltaproteobacteria(p__Proteobacteria) 100.0%
+c__Mahellia	1	1	c__Clostridia(p__Firmicutes) 100.0%
+c__SDB-A	1	1	c__Deltaproteobacteria(p__Proteobacteria) 100.0%
+c__DG-26_A	1	1	c__(p__Cyanobacteria) 100.0%
+c__Latescibacteria	1	1	c__(p__Cyanobacteria) 100.0%
+c__GCA-001730085	1	1	c__(p__Cyanobacteria) 100.0%
+c__RBG-16-64-22	1	1	c__(p__Cyanobacteria) 100.0%
+c__UBA8477	1	1	c__(p__Cyanobacteria) 100.0%
+c__2-12-FULL-45-22	1	1	c__(p__Cyanobacteria) 100.0%
+c__Glassbacteria	1	1	c__(p__Cyanobacteria) 100.0%
+c__YA12-FULL-61-11	1	1	c__Deltaproteobacteria(p__Proteobacteria) 100.0%
+c__CG2-30-54-11	1	1	c__(p__Cyanobacteria) 100.0%
+c__RBG-13-61-14	1	1	c__Deltaproteobacteria(p__Proteobacteria) 100.0%
+c__RBG-13-66-14	1	1	c__(p__Cyanobacteria) 100.0%
+c__4484-49	1	1	c__(p__Cyanobacteria) 100.0%
+c__JdFR-97	1	1	c__Deltaproteobacteria(p__Proteobacteria) 100.0%
+c__4484-113	1	1	c__Planctomycetia(p__Planctomycetes) 100.0%
+c__UBA5435	1	1	c__(p__Cyanobacteria) 100.0%
+c__UBA4820	1	1	c__(p__Cyanobacteria) 100.0%
+c__UBA6099	1	1	c__(p__Cyanobacteria) 100.0%
+c__UBA4733	1	1	c__(p__Cyanobacteria) 100.0%
+c__UBA6266	1	1	c__(p__Cyanobacteria) 100.0%
+c__UBA10988	1	1	c__(p__Cyanobacteria) 100.0%
+c__UBA7526	1	1	c__(p__Cyanobacteria) 100.0%
+c__GCA-2686955	1	1	c__(p__Cyanobacteria) 100.0%
+c__ARS69	1	1	c__(p__Cyanobacteria) 100.0%
+c__UBA5829	1	1	c__(p__Cyanobacteria) 100.0%
+c__UBA2233	1	1	c__(p__Cyanobacteria) 100.0%
+c__UBA1439	1	1	c__(p__Cyanobacteria) 100.0%
+c__UBA7883	1	1	c__Nitrospinia(p__Nitrospinae) 100.0%
+c__UBA5301	1	1	c__(p__Cyanobacteria) 100.0%
+c__GCA-002792135	1	1	c__(p__Cyanobacteria) 100.0%
+c__FEN-1099	1	1	c__Deltaproteobacteria(p__Proteobacteria) 100.0%
+c__RUG730	1	1	c__Elusimicrobia(p__Elusimicrobia) 100.0%
+c__Muirbacteriia	1	1	c__(p__Cyanobacteria) 100.0%
+c__HRBIN11	1	1	c__(p__Cyanobacteria) 100.0%
+c__HRBIN17	1	1	c__(p__Cyanobacteria) 100.0%
+c__HRBIN16	1	1	c__(p__Cyanobacteria) 100.0%
+c__FEN-1346	1	1	c__Planctomycetia(p__Planctomycetes) 100.0%
+c__B62-G9	1	1	c__(p__Cyanobacteria) 100.0%
+c__UBA9089	1	1	c__(p__Cyanobacteria) 100.0%
+c__J088	1	1	c__(p__Cyanobacteria) 100.0%
+c__T1SED10-198M	1	1	c__(p__Cyanobacteria) 100.0%
+c__UBA12135	1	1	c__Spirochaetia(p__Spirochaetes) 100.0%
+c__CSSED10-310	1	1	c__(p__Cyanobacteria) 100.0%
+c__RPQS01	1	1	c__(p__Cyanobacteria) 100.0%
+c__B130-G9	1	1	c__(p__Cyanobacteria) 100.0%
+c__B64-G9	1	1	c__Deltaproteobacteria(p__Proteobacteria) 100.0%
+c__B129-G9	1	1	c__(p__Cyanobacteria) 100.0%
+c__NPL-UPA2	1	1	c__(p__Cyanobacteria) 100.0%
+c__SURF-8	1	1	c__Deltaproteobacteria(p__Proteobacteria) 100.0%
+c__SURF-26	1	1	c__(p__Cyanobacteria) 100.0%
+c__B143-G9	1	1	c__(p__Cyanobacteria) 100.0%
+c__UBA9088	1	1	c__(p__Cyanobacteria) 100.0%
+c__B3-B38	1	1	c__(p__Cyanobacteria) 100.0%
+c__SBBH01	1	1	c__Planctomycetia(p__Planctomycetes) 100.0%
+c__FW602-bin22	1	1	c__(p__Cyanobacteria) 100.0%
+c__SOKK01	1	1	c__(p__Cyanobacteria) 100.0%
+c__QYQD01	1	1	c__Deltaproteobacteria(p__Proteobacteria) 100.0%
+c__SLNR01	1	1	c__(p__Cyanobacteria) 100.0%

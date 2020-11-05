@@ -1,0 +1,22 @@
+GTDB R95 phylum	Number of genomes	Number of NCBI phyla	List of NCBI phyla
+p__Halobacteriota	972	2	p__Euryarchaeota 99.38%, p__ 0.62%
+p__Thermoplasmatota	718	2	p__Euryarchaeota 99.86%, p__ 0.14%
+p__Thermoproteota	566	10	p__Crenarchaeota 45.05%, p__Thaumarchaeota 28.8%, p__Candidatus Bathyarchaeota 16.61%, p__Candidatus Verstraetearchaeota 2.65%, p__ 1.94%, p__Candidatus Korarchaeota 1.77%, p__Candidatus Marsarchaeota 1.77%, p__Candidatus Geothermarchaeota 0.71%, p__Euryarchaeota 0.35%, p__Candidatus Nezhaarchaeota 0.35%
+p__Methanobacteriota	324	2	p__Euryarchaeota 99.69%, p__ 0.31%
+p__Nanoarchaeota	164	5	p__ 42.68%, p__Candidatus Woesearchaeota 39.02%, p__Nanoarchaeota 9.76%, p__Candidatus Parvarchaeota 7.93%, p__Euryarchaeota 0.61%
+p__Asgardarchaeota	37	6	p__Candidatus Thorarchaeota 43.24%, p__Candidatus Lokiarchaeota 32.43%, p__Candidatus Heimdallarchaeota 13.51%, p__Candidatus Helarchaeota 5.41%, p__Candidatus Odinarchaeota 2.7%, p__ 2.7%
+p__Micrarchaeota	35	3	p__Candidatus Micrarchaeota 91.43%, p__Euryarchaeota 5.71%, p__ 2.86%
+p__Altarchaeota	18	2	p__Candidatus Altiarchaeota 94.44%, p__Euryarchaeota 5.56%
+p__Aenigmatarchaeota	18	3	p__Candidatus Aenigmarchaeota 77.78%, p__ 16.67%, p__Candidatus Micrarchaeota 5.56%
+p__Iainarchaeota	15	3	p__Candidatus Diapherotrites 80.0%, p__ 13.33%, p__Candidatus Micrarchaeota 6.67%
+p__Nanohaloarchaeota	12	1	p__Euryarchaeota 100.0%
+p__Huberarchaeota	9	2	p__Candidatus Huberarchaea 88.89%, p__ 11.11%
+p__Hydrothermarchaeota	8	2	p__ 62.5%, p__Euryarchaeota 37.5%
+p__Hadarchaeota	6	1	p__Euryarchaeota 100.0%
+p__PWEA01	6	1	p__Candidatus Aenigmarchaeota 100.0%
+p__Undinarchaeota	5	2	p__ 80.0%, p__Euryarchaeota 20.0%
+p__EX4484-52	3	2	p__Euryarchaeota 66.67%, p__Candidatus Aenigmarchaeota 33.33%
+p__Proteobacteria	2	1	p__Euryarchaeota(d__Archaea) 100.0%
+p__QMZS01	2	1	p__Candidatus Aenigmarchaeota 100.0%
+p__Bacteroidota	1	1	p__Euryarchaeota(d__Archaea) 100.0%
+p__Planctomycetota	1	1	p__Candidatus Woesearchaeota(d__Archaea) 100.0%

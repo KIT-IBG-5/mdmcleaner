@@ -1,0 +1,909 @@
+GTDB R95 order	Number of genomes	Number of NCBI orders	List of NCBI orders	
+o__Enterobacterales	52384	14	o__Enterobacterales 86.35%, o__Vibrionales 7.47%, o__Pasteurellales 3.12%, o__Alteromonadales 1.76%, o__Aeromonadales 0.89%, o__Orbales 0.2%, o__(c__Tissierellia) 0.09%, o__Chromatiales 0.06%, o__Oceanospirillales 0.02%, o__Rickettsiales(c__Alphaproteobacteria) 0.01%, o__Pseudomonadales 0.01%, o__Burkholderiales(c__Betaproteobacteria) 0.0%, o__Lactobacillales(c__Bacilli) 0.0%, o__Sphingobacteriales(c__Sphingobacteriia) 0.0%	
+o__Lactobacillales	24694	6	o__Lactobacillales 87.57%, o__Bacillales 12.4%, o__(c__Tissierellia) 0.02%, o__Bifidobacteriales(c__Actinobacteria) 0.0%, o__Sphingomonadales(c__Alphaproteobacteria) 0.0%, o__Pasteurellales(c__Gammaproteobacteria) 0.0%	
+o__Pseudomonadales	15825	13	o__Pseudomonadales 91.85%, o__Oceanospirillales 3.68%, o__(c__Tissierellia) 1.7%, o__Cellvibrionales 1.61%, o__Alteromonadales 0.97%, o__Rhodospirillales(c__Alphaproteobacteria) 0.09%, o__Enterobacterales 0.04%, o__Lactobacillales(c__Bacilli) 0.02%, o__Rhodobacterales(c__Alphaproteobacteria) 0.01%, o__Chlamydiales(c__Chlamydiia) 0.01%, o__Burkholderiales(c__Betaproteobacteria) 0.01%, o__Xanthomonadales 0.01%, o__Neisseriales(c__Betaproteobacteria) 0.01%	
+o__Staphylococcales	12955	6	o__Bacillales 99.94%, o__Lactobacillales 0.03%, o__Micrococcales(c__Actinobacteria) 0.01%, o__Clostridiales(c__Clostridia) 0.01%, o__(c__Tissierellia) 0.01%, o__Rhodobacterales(c__Alphaproteobacteria) 0.01%	
+o__Mycobacteriales	11486	18	o__Corynebacteriales(c__Actinobacteria) 93.57%, o__Micromonosporales(c__Actinobacteria) 2.47%, o__Pseudonocardiales(c__Actinobacteria) 2.4%, o__Geodermatophilales(c__Actinobacteria) 0.59%, o__Frankiales(c__Actinobacteria) 0.46%, o__Glycomycetales(c__Actinobacteria) 0.13%, o__Actinopolysporales(c__Actinobacteria) 0.1%, o__(c__Tissierellia) 0.08%, o__Nakamurellales(c__Actinobacteria) 0.06%, o__Streptomycetales(c__Actinobacteria) 0.03%, o__Cryptosporangiales(c__Actinobacteria) 0.03%, o__Streptosporangiales(c__Actinobacteria) 0.01%, o__Pseudomonadales(c__Gammaproteobacteria) 0.01%, o__Acidimicrobiales(c__Acidimicrobiia) 0.01%, o__Actinomycetales(c__Actinobacteria) 0.01%, o__Lactobacillales(c__Bacilli) 0.01%, o__Bacillales(c__Bacilli) 0.01%, o__Clostridiales(c__Clostridia) 0.01%	
+o__Burkholderiales	9893	14	o__Burkholderiales(c__Betaproteobacteria) 62.29%, o__Neisseriales(c__Betaproteobacteria) 30.93%, o__Nitrosomonadales(c__Betaproteobacteria) 3.25%, o__(c__Tissierellia) 1.95%, o__Rhodocyclales(c__Betaproteobacteria) 1.07%, o__Hydrogenophilales(c__Hydrogenophilalia) 0.33%, o__Ferrovales(c__Betaproteobacteria) 0.07%, o__Pseudomonadales 0.04%, o__Rhizobiales(c__Alphaproteobacteria) 0.01%, o__Corynebacteriales(c__Actinobacteria) 0.01%, o__Thiotrichales 0.01%, o__Clostridiales(c__Clostridia) 0.01%, o__Rhodobacterales(c__Alphaproteobacteria) 0.01%, o__Campylobacterales(c__Epsilonproteobacteria) 0.01%	
+o__Campylobacterales	4972	2	o__Campylobacterales(c__Epsilonproteobacteria) 99.05%, o__(c__Tissierellia) 0.95%	
+o__Rhizobiales	4939	5	o__Rhizobiales 97.12%, o__Rhodobacterales 1.84%, o__(c__Tissierellia) 0.99%, o__Streptomycetales(c__Actinobacteria) 0.02%, o__Sphingomonadales 0.02%	
+o__Bacillales	4898	10	o__Bacillales 99.47%, o__Lactobacillales 0.18%, o__(c__Tissierellia) 0.16%, o__Clostridiales(c__Clostridia) 0.06%, o__Micrococcales(c__Actinobacteria) 0.02%, o__Pseudonocardiales(c__Actinobacteria) 0.02%, o__Vibrionales(c__Gammaproteobacteria) 0.02%, o__Rhodobacterales(c__Alphaproteobacteria) 0.02%, o__Corynebacteriales(c__Actinobacteria) 0.02%, o__Glycomycetales(c__Actinobacteria) 0.02%	
+o__Bacteroidales	3842	5	o__Bacteroidales 93.28%, o__(c__Tissierellia) 4.29%, o__Marinilabiliales 2.37%, o__Synergistales(c__Synergistia) 0.03%, o__Cytophagales(c__Cytophagia) 0.03%	
+o__Actinomycetales	3467	11	o__Micrococcales(c__Actinobacteria) 58.41%, o__Bifidobacteriales(c__Actinobacteria) 32.36%, o__Actinomycetales(c__Actinobacteria) 8.05%, o__(c__Tissierellia) 0.55%, o__Kineosporiales(c__Actinobacteria) 0.32%, o__Corynebacteriales(c__Actinobacteria) 0.09%, o__Tissierellales(c__Tissierellia) 0.09%, o__Streptomycetales(c__Actinobacteria) 0.06%, o__Streptosporangiales(c__Actinobacteria) 0.03%, o__Cytophagales(c__Cytophagia) 0.03%, o__Bacillales(c__Bacilli) 0.03%	
+o__Flavobacteriales	2372	5	o__Flavobacteriales(c__Flavobacteriia) 97.51%, o__(c__Tissierellia) 2.23%, o__Cytophagales(c__Cytophagia) 0.08%, o__Alteromonadales(c__Gammaproteobacteria) 0.08%, o__Campylobacterales(c__Epsilonproteobacteria) 0.08%	
+o__Peptostreptococcales	2311	3	o__Clostridiales 98.87%, o__(c__Tissierellia) 1.08%, o__Desulfovibrionales(c__Deltaproteobacteria) 0.04%	
+o__Xanthomonadales	2249	5	o__Xanthomonadales 97.24%, o__Chromatiales 1.56%, o__(c__Tissierellia) 0.84%, o__Oceanospirillales 0.27%, o__Pseudomonadales 0.09%	
+o__Lachnospirales	2185	7	o__Clostridiales 96.48%, o__(c__Tissierellia) 3.11%, o__Bacteroidales(c__Bacteroidia) 0.18%, o__Fusobacteriales(c__Fusobacteriia) 0.09%, o__Lactobacillales(c__Bacilli) 0.05%, o__Anaerolineales(c__Anaerolineae) 0.05%, o__Erysipelotrichales(c__Erysipelotrichia) 0.05%	
+o__Oscillospirales	1610	3	o__Clostridiales 96.27%, o__(c__Tissierellia) 3.66%, o__Lactobacillales(c__Bacilli) 0.06%	
+o__Streptomycetales	1429	4	o__Streptomycetales(c__Actinobacteria) 99.37%, o__(c__Tissierellia) 0.28%, o__Catenulisporales(c__Actinobacteria) 0.21%, o__Streptosporangiales(c__Actinobacteria) 0.14%	
+o__Rhodobacterales	1244	4	o__Rhodobacterales 98.47%, o__(c__Tissierellia) 1.29%, o__Rhizobiales 0.16%, o__Rhodospirillales 0.08%	
+o__Sphingomonadales	984	11	o__Sphingomonadales 94.72%, o__(c__Tissierellia) 2.95%, o__Kordiimonadales 1.22%, o__Emcibacterales 0.41%, o__Burkholderiales(c__Betaproteobacteria) 0.1%, o__Neisseriales(c__Betaproteobacteria) 0.1%, o__Caulobacterales 0.1%, o__Micrococcales(c__Actinobacteria) 0.1%, o__Bacillales(c__Bacilli) 0.1%, o__Rhodothalassiales 0.1%, o__Pseudomonadales(c__Gammaproteobacteria) 0.1%	
+o__Coriobacteriales	785	3	o__Coriobacteriales 81.66%, o__Eggerthellales 15.29%, o__(c__Tissierellia) 3.06%	
+o__Propionibacteriales	662	3	o__Propionibacteriales(c__Actinobacteria) 99.09%, o__(c__Tissierellia) 0.6%, o__Actinomycetales(c__Actinobacteria) 0.3%	
+o__Leptospirales	633	3	o__Leptospirales(c__Spirochaetia) 99.53%, o__Spirochaetales(c__Spirochaetia) 0.32%, o__(c__Tissierellia) 0.16%	
+o__Mycoplasmatales	630	6	o__Mycoplasmatales(c__Mollicutes) 86.03%, o__Entomoplasmatales(c__Mollicutes) 13.17%, o__Chlamydiales(c__Chlamydiia) 0.32%, o__Acholeplasmatales(c__Mollicutes) 0.16%, o__Bacillales 0.16%, o__(c__Tissierellia) 0.16%	
+o__PCC-6307	614	4	o__Synechococcales(c__) 98.53%, o__(c__Tissierellia) 1.14%, o__Propionibacteriales(c__Actinobacteria) 0.16%, o__Chroococcales(c__) 0.16%	
+o__Acidimicrobiales	556	3	o__Acidimicrobiales 86.87%, o__(c__Tissierellia) 12.95%, o__Actinomycetales(c__Actinobacteria) 0.18%	
+o__Paenibacillales	523	1	o__Bacillales 100.0%	
+o__Cyanobacteriales	517	8	o__Nostocales(c__) 38.68%, o__Chroococcales(c__) 25.15%, o__Oscillatoriales(c__) 18.76%, o__(c__Tissierellia) 8.51%, o__Synechococcales(c__) 5.8%, o__Pleurocapsales(c__) 1.55%, o__Chroococcidiopsidales(c__) 1.16%, o__Spirulinales(c__) 0.39%	
+o__UBA9983	515	1	o__(c__Tissierellia) 100.0%	
+o__Cytophagales	421	4	o__Cytophagales(c__Cytophagia) 95.72%, o__(c__Tissierellia) 3.8%, o__Rhodobacterales(c__Alphaproteobacteria) 0.24%, o__Rickettsiales(c__Alphaproteobacteria) 0.24%	
+o__Caulobacterales	417	5	o__Caulobacterales 53.0%, o__Rhodobacterales 39.81%, o__(c__Tissierellia) 4.56%, o__Parvularculales 2.4%, o__Acidimicrobiales(c__Acidimicrobiia) 0.24%	
+o__Erysipelotrichales	387	5	o__Erysipelotrichales(c__Erysipelotrichia) 82.69%, o__Clostridiales(c__Clostridia) 10.08%, o__(c__Tissierellia) 4.39%, o__Lactobacillales 2.58%, o__Bacteroidales(c__Bacteroidia) 0.26%	
+o__Christensenellales	346	8	o__Clostridiales(c__Clostridia) 87.86%, o__(c__Tissierellia) 10.4%, o__Acidaminococcales(c__Negativicutes) 0.29%, o__Myxococcales(c__Deltaproteobacteria) 0.29%, o__Rhodospirillales(c__Alphaproteobacteria) 0.29%, o__Selenomonadales(c__Negativicutes) 0.29%, o__Thermoanaerobacterales(c__Clostridia) 0.29%, o__Candidatus Borkfalkiales(c__Clostridia) 0.29%	
+o__Acetobacterales	345	1	o__Rhodospirillales 100.0%	
+o__Rickettsiales	341	4	o__Rickettsiales 92.96%, o__(c__Tissierellia) 6.45%, o__Holosporales 0.29%, o__Rhodospirillales 0.29%	
+o__Chitinophagales	332	5	o__Chitinophagales(c__Chitinophagia) 53.31%, o__(c__Tissierellia) 24.1%, o__Saprospirales(c__Saprospiria) 16.27%, o__Sphingobacteriales(c__Sphingobacteriia) 6.02%, o__Enterobacterales(c__Gammaproteobacteria) 0.3%	
+o__Acidobacteriales	305	2	o__Acidobacteriales(c__Acidobacteriia) 89.18%, o__(c__Tissierellia) 10.82%	
+o__Sphingobacteriales	301	3	o__Sphingobacteriales(c__Sphingobacteriia) 99.34%, o__(c__Tissierellia) 0.33%, o__Rhodospirillales(c__Alphaproteobacteria) 0.33%	
+o__Francisellales	291	2	o__Thiotrichales 99.66%, o__(c__Tissierellia) 0.34%	
+o__Treponematales	268	2	o__Spirochaetales 96.27%, o__(c__Tissierellia) 3.73%	
+o__Fusobacteriales	259	2	o__Fusobacteriales 99.23%, o__(c__Tissierellia) 0.77%	
+o__Tissierellales	236	5	o__Tissierellales(c__Tissierellia) 60.59%, o__(c__Tissierellia) 22.03%, o__Clostridiales 16.53%, o__Erysipelotrichales(c__Erysipelotrichia) 0.42%, o__Actinomycetales(c__Actinobacteria) 0.42%	
+o__Verrucomicrobiales	231	3	o__Verrucomicrobiales 90.91%, o__(c__Tissierellia) 8.66%, o__Rickettsiales(c__Alphaproteobacteria) 0.43%	
+o__Opitutales	223	3	o__(c__Tissierellia) 58.74%, o__Opitutales(c__Opitutae) 32.29%, o__Puniceicoccales(c__Opitutae) 8.97%	
+o__Veillonellales	222	2	o__Veillonellales 99.55%, o__(c__Tissierellia) 0.45%	
+o__Streptosporangiales	199	3	o__Streptosporangiales(c__Actinobacteria) 90.45%, o__(c__Tissierellia) 9.05%, o__Glycomycetales(c__Actinobacteria) 0.5%	
+o__Desulfovibrionales	197	3	o__Desulfovibrionales(c__Deltaproteobacteria) 97.97%, o__(c__Tissierellia) 1.52%, o__Marinilabiliales(c__Bacteroidia) 0.51%	
+o__Deinococcales	192	3	o__Thermales 56.77%, o__Deinococcales 42.71%, o__(c__Tissierellia) 0.52%	
+o__Borreliales	184	1	o__Spirochaetales 100.0%	
+o__Rhodospirillales	174	3	o__Rhodospirillales 89.66%, o__(c__Tissierellia) 8.05%, o__Rhizobiales 2.3%	
+o__Anaerolineales	173	2	o__Anaerolineales 67.05%, o__(c__Tissierellia) 32.95%	
+o__Balneolales	169	4	o__Balneolales(c__Balneolia) 81.66%, o__(c__Tissierellia) 17.16%, o__Chitinophagales(c__Chitinophagia) 0.59%, o__Bacteroidetes Order II. Incertae sedis(c__) 0.59%	
+o__Pelagibacterales	162	3	o__Pelagibacterales 93.83%, o__(c__Tissierellia) 5.56%, o__Rickettsiales 0.62%	
+o__RF39	152	6	o__(c__Tissierellia) 66.45%, o__Clostridiales(c__Clostridia) 15.13%, o__Bacillales 13.82%, o__Mycoplasmatales(c__Mollicutes) 3.29%, o__Erysipelotrichales(c__Erysipelotrichia) 0.66%, o__Acholeplasmatales(c__Mollicutes) 0.66%	
+o__Chthoniobacterales	151	3	o__(c__Tissierellia) 96.03%, o__Chthoniobacterales(c__Spartobacteria) 2.65%, o__Verrucomicrobiales 1.32%	
+o__Pirellulales	151	3	o__Planctomycetales(c__Planctomycetia) 86.75%, o__(c__Tissierellia) 12.58%, o__Phycisphaerales(c__Phycisphaerae) 0.66%	
+o__Chromatiales	147	3	o__(c__Tissierellia) 75.51%, o__Chromatiales 23.13%, o__Thiotrichales 1.36%	
+o__Saccharimonadales	146	1	o__(c__Tissierellia) 100.0%	
+o__Methylococcales	145	3	o__Methylococcales 84.83%, o__Thiotrichales 12.41%, o__(c__Tissierellia) 2.76%	
+o__Paceibacterales	142	1	o__(c__Tissierellia) 100.0%	
+o__RFN20	134	4	o__Bacillales 62.69%, o__(c__Tissierellia) 26.87%, o__Erysipelotrichales(c__Erysipelotrichia) 8.21%, o__Clostridiales(c__Clostridia) 2.24%	
+o__UBA1400	128	2	o__(c__Tissierellia) 99.22%, o__Pseudomonadales(c__Gammaproteobacteria) 0.78%	
+o__Phycisphaerales	128	3	o__(c__Tissierellia) 52.34%, o__Phycisphaerales 39.84%, o__Planctomycetales(c__Planctomycetia) 7.81%	Planctomycetes
+o__Pedosphaerales	122	2	o__Verrucomicrobiales 81.15%, o__(c__Tissierellia) 18.85%	
+o__Selenomonadales	120	3	o__Selenomonadales 88.33%, o__Veillonellales 9.17%, o__(c__Tissierellia) 2.5%	
+o__Marinisomatales	119	1	o__(c__Tissierellia) 100.0%	
+o__Gastranaerophilales	119	6	o__(c__Tissierellia) 61.34%, o__Candidatus Gastranaerophilales(c__) 26.05%, o__Clostridiales(c__Clostridia) 6.72%, o__Pseudomonadales(c__Gammaproteobacteria) 2.52%, o__Fusobacteriales(c__Fusobacteriia) 1.68%, o__Brachyspirales(c__Spirochaetia) 1.68%	
+o__Syntrophales	115	2	o__Syntrophobacterales(c__Deltaproteobacteria) 92.17%, o__(c__Tissierellia) 7.83%	
+o__Acholeplasmatales	115	5	o__Acholeplasmatales(c__Mollicutes) 76.52%, o__(c__Tissierellia) 17.39%, o__Bacillales 3.48%, o__Clostridiales(c__Clostridia) 1.74%, o__Anaeroplasmatales(c__Mollicutes) 0.87%	
+o__Moranbacterales	111	1	o__(c__Tissierellia) 100.0%	
+o__SG8-23	108	2	o__(c__Tissierellia) 66.67%, o__Gemmatimonadales 33.33%	-
+o__Ectothiorhodospirales	107	2	o__Chromatiales 99.07%, o__(c__Tissierellia) 0.93%	
+o__Nanopelagicales	106	6	o__(c__Tissierellia) 71.7%, o__Candidatus Nanopelagicales(c__Actinobacteria) 16.04%, o__Micrococcales(c__Actinobacteria) 5.66%, o__Actinomycetales(c__Actinobacteria) 2.83%, o__Streptomycetales(c__Actinobacteria) 2.83%, o__Rhodothermales(c__Rhodothermia) 0.94%	Terrabacteria group
+o__GWA2-44-7	105	1	o__(c__Tissierellia) 100.0%	
+o__TANB77	104	1	o__Clostridiales 100.0%	
+o__Synergistales	103	2	o__Synergistales 96.12%, o__(c__Tissierellia) 3.88%	
+o__Desulfobacterales	103	2	o__Desulfobacterales(c__Deltaproteobacteria) 87.38%, o__(c__Tissierellia) 12.62%	
+o__Gemmatimonadales	99	2	o__(c__Tissierellia) 89.9%, o__Gemmatimonadales 10.1%	
+o__Nitrospirales	99	3	o__Nitrospirales(c__Nitrospira) 67.68%, o__(c__Tissierellia) 29.29%, o__Nitrosomonadales(c__Betaproteobacteria) 3.03%	
+o__Spirochaetales	97	2	o__Spirochaetales 90.72%, o__(c__Tissierellia) 9.28%	
+o__UBA1406	93	1	o__(c__Tissierellia) 100.0%	
+o__Myxococcales	93	2	o__Myxococcales(c__Deltaproteobacteria) 82.8%, o__(c__Tissierellia) 17.2%	
+o__UBA6257	91	1	o__(c__Tissierellia) 100.0%	
+o__Coxiellales	91	2	o__Legionellales 86.81%, o__(c__Tissierellia) 13.19%	
+o__Exiguobacterales	90	1	o__Bacillales 100.0%	
+o__SG8-24	90	1	o__(c__Tissierellia) 100.0%	
+o__Brevibacillales	89	1	o__Bacillales 100.0%	
+o__Acidaminococcales	86	4	o__Acidaminococcales 84.88%, o__Selenomonadales 12.79%, o__Lactobacillales(c__Bacilli) 1.16%, o__(c__Tissierellia) 1.16%	
+o__Dehalococcoidales	86	2	o__Dehalococcoidales 53.49%, o__(c__Tissierellia) 46.51%	
+o__Dormibacterales	84	1	o__(c__Tissierellia) 100.0%	
+o__PS1	81	2	o__(c__Tissierellia) 96.3%, o__Thiotrichales 3.7%	
+o__Thermodesulfovibrionales	81	2	o__(c__Tissierellia) 53.09%, o__Nitrospirales(c__Nitrospira) 46.91%	
+o__Desulfobulbales	80	2	o__Desulfobacterales(c__Deltaproteobacteria) 83.75%, o__(c__Tissierellia) 16.25%	
+o__SAR86	79	1	o__(c__Tissierellia) 100.0%	
+o__Thermotogales	78	2	o__Thermotogales 98.72%, o__(c__Tissierellia) 1.28%	
+o__Bryobacterales	78	3	o__Bryobacterales(c__Acidobacteriia) 87.18%, o__(c__Tissierellia) 11.54%, o__Acidobacteriales(c__Acidobacteriia) 1.28%	
+o__Bacteriovoracales	78	3	o__Bacteriovoracales(c__Oligoflexia) 67.95%, o__Bdellovibrionales(c__Oligoflexia) 25.64%, o__(c__Tissierellia) 6.41%	
+o__DTU022	77	2	o__Clostridiales(c__Clostridia) 94.81%, o__(c__Tissierellia) 5.19%	
+o__Fibrobacterales	75	3	o__Fibrobacterales 89.33%, o__(c__Tissierellia) 9.33%, o__Fibromonadales 1.33%	
+o__Nitrosococcales	75	3	o__Thiotrichales 81.33%, o__Chromatiales 10.67%, o__(c__Tissierellia) 8.0%	
+o__UBA101185	74	1	o__(c__Tissierellia) 100.0%	
+o__Desulfotomaculales	74	3	o__Clostridiales(c__Clostridia) 81.08%, o__(c__Tissierellia) 17.57%, o__Thermoanaerobacterales(c__Clostridia) 1.35%	
+o__Magasanikbacterales	73	1	o__(c__Tissierellia) 100.0%	
+o__Puniceispirillales	72	2	o__(c__Tissierellia) 91.67%, o__Rhodospirillales 8.33%	
+o__Petrotogales	71	4	o__Kosmotogales 43.66%, o__Petrotogales 39.44%, o__Thermotogales 15.49%, o__(c__Tissierellia) 1.41%	Thermotogae
+o__Vicinamibacterales	69	3	o__(c__Tissierellia) 97.1%, o__Chromatiales(c__Gammaproteobacteria) 1.45%, o__Acidobacteriales(c__Acidobacteriia) 1.45%	
+o__Micavibrionales	69	3	o__(c__Tissierellia) 88.41%, o__Rhodospirillales 10.14%, o__Rickettsiales 1.45%	-
+o__UBA10353	68	4	o__(c__Tissierellia) 77.94%, o__Acidiferrobacterales 19.12%, o__Acidithiobacillales(c__Acidithiobacillia) 1.47%, o__Arenicellales 1.47%	
+o__UBA7541	66	1	o__(c__Tissierellia) 100.0%	
+o__Acetivibrionales	66	2	o__Clostridiales 98.48%, o__(c__Tissierellia) 1.52%	
+o__Sphaerochaetales	65	2	o__Spirochaetales 95.38%, o__(c__Tissierellia) 4.62%	
+o__Rhodothermales	64	3	o__Bacteroidetes Order II. Incertae sedis(c__) 54.69%, o__(c__Tissierellia) 32.81%, o__Rhodothermales 12.5%	
+o__BM507	63	1	o__(c__Tissierellia) 100.0%	
+o__UBA10030	63	1	o__(c__Tissierellia) 100.0%	
+o__Desulfuromonadales	63	3	o__Desulfuromonadales(c__Deltaproteobacteria) 88.89%, o__(c__Tissierellia) 7.94%, o__Desulfobacterales(c__Deltaproteobacteria) 3.17%	
+o__RF32	63	4	o__(c__Tissierellia) 57.14%, o__Rhodospirillales 38.1%, o__Rickettsiales 3.17%, o__Lactobacillales(c__Bacilli) 1.59%	
+o__2-02-FULL-40-12	62	1	o__(c__Tissierellia) 100.0%	
+o__Azospirillales	62	3	o__Rhodospirillales 96.77%, o__(c__Tissierellia) 1.61%, o__Corynebacteriales(c__Actinobacteria) 1.61%	
+o__Izemoplasmatales	62	3	o__(c__Tissierellia) 83.87%, o__Bacillales 14.52%, o__Acholeplasmatales(c__Mollicutes) 1.61%	
+o__Geobacterales	61	1	o__Desulfuromonadales(c__Deltaproteobacteria) 100.0%	
+o__Levybacterales	61	1	o__(c__Tissierellia) 100.0%	
+o__Bdellovibrionales	61	2	o__Bdellovibrionales(c__Oligoflexia) 98.36%, o__(c__Tissierellia) 1.64%	
+o__CSP1-4	60	2	o__(c__Tissierellia) 98.33%, o__Thermomicrobiales(c__Thermomicrobia) 1.67%	
+o__Steroidobacterales	60	3	o__(c__Tissierellia) 93.33%, o__Nevskiales 5.0%, o__Xanthomonadales 1.67%	
+o__Rokubacteriales	58	1	o__(c__Tissierellia) 100.0%	
+o__Ignavibacteriales	58	2	o__(c__Tissierellia) 62.07%, o__Ignavibacteriales 37.93%	
+o__Parachlamydiales	58	3	o__Parachlamydiales 53.45%, o__(c__Tissierellia) 41.38%, o__Chlamydiales 5.17%	
+o__Desulfitobacteriales	57	1	o__Clostridiales(c__Clostridia) 100.0%	
+o__WO2-41-13	57	1	o__(c__Tissierellia) 100.0%	
+o__UBP12	57	1	o__(c__Tissierellia) 100.0%	
+o__SAR202	55	1	o__(c__Tissierellia) 100.0%	
+o__Elusimicrobiales	55	2	o__(c__Tissierellia) 89.09%, o__Elusimicrobiales 10.91%	
+o__Parvibaculales	55	2	o__Rhizobiales 85.45%, o__(c__Tissierellia) 14.55%	
+o__Peribacterales	55	2	o__(c__Tissierellia) 78.18%, o__Candidatus Peribacterales(c__Candidatus Peribacteria) 21.82%	
+o__Solirubrobacterales	55	3	o__Solirubrobacterales 63.64%, o__(c__Tissierellia) 34.55%, o__Thermoleophilales 1.82%	
+o__Saccharofermentanales	52	1	o__Clostridiales 100.0%	
+o__Syntrophomonadales	52	2	o__Clostridiales(c__Clostridia) 98.08%, o__(c__Tissierellia) 1.92%	
+o__Nitriliruptorales	52	2	o__Nitriliruptorales(c__Nitriliruptoria) 98.08%, o__Egicoccales(c__Nitriliruptoria) 1.92%	
+o__SAR324	51	1	o__(c__Tissierellia) 100.0%	
+o__RFP12	51	2	o__(c__Tissierellia) 96.08%, o__Lentisphaerales(c__Lentisphaeria) 3.92%	
+o__Thiomicrospirales	50	1	o__Thiotrichales 100.0%	
+o__UBA3495	50	1	o__(c__Tissierellia) 100.0%	
+o__Gaiellales	50	2	o__(c__Tissierellia) 98.0%, o__Gaiellales(c__Rubrobacteria) 2.0%	
+o__UBA1151	49	1	o__(c__Tissierellia) 100.0%	
+o__Mariprofundales	49	2	o__(c__Tissierellia) 73.47%, o__Mariprofundales 26.53%	
+o__Cloacimonadales	48	1	o__(c__Tissierellia) 100.0%	
+o__UBA8260	46	1	o__(c__Tissierellia) 100.0%	
+o__Nevskiales	45	4	o__Nevskiales 57.78%, o__Salinisphaerales 35.56%, o__Chromatiales 4.44%, o__Xanthomonadales 2.22%	
+o__UBA1369	44	1	o__(c__Tissierellia) 100.0%	
+o__Thermoanaerobacterales	44	2	o__Thermoanaerobacterales(c__Clostridia) 97.73%, o__Clostridiales(c__Clostridia) 2.27%	
+o__Polyangiales	44	2	o__Myxococcales(c__Deltaproteobacteria) 88.64%, o__(c__Tissierellia) 11.36%	
+o__Daviesbacterales	42	1	o__(c__Tissierellia) 100.0%	
+o__GIF9	42	1	o__(c__Tissierellia) 100.0%	
+o__Brocadiales	42	3	o__Candidatus Brocadiales 57.14%, o__(c__Tissierellia) 40.48%, o__Planctomycetales(c__Planctomycetia) 2.38%	
+o__P2-11E	41	1	o__(c__Tissierellia) 100.0%	
+o__Cardiobacteriales	41	2	o__(c__Tissierellia) 60.98%, o__Cardiobacteriales 39.02%	
+o__Eubacteriales	40	2	o__Clostridiales 97.5%, o__(c__Tissierellia) 2.5%	
+o__Planctomycetales	40	2	o__Planctomycetales(c__Planctomycetia) 75.0%, o__(c__Tissierellia) 25.0%	
+o__Sedimentisphaerales	40	4	o__(c__Tissierellia) 45.0%, o__Phycisphaerales 45.0%, o__Sedimentisphaerales 7.5%, o__Planctomycetales(c__Planctomycetia) 2.5%	
+o__Nitrococcales	39	2	o__Chromatiales 97.44%, o__(c__Tissierellia) 2.56%	
+o__Acidithiobacillales	38	2	o__Acidithiobacillales(c__Acidithiobacillia) 97.37%, o__Nitrospirales(c__Nitrospira) 2.63%	
+o__Curtissbacterales	37	1	o__(c__Tissierellia) 100.0%	
+o__Caldicellulosiruptorales	36	1	o__Thermoanaerobacterales(c__Clostridia) 100.0%	
+o__Kapabacteriales	36	1	o__(c__Tissierellia) 100.0%	
+o__UBA920	36	1	o__(c__Tissierellia) 100.0%	
+o__Pyrinomonadales	36	2	o__(c__Tissierellia) 97.22%, o__Blastocatellales 2.78%	
+o__Thermoactinomycetales	35	1	o__Bacillales 100.0%	
+o__SC72	35	1	o__(c__Tissierellia) 100.0%	
+o__Shapirobacterales	35	1	o__(c__Tissierellia) 100.0%	
+o__Babeliales	35	2	o__(c__Tissierellia) 94.29%, o__Candidatus Babeliales 5.71%	
+o__Victivallales	35	2	o__(c__Tissierellia) 94.29%, o__Victivallales 5.71%	
+o__Portnoybacterales	34	1	o__(c__Tissierellia) 100.0%	
+o__SCGC-AAA003-L08	33	1	o__(c__Tissierellia) 100.0%	
+o__Competibacterales	32	2	o__(c__Tissierellia) 96.88%, o__Xanthomonadales 3.12%	
+o__GIF10	32	2	o__(c__Tissierellia) 96.88%, o__Planctomycetales(c__Planctomycetia) 3.12%	
+o__Piscirickettsiales	30	1	o__Thiotrichales 100.0%	
+o__GWC2-36-17_A	30	1	o__(c__Tissierellia) 100.0%	
+o__Leptospirillales	30	2	o__Nitrospirales(c__Nitrospira) 76.67%, o__(c__Tissierellia) 23.33%	
+o__Fimbriimonadales	30	3	o__Chthonomonadales(c__Chthonomonadetes) 63.33%, o__(c__Tissierellia) 33.33%, o__Fimbriimonadales 3.33%	
+o__Bipolaricaulales	29	1	o__(c__Tissierellia) 100.0%	
+o__Palsa-1104	29	1	o__Myxococcales(c__Deltaproteobacteria) 100.0%	
+o__NS11-12g	29	2	o__(c__Tissierellia) 93.1%, o__Flavobacteriales(c__Flavobacteriia) 6.9%	
+o__Acidiferrobacterales	29	3	o__(c__Tissierellia) 72.41%, o__Acidiferrobacterales 20.69%, o__Acidithiobacillales(c__Acidithiobacillia) 6.9%	
+o__Chloroflexales	29	3	o__Chloroflexales 65.52%, o__(c__Tissierellia) 20.69%, o__Herpetosiphonales 13.79%	
+o__Gemmatales	29	2	o__(c__Tissierellia) 62.07%, o__Planctomycetales(c__Planctomycetia) 37.93%	
+o__CF-121	28	1	o__(c__Tissierellia) 100.0%	
+o__Phormidesmiales	28	3	o__Synechococcales(c__) 64.29%, o__(c__Tissierellia) 32.14%, o__Oscillatoriales(c__) 3.57%	
+o__GWC2-55-46	27	1	o__(c__Tissierellia) 100.0%	
+o__Alicyclobacillales	27	2	o__Bacillales(c__Bacilli) 96.3%, o__(c__Tissierellia) 3.7%	
+o__UBA8366	27	3	o__Rhodospirillales 55.56%, o__(c__Tissierellia) 40.74%, o__Rickettsiales 3.7%	
+o__UBA1558	26	1	o__(c__Tissierellia) 100.0%	
+o__Rs-D84	26	2	o__(c__Tissierellia) 76.92%, o__Rickettsiales 23.08%	
+o__Rhizobiales_B	26	2	o__Rhizobiales 73.08%, o__(c__Tissierellia) 26.92%	
+o__Syntrophorhabdales	26	2	o__(c__Tissierellia) 57.69%, o__Syntrophobacterales(c__Deltaproteobacteria) 42.31%	
+o__Methylacidiphilales	26	3	o__Methylacidiphilales(c__Methylacidiphilae) 42.31%, o__Verrucomicrobiales 30.77%, o__(c__Tissierellia) 26.92%	
+o__UBA10105	25	1	o__(c__Tissierellia) 100.0%	
+o__UBA1135	25	1	o__(c__Tissierellia) 100.0%	
+o__Moorellales	25	3	o__Thermoanaerobacterales(c__Clostridia) 92.0%, o__Clostridiales(c__Clostridia) 4.0%, o__(c__Tissierellia) 4.0%	
+o__Thalassobaculales	25	2	o__Rhodospirillales 76.0%, o__(c__Tissierellia) 24.0%	
+o__Nitrospinales	25	2	o__Nitrospinales 68.0%, o__(c__Tissierellia) 32.0%	
+o__ML615J-28	25	4	o__Bacillales 36.0%, o__(c__Tissierellia) 32.0%, o__Acholeplasmatales(c__Mollicutes) 28.0%, o__Erysipelotrichales(c__Erysipelotrichia) 4.0%	
+o__Kryptoniales	24	1	o__(c__Tissierellia) 100.0%	
+o__Aminicenantales	24	1	o__(c__Tissierellia) 100.0%	
+o__SLAD01	24	1	o__(c__Tissierellia) 100.0%	
+o__Thermodesulfobacteriales	24	2	o__Thermodesulfobacteriales 95.83%, o__(c__Tissierellia) 4.17%	
+o__OPB41	24	2	o__(c__Tissierellia) 91.67%, o__Coriobacteriales 8.33%	
+o__Aquificales	24	2	o__Aquificales 87.5%, o__(c__Tissierellia) 12.5%	
+o__HIMB59	24	2	o__Pelagibacterales 50.0%, o__(c__Tissierellia) 50.0%	
+o__TMED109	24	3	o__Pelagibacterales 41.67%, o__(c__Tissierellia) 37.5%, o__Rickettsiales 20.83%	
+o__Hydrogenedentiales	23	1	o__(c__Tissierellia) 100.0%	
+o__Sporomusales	23	2	o__Selenomonadales 95.65%, o__Veillonellales 4.35%	
+o__DTU010	23	2	o__(c__Tissierellia) 73.91%, o__Clostridiales(c__Clostridia) 26.09%	
+o__Kiloniellales	23	3	o__Rhodospirillales 65.22%, o__Kiloniellales 30.43%, o__(c__Tissierellia) 4.35%	
+o__Bradymonadales	23	3	o__Myxococcales(c__Deltaproteobacteria) 52.17%, o__Bradymonadales(c__Deltaproteobacteria) 34.78%, o__(c__Tissierellia) 13.04%	
+o__UBA10015	22	2	o__(c__Tissierellia) 95.45%, o__Planctomycetales(c__Planctomycetia) 4.55%	
+o__Endomicrobiales	22	2	o__(c__Tissierellia) 90.91%, o__Endomicrobiales 9.09%	
+o__TMED127	22	3	o__Rickettsiales 77.27%, o__Pelagibacterales 13.64%, o__(c__Tissierellia) 9.09%	
+o__Caldicoprobacterales	22	2	o__(c__Tissierellia) 63.64%, o__Clostridiales(c__Clostridia) 36.36%	
+o__Defluviicoccales	22	2	o__Rhodospirillales 50.0%, o__(c__Tissierellia) 50.0%	
+o__Ktedonobacterales	22	3	o__(c__Tissierellia) 50.0%, o__Ktedonobacterales 36.36%, o__Thermogemmatisporales 13.64%	
+o__2-02-FULL-39-11	21	1	o__(c__Tissierellia) 100.0%	
+o__Sungbacterales	21	1	o__(c__Tissierellia) 100.0%	
+o__UBA5794	21	1	o__(c__Tissierellia) 100.0%	
+o__UBA796	21	1	o__(c__Tissierellia) 100.0%	
+o__SJA-28	21	2	o__(c__Tissierellia) 95.24%, o__Ignavibacteriales 4.76%	
+o__Beggiatoales	21	2	o__Thiotrichales 71.43%, o__(c__Tissierellia) 28.57%	
+o__SBR1031	21	2	o__(c__Tissierellia) 71.43%, o__Anaerolineales 28.57%	
+o__Desulfatiglandales	21	2	o__(c__Tissierellia) 66.67%, o__Desulfobacterales(c__Deltaproteobacteria) 33.33%	
+o__Syntrophobacterales	20	2	o__Syntrophobacterales(c__Deltaproteobacteria) 90.0%, o__Desulfarculales(c__Deltaproteobacteria) 10.0%	
+o__AKYH767	20	3	o__(c__Tissierellia) 90.0%, o__Sphingobacteriales(c__Sphingobacteriia) 5.0%, o__Flavobacteriales(c__Flavobacteriia) 5.0%	
+o__UBA4486	20	3	o__(c__Tissierellia) 65.0%, o__Thiotrichales 20.0%, o__Legionellales 15.0%	
+o__Aneurinibacillales	19	1	o__Bacillales 100.0%	
+o__SB-45	19	1	o__(c__Tissierellia) 100.0%	
+o__WGA-4E	19	1	o__(c__Tissierellia) 100.0%	
+o__BD1-5	19	1	o__(c__Tissierellia) 100.0%	
+o__UBA2979	19	1	o__(c__Tissierellia) 100.0%	
+o__Thermomicrobiales	19	3	o__Thermomicrobiales(c__Thermomicrobia) 42.11%, o__(c__Tissierellia) 36.84%, o__Sphaerobacterales(c__Thermomicrobia) 21.05%	
+o__Euzebyales	19	4	o__Nitriliruptorales(c__Nitriliruptoria) 36.84%, o__(c__Tissierellia) 31.58%, o__Euzebyales(c__Nitriliruptoria) 15.79%, o__Egibacterales(c__Nitriliruptoria) 15.79%	
+o__Hydrogenothermales	18	1	o__Aquificales 100.0%	
+o__UBA9629	18	1	o__(c__Tissierellia) 100.0%	
+o__MBNT15	18	1	o__(c__Tissierellia) 100.0%	
+o__UBA1565	18	1	o__(c__Tissierellia) 100.0%	
+o__UBA4882	18	1	o__(c__Tissierellia) 100.0%	
+o__UBA4738	18	1	o__(c__Tissierellia) 100.0%	
+o__Pseudanabaenales	18	3	o__Synechococcales(c__) 77.78%, o__(c__Tissierellia) 16.67%, o__Oscillatoriales(c__) 5.56%	
+o__Omnitrophales	17	1	o__(c__Tissierellia) 100.0%	
+o__Jiangellales	17	2	o__Jiangellales(c__Actinobacteria) 94.12%, o__(c__Tissierellia) 5.88%	
+o__Halothiobacillales	17	2	o__Chromatiales 94.12%, o__(c__Tissierellia) 5.88%	
+o__Thiotrichales	17	3	o__Thiotrichales 82.35%, o__(c__Tissierellia) 11.76%, o__Aquificales(c__Aquificae) 5.88%	
+o__TMED189	17	3	o__(c__Tissierellia) 82.35%, o__Candidatus Actinomarinales(c__Actinobacteria) 11.76%, o__Acidimicrobiales 5.88%	
+o__Monoglobales_A	17	2	o__Clostridiales 82.35%, o__(c__Tissierellia) 17.65%	
+o__B4-G1	17	2	o__Thermoflexales(c__Thermoflexia) 58.82%, o__(c__Tissierellia) 41.18%	
+o__Sulfobacillales	16	1	o__Clostridiales(c__Clostridia) 100.0%	
+o__JGIOTU-2	16	1	o__(c__Tissierellia) 100.0%	
+o__O2-12-FULL-45-9	16	1	o__(c__Tissierellia) 100.0%	
+o__AC1	16	1	o__(c__Tissierellia) 100.0%	
+o__SLMV01	16	1	o__(c__Tissierellia) 100.0%	
+o__Magnetococcales	16	2	o__Magnetococcales(c__Alphaproteobacteria) 93.75%, o__(c__Tissierellia) 6.25%	
+o__UBA8416	16	2	o__(c__Tissierellia) 93.75%, o__Lentisphaerales(c__Lentisphaeria) 6.25%	
+o__UBA9160	16	2	o__(c__Tissierellia) 93.75%, o__Spirochaetales(c__Spirochaetia) 6.25%	
+o__UBA4975	16	2	o__(c__Tissierellia) 87.5%, o__Clostridiales(c__Clostridia) 12.5%	
+o__Reyranellales	16	2	o__Rhodospirillales 81.25%, o__(c__Tissierellia) 18.75%	
+o__UBA1018	16	2	o__Bdellovibrionales(c__Oligoflexia) 62.5%, o__Bacteriovoracales(c__Oligoflexia) 37.5%	
+o__Buchananbacterales	15	1	o__(c__Tissierellia) 100.0%	
+o__UBA1301	15	1	o__(c__Tissierellia) 100.0%	
+o__Thermosediminibacterales	15	2	o__Thermoanaerobacterales(c__Clostridia) 93.33%, o__(c__Tissierellia) 6.67%	
+o__Peptococcales	15	2	o__Clostridiales(c__Clostridia) 93.33%, o__(c__Tissierellia) 6.67%	
+o__Micavibrionales_C	15	2	o__(c__Tissierellia) 93.33%, o__Rhodospirillales 6.67%	
+o__UBA1280	15	4	o__(c__Tissierellia) 66.67%, o__Magnetococcales 20.0%, o__Pseudomonadales(c__Gammaproteobacteria) 6.67%, o__Rhizobiales 6.67%	
+o__Thermacetogeniales	15	3	o__Thermoanaerobacterales(c__Clostridia) 53.33%, o__Clostridiales(c__Clostridia) 40.0%, o__(c__Tissierellia) 6.67%	
+o__T3Sed10-11	15	2	o__Ignavibacteriales(c__Ignavibacteria) 53.33%, o__(c__Tissierellia) 46.67%	
+o__Kazan-3B-28	14	1	o__(c__Tissierellia) 100.0%	
+o__Veblenbacterales	14	1	o__(c__Tissierellia) 100.0%	
+o__Ryanbacterales	14	1	o__(c__Tissierellia) 100.0%	
+o__Leptolyngbyales	14	2	o__Synechococcales(c__) 92.86%, o__Oscillatoriales(c__) 7.14%	
+o__Haloplasmatales	14	3	o__Erysipelotrichales(c__Erysipelotrichia) 78.57%, o__Haloplasmatales(c__) 14.29%, o__(c__Tissierellia) 7.14%	
+o__UBA9655	14	2	o__(c__Tissierellia) 71.43%, o__Holosporales 28.57%	
+o__B1SED10-174	14	2	o__Halanaerobiales(c__Clostridia) 71.43%, o__(c__Tissierellia) 28.57%	
+o__UBA7916	14	2	o__(c__Tissierellia) 57.14%, o__Legionellales 42.86%	
+o__UBA6902	14	2	o__(c__Tissierellia) 50.0%, o__Nitrospirales(c__Nitrospira) 50.0%	
+o__Cryosericales	14	2	o__(c__Tissierellia) 50.0%, o__Candidatus Cryosericales(c__Candidatus Cryosericia) 50.0%	
+o__Halobacteroidales	13	1	o__Halanaerobiales(c__Clostridia) 100.0%	
+o__UBA1560	13	1	o__(c__Tissierellia) 100.0%	
+o__UBA2196	13	1	o__(c__Tissierellia) 100.0%	
+o__GWA2-35-9	13	1	o__(c__Tissierellia) 100.0%	
+o__AKYH767-A	13	1	o__(c__Tissierellia) 100.0%	
+o__UBA4971	13	1	o__(c__Tissierellia) 100.0%	
+o__UBA1414	13	1	o__(c__Tissierellia) 100.0%	
+o__Thermoanaerobaculales	13	2	o__(c__Tissierellia) 92.31%, o__Thermoanaerobaculales 7.69%	
+o__UBA1144	13	2	o__(c__Tissierellia) 92.31%, o__Spirochaetales(c__Spirochaetia) 7.69%	
+o__UBA817	13	2	o__(c__Tissierellia) 84.62%, o__Rickettsiales(c__Alphaproteobacteria) 15.38%	
+o__UBA1407	13	3	o__(c__Tissierellia) 76.92%, o__Victivallales 15.38%, o__Lentisphaerales 7.69%	
+o__Fermentibacterales	13	2	o__(c__Tissierellia) 76.92%, o__Candidatus Fermentibacterales(c__Candidatus Fermentibacteria (class)) 23.08%	
+o__Kiritimatiellales	13	2	o__Kiritimatiellales 69.23%, o__(c__Tissierellia) 30.77%	
+o__UBA1845	13	3	o__Phycisphaerales 38.46%, o__(c__Tissierellia) 30.77%, o__Planctomycetales(c__Planctomycetia) 30.77%	
+o__SM23-28-2	12	1	o__(c__Tissierellia) 100.0%	
+o__CPR2	12	1	o__(c__Tissierellia) 100.0%	
+o__UBA10190	12	1	o__(c__Tissierellia) 100.0%	
+o__UBA9968	12	1	o__(c__Tissierellia) 100.0%	
+o__UBA9570	12	1	o__(c__Tissierellia) 100.0%	
+o__UBA2963	12	1	o__(c__Tissierellia) 100.0%	
+o__UBA9649	12	2	o__(c__Tissierellia) 91.67%, o__Planctomycetales(c__Planctomycetia) 8.33%	
+o__UBA8231	12	2	o__(c__Tissierellia) 83.33%, o__Gemmatimonadales(c__Gemmatimonadetes) 16.67%	
+o__UBA5335	12	3	o__(c__Tissierellia) 75.0%, o__Thiotrichales 16.67%, o__Chromatiales 8.33%	
+o__PWYM01	12	2	o__(c__Tissierellia) 75.0%, o__Chromatiales 25.0%	
+o__Woeseiales	12	2	o__(c__Tissierellia) 58.33%, o__Chromatiales 41.67%	
+o__Ammonifexales	12	3	o__Clostridiales(c__Clostridia) 50.0%, o__Thermoanaerobacterales(c__Clostridia) 33.33%, o__(c__Tissierellia) 16.67%	
+o__Propionisporales	11	1	o__Selenomonadales 100.0%	
+o__IMCC26256	11	1	o__(c__Tissierellia) 100.0%	
+o__GWC2-36-17	11	1	o__(c__Tissierellia) 100.0%	
+o__OS-L	11	1	o__(c__Tissierellia) 100.0%	
+o__Monoglobales	11	1	o__Clostridiales 100.0%	
+o__XYC2-FULL-46-14	11	1	o__(c__Tissierellia) 100.0%	
+o__UBA4802	11	1	o__(c__Tissierellia) 100.0%	
+o__UBA4705	11	1	o__(c__Tissierellia) 100.0%	
+o__UBA2968	11	1	o__(c__Tissierellia) 100.0%	
+o__Obscuribacterales	11	2	o__(c__Tissierellia) 90.91%, o__Candidatus Obscuribacterales(c__) 9.09%	
+o__Holophagales	11	2	o__Holophagales 81.82%, o__(c__Tissierellia) 18.18%	
+o__Thermosynechococcales	11	3	o__Synechococcales(c__) 81.82%, o__Oscillatoriales(c__) 9.09%, o__(c__Tissierellia) 9.09%	
+o__DSM-16500	11	2	o__(c__Tissierellia) 72.73%, o__Legionellales 27.27%	
+o__Diplorickettsiales	11	2	o__Legionellales 54.55%, o__(c__Tissierellia) 45.45%	
+o__Sneathiellales	11	2	o__(c__Tissierellia) 54.55%, o__Sneathiellales 45.45%	
+o__Methylomirabilales	10	1	o__(c__Tissierellia) 100.0%	
+o__GWA2-46-9	10	1	o__(c__Tissierellia) 100.0%	
+o__CSP1-3	10	1	o__(c__Tissierellia) 100.0%	
+o__Absconditabacterales	10	1	o__(c__Tissierellia) 100.0%	
+o__DTUO25	10	1	o__(c__Tissierellia) 100.0%	
+o__UBA2169	10	1	o__(c__Tissierellia) 100.0%	
+o__UBA9942	10	1	o__(c__Tissierellia) 100.0%	
+o__UBA2591	10	1	o__(c__Tissierellia) 100.0%	
+o__UBA7540	10	1	o__(c__Tissierellia) 100.0%	
+o__DRI-13	10	2	o__Clostridiales(c__Clostridia) 90.0%, o__(c__Tissierellia) 10.0%	
+o__UBA2774	10	2	o__(c__Tissierellia) 90.0%, o__Thermodesulfobacteriales(c__Thermodesulfobacteria) 10.0%	
+o__UBA2991	10	2	o__(c__Tissierellia) 90.0%, o__Thermoflexales(c__Thermoflexia) 10.0%	
+o__UBA6615	10	2	o__(c__Tissierellia) 70.0%, o__Rhodospirillales 30.0%	
+o__Promineofilales	10	3	o__(c__Tissierellia) 60.0%, o__Anaerolineales 30.0%, o__Ardenticatenales(c__Ardenticatenia) 10.0%	
+o__ATCC43930	10	2	o__Rhodospirillales 50.0%, o__(c__Tissierellia) 50.0%	
+o__Caldilineales	10	3	o__Caldilineales(c__Caldilineae) 50.0%, o__(c__Tissierellia) 30.0%, o__Anaerolineales 20.0%	
+o__Evansiales	9	1	o__Oceanospirillales 100.0%	
+o__PCC-7336	9	1	o__Synechococcales(c__) 100.0%	
+o__CPR3	9	1	o__(c__Tissierellia) 100.0%	
+o__UBA10025	9	1	o__(c__Tissierellia) 100.0%	
+o__32-111	9	1	o__(c__Tissierellia) 100.0%	
+o__UBA1551	9	1	o__(c__Tissierellia) 100.0%	
+o__UBA10029	9	1	o__(c__Tissierellia) 100.0%	
+o__UBA1146	9	1	o__(c__Tissierellia) 100.0%	
+o__UBA10575	9	1	o__(c__Tissierellia) 100.0%	
+o__Binatales	9	1	o__(c__Tissierellia) 100.0%	
+o__UBA2241	9	1	o__(c__Tissierellia) 100.0%	
+o__Isosphaerales	9	2	o__Planctomycetales(c__Planctomycetia) 88.89%, o__(c__Tissierellia) 11.11%	
+o__Thiohalomonadales_A	9	2	o__(c__Tissierellia) 88.89%, o__Chromatiales 11.11%	
+o__UTPRO1	9	2	o__(c__Tissierellia) 88.89%, o__Myxococcales(c__Deltaproteobacteria) 11.11%	
+o__Nannocystales	9	2	o__Myxococcales(c__Deltaproteobacteria) 77.78%, o__(c__Tissierellia) 22.22%	
+o__UBA12402	9	2	o__(c__Tissierellia) 77.78%, o__Legionellales 22.22%	
+o__UBA7985	9	3	o__Rhodospirillales 66.67%, o__(c__Tissierellia) 22.22%, o__Kiloniellales 11.11%	
+o__Caldisericales	9	2	o__(c__Tissierellia) 66.67%, o__Caldisericales 33.33%	
+o__UBA7879	9	3	o__(c__Tissierellia) 55.56%, o__Holosporales 33.33%, o__Rickettsiales 11.11%	
+o__Tumebacillales	8	1	o__Bacillales(c__Bacilli) 100.0%	
+o__UBA11705	8	1	o__(c__Tissierellia) 100.0%	
+o__Terrybacterales	8	1	o__(c__Tissierellia) 100.0%	
+o__UBA11654	8	1	o__(c__Tissierellia) 100.0%	
+o__Caldatribacteriales	8	1	o__(c__Tissierellia) 100.0%	
+o__OXYB2-FULL-49-7	8	1	o__(c__Tissierellia) 100.0%	
+o__2-02-FULL-39-32	8	1	o__(c__Tissierellia) 100.0%	
+o__GWE2-31-10	8	1	o__(c__Tissierellia) 100.0%	
+o__UBA4055	8	1	o__(c__Tissierellia) 100.0%	
+o__UBA8473	8	1	o__(c__Tissierellia) 100.0%	
+o__UBA1544	8	1	o__(c__Tissierellia) 100.0%	
+o__CG1-02-43-210	8	1	o__(c__Tissierellia) 100.0%	
+o__JdFR-76	8	1	o__(c__Tissierellia) 100.0%	
+o__4484-171	8	1	o__(c__Tissierellia) 100.0%	
+o__UBA1212	8	1	o__Clostridiales 100.0%	
+o__GCA-002705445	8	1	o__(c__Tissierellia) 100.0%	
+o__UBA2242	8	1	o__(c__Tissierellia) 100.0%	
+o__Rubrobacterales	8	2	o__Rubrobacterales 87.5%, o__(c__Tissierellia) 12.5%	
+o__UBA6522	8	2	o__(c__Tissierellia) 87.5%, o__Rhodospirillales(c__Alphaproteobacteria) 12.5%	
+o__Thiohalomonadales	8	2	o__Chromatiales 62.5%, o__(c__Tissierellia) 37.5%	
+o__BSN033	8	2	o__Syntrophobacterales(c__Deltaproteobacteria) 62.5%, o__(c__Tissierellia) 37.5%	
+o__UBA7887	8	2	o__(c__Tissierellia) 62.5%, o__Rhodospirillales 37.5%	
+o__SM23-33	8	3	o__Phycisphaerales 50.0%, o__(c__Tissierellia) 37.5%, o__Planctomycetales(c__Planctomycetia) 12.5%	
+o__Aerophobales	7	1	o__(c__Tissierellia) 100.0%	
+o__DTU065	7	1	o__(c__Tissierellia) 100.0%	
+o__UBA8919	7	1	o__(c__Tissierellia) 100.0%	
+o__SPLOWO2-01-44-7	7	1	o__(c__Tissierellia) 100.0%	
+o__GWA2-38-11	7	1	o__(c__Tissierellia) 100.0%	
+o__Ozemobacterales	7	1	o__(c__Tissierellia) 100.0%	
+o__GWF2-39-127	7	1	o__(c__Tissierellia) 100.0%	
+o__CG2-30-33-46	7	1	o__(c__Tissierellia) 100.0%	
+o__LD1-PB3	7	1	o__(c__Tissierellia) 100.0%	
+o__UBA1572	7	1	o__(c__Tissierellia) 100.0%	
+o__UBA2386	7	1	o__(c__Tissierellia) 100.0%	
+o__UBA8108	7	1	o__(c__Tissierellia) 100.0%	
+o__SZUA-252	7	1	o__(c__Tissierellia) 100.0%	
+o__SLGR01	7	1	o__(c__Tissierellia) 100.0%	
+o__Caedimonadales	7	2	o__Holosporales 85.71%, o__(c__Tissierellia) 14.29%	
+o__Dissulfuribacterales	7	2	o__(c__Tissierellia) 85.71%, o__Thermodesulfobacteriales(c__Thermodesulfobacteria) 14.29%	
+o__UBA10199	7	2	o__(c__Tissierellia) 85.71%, o__Nitrospirales(c__Nitrospira) 14.29%	
+o__CG2-30-70-394	7	2	o__(c__Tissierellia) 85.71%, o__Chrysiogenales(c__Chrysiogenetes) 14.29%	
+o__Thermicanales	7	2	o__Bacillales 71.43%, o__Thermoanaerobacterales(c__Clostridia) 28.57%	
+o__Granulosicoccales	7	2	o__Chromatiales 71.43%, o__(c__Tissierellia) 28.57%	
+o__HDB-SIOI813	7	2	o__(c__Tissierellia) 71.43%, o__Nitrospirales(c__Nitrospira) 28.57%	
+o__UBA1429	7	2	o__(c__Tissierellia) 71.43%, o__Anaerolineales 28.57%	
+o__Holosporales	7	3	o__Holosporales 57.14%, o__(c__Tissierellia) 28.57%, o__Rickettsiales 14.29%	
+o__Elainellales	7	2	o__Synechococcales(c__) 57.14%, o__(c__Tissierellia) 42.86%	
+o__C00003060	7	2	o__Desulfobacterales(c__Deltaproteobacteria) 57.14%, o__(c__Tissierellia) 42.86%	
+o__Thiohalobacterales	7	2	o__(c__Tissierellia) 57.14%, o__Chromatiales 42.86%	
+o__GCA-002720895	7	2	o__(c__Tissierellia) 57.14%, o__Pelagibacterales 42.86%	
+o__SKNC01	7	2	o__Clostridiales(c__Clostridia) 57.14%, o__(c__Tissierellia) 42.86%	
+o__Oligoflexales	7	3	o__Oligoflexales 42.86%, o__Bdellovibrionales 28.57%, o__(c__Tissierellia) 28.57%	
+o__Desulfobaccales	7	4	o__(c__Tissierellia) 42.86%, o__Syntrophobacterales(c__Deltaproteobacteria) 28.57%, o__Desulfarculales(c__Deltaproteobacteria) 14.29%, o__Desulfobacterales(c__Deltaproteobacteria) 14.29%	
+o__Caldanaerobiales	6	1	o__Thermoanaerobacterales(c__Clostridia) 100.0%	
+o__SM23-42	6	1	o__(c__Tissierellia) 100.0%	
+o__MSB-5A5	6	1	o__(c__Tissierellia) 100.0%	
+o__AB16	6	1	o__(c__Tissierellia) 100.0%	
+o__Ga0077560	6	1	o__(c__Tissierellia) 100.0%	
+o__CG1-02-37-114	6	1	o__(c__Tissierellia) 100.0%	
+o__XYD2-FULL-50-16	6	1	o__(c__Tissierellia) 100.0%	
+o__CG2-30-53-67	6	1	o__(c__Tissierellia) 100.0%	
+o__CG2-30-59-28	6	1	o__(c__Tissierellia) 100.0%	
+o__2-02-FULL-40-11	6	1	o__(c__Tissierellia) 100.0%	
+o__B13-G15	6	1	o__(c__Tissierellia) 100.0%	
+o__UBA1177	6	1	o__(c__Tissierellia) 100.0%	
+o__GN15	6	1	o__(c__Tissierellia) 100.0%	
+o__UBA5377	6	1	o__(c__Tissierellia) 100.0%	
+o__LZORAL124-64-63	6	1	o__(c__Tissierellia) 100.0%	
+o__UBA4664	6	1	o__(c__Tissierellia) 100.0%	
+o__UBA4068	6	1	o__Clostridiales(c__Clostridia) 100.0%	
+o__Bac17	6	1	o__(c__Tissierellia) 100.0%	
+o__GCA-002687715	6	1	o__(c__Tissierellia) 100.0%	
+o__Palsa-1439	6	1	o__(c__Tissierellia) 100.0%	
+o__Thermaerobacterales	6	2	o__Clostridiales(c__Clostridia) 83.33%, o__(c__Tissierellia) 16.67%	
+o__Paracaedibacterales	6	2	o__Holosporales 83.33%, o__(c__Tissierellia) 16.67%	
+o__Ga0077536	6	2	o__(c__Tissierellia) 83.33%, o__Methylococcales 16.67%	
+o__CG2-30-40-21	6	2	o__(c__Tissierellia) 83.33%, o__Nitrospirales(c__Nitrospira) 16.67%	
+o__UBA2199	6	2	o__(c__Tissierellia) 83.33%, o__Chrysiogenales(c__Chrysiogenetes) 16.67%	
+o__UBA5704	6	2	o__(c__Tissierellia) 83.33%, o__Holophagales(c__Holophagae) 16.67%	
+o__Haliangiales	6	2	o__Myxococcales(c__Deltaproteobacteria) 66.67%, o__(c__Tissierellia) 33.33%	
+o__UBA8248	6	2	o__(c__Tissierellia) 66.67%, o__Nitrospinales(c__Nitrospinia) 33.33%	
+o__UBA828	6	2	o__(c__Tissierellia) 66.67%, o__Rhodospirillales 33.33%	
+o__Chitinivibrionales	6	3	o__(c__Tissierellia) 50.0%, o__Chitinispirillales(c__Chitinispirillia) 33.33%, o__Chitinivibrionales 16.67%	
+o__Tistrellales	5	1	o__Rhodospirillales 100.0%	
+o__GWA2-43-13	5	1	o__(c__Tissierellia) 100.0%	
+o__UBA12157	5	1	o__(c__Tissierellia) 100.0%	
+o__DTU084	5	1	o__(c__Tissierellia) 100.0%	
+o__Tepidibacillales	5	1	o__Bacillales 100.0%	
+o__UBA6215	5	1	o__(c__Tissierellia) 100.0%	
+o__Woykebacterales	5	1	o__(c__Tissierellia) 100.0%	
+o__20CM-2-55-15	5	1	o__(c__Tissierellia) 100.0%	
+o__2-02-FULL-44-16	5	1	o__(c__Tissierellia) 100.0%	
+o__Gp22-AA2	5	1	o__(c__Tissierellia) 100.0%	
+o__UBA10183	5	1	o__(c__Tissierellia) 100.0%	
+o__UBA2777	5	1	o__(c__Tissierellia) 100.0%	
+o__RBG-16-71-46	5	1	o__(c__Tissierellia) 100.0%	
+o__Carboxydocellales	5	1	o__Clostridiales(c__Clostridia) 100.0%	
+o__UBA7694	5	1	o__(c__Tissierellia) 100.0%	
+o__UBA3072	5	1	o__(c__Tissierellia) 100.0%	
+o__SSS58A	5	1	o__(c__Tissierellia) 100.0%	
+o__UBA6126	5	1	o__(c__Tissierellia) 100.0%	
+o__SS1-B-03-39	5	1	o__(c__Tissierellia) 100.0%	
+o__UBA2258	5	1	o__(c__Tissierellia) 100.0%	
+o__UBA4151	5	1	o__Myxococcales(c__Deltaproteobacteria) 100.0%	
+o__QHBO01	5	1	o__(c__Tissierellia) 100.0%	
+o__UBA7950	5	1	o__(c__Tissierellia) 100.0%	
+o__SZUA-229	5	2	o__(c__Tissierellia) 80.0%, o__Thiotrichales 20.0%	
+o__UBA5066	5	2	o__(c__Tissierellia) 80.0%, o__Holophagales(c__Holophagae) 20.0%	
+o__Thermoflexales	5	2	o__(c__Tissierellia) 80.0%, o__Thermoflexales(c__Thermoflexia) 20.0%	
+o__CR04bin15	5	2	o__Calditrichales(c__Calditrichae) 80.0%, o__(c__Tissierellia) 20.0%	
+o__Geminicoccales	5	2	o__Rhodospirillales 60.0%, o__(c__Tissierellia) 40.0%	
+o__Berkiellales	5	3	o__Legionellales 60.0%, o__(c__Tissierellia) 20.0%, o__Thiotrichales 20.0%	
+o__UBA9217	5	2	o__(c__Tissierellia) 60.0%, o__Nitrospirales(c__Nitrospira) 40.0%	
+o__Thermincolales	5	2	o__(c__Tissierellia) 60.0%, o__Clostridiales(c__Clostridia) 40.0%	
+o__Dethiobacterales	5	2	o__(c__Tissierellia) 60.0%, o__Clostridiales(c__Clostridia) 40.0%	
+o__GCA-2729495	5	2	o__Chromatiales 60.0%, o__(c__Tissierellia) 40.0%	
+o__UBA8558	5	2	o__Rickettsiales 60.0%, o__(c__Tissierellia) 40.0%	
+o__UBA9042	5	2	o__(c__Tissierellia) 60.0%, o__Myxococcales(c__Deltaproteobacteria) 40.0%	
+o__Dongiales	4	1	o__Rhodospirillales 100.0%	
+o__Oceanibaculales	4	1	o__Rhodospirillales 100.0%	
+o__Carboxydothermales	4	1	o__Thermoanaerobacterales(c__Clostridia) 100.0%	
+o__D8A-2	4	1	o__(c__Tissierellia) 100.0%	
+o__Calescibacteriales	4	1	o__(c__Tissierellia) 100.0%	
+o__Ga0077554	4	1	o__(c__Tissierellia) 100.0%	
+o__DTU080	4	1	o__(c__Tissierellia) 100.0%	
+o__XJ16	4	1	o__Chromatiales 100.0%	
+o__D2-FULL-39-29	4	1	o__(c__Tissierellia) 100.0%	
+o__2-02-FULL-50-16	4	1	o__(c__Tissierellia) 100.0%	
+o__UBA8468	4	1	o__(c__Tissierellia) 100.0%	
+o__2-02-FULL-35-15	4	1	o__(c__Tissierellia) 100.0%	
+o__UBA10806	4	1	o__(c__Tissierellia) 100.0%	
+o__S15B-MN24	4	1	o__(c__Tissierellia) 100.0%	
+o__RBG-13-44-9	4	1	o__(c__Tissierellia) 100.0%	
+o__UBA7662	4	1	o__(c__Tissierellia) 100.0%	
+o__UBA3073	4	1	o__(c__Tissierellia) 100.0%	
+o__CG03	4	1	o__(c__Tissierellia) 100.0%	
+o__UBA890	4	1	o__(c__Tissierellia) 100.0%	
+o__UBA6624	4	1	o__(c__Tissierellia) 100.0%	
+o__UBA2214	4	1	o__(c__Tissierellia) 100.0%	
+o__UBA6911	4	1	o__(c__Tissierellia) 100.0%	
+o__UBA1063	4	1	o__(c__Tissierellia) 100.0%	
+o__PHBI01	4	1	o__(c__Tissierellia) 100.0%	
+o__UBA2361	4	1	o__(c__Tissierellia) 100.0%	
+o__UBA12225	4	1	o__(c__Tissierellia) 100.0%	
+o__PGYV01	4	1	o__(c__Tissierellia) 100.0%	
+o__Zavarziniales	4	1	o__Rhodospirillales 100.0%	
+o__Defferisomatales	4	1	o__(c__Tissierellia) 100.0%	
+o__Gp7-AA8	4	1	o__(c__Tissierellia) 100.0%	
+o__Fen-336	4	1	o__(c__Tissierellia) 100.0%	
+o__SZUA-161	4	1	o__(c__Tissierellia) 100.0%	
+o__UBA11346	4	1	o__(c__Tissierellia) 100.0%	
+o__B70-G9	4	1	o__(c__Tissierellia) 100.0%	
+o__SLND01	4	1	o__(c__Tissierellia) 100.0%	
+o__SLMS01	4	1	o__(c__Tissierellia) 100.0%	
+o__SLRQ01	4	1	o__(c__Tissierellia) 100.0%	
+o__CACIAM-69d	4	2	o__Synechococcales(c__) 75.0%, o__Oscillatoriales(c__) 25.0%	
+o__Lutisporales	4	2	o__Clostridiales 75.0%, o__(c__Tissierellia) 25.0%	
+o__HGW-17	4	2	o__(c__Tissierellia) 75.0%, o__Myxococcales(c__Deltaproteobacteria) 25.0%	
+o__UBA2966	4	2	o__(c__Tissierellia) 75.0%, o__Rhodospirillales 25.0%	
+o__Tenderiales	4	2	o__(c__Tissierellia) 75.0%, o__Chromatiales 25.0%	
+o__UBA4142	4	2	o__Anaerolineales 75.0%, o__(c__Tissierellia) 25.0%	
+o__Ferrovibrionales	4	2	o__Rhodospirillales 75.0%, o__(c__Tissierellia) 25.0%	
+o__4572-78	4	2	o__(c__Tissierellia) 75.0%, o__Anaerolineales 25.0%	
+o__21-64-14	4	2	o__(c__Tissierellia) 75.0%, o__Chromatiales 25.0%	
+o__Immundisolibacterales	4	2	o__(c__Tissierellia) 75.0%, o__Immundisolibacterales 25.0%	
+o__SM23-32	4	2	o__Candidatus Brocadiales 75.0%, o__(c__Tissierellia) 25.0%	
+o__SBBL01	4	2	o__Nitrospirales(c__Nitrospira) 75.0%, o__(c__Tissierellia) 25.0%	
+o__Acidulodesulfobacterales	4	2	o__Candidatus Acidulodesulfobacterales(c__Deltaproteobacteria) 75.0%, o__(c__Tissierellia) 25.0%	
+o__Calditrichales	4	2	o__Calditrichales(c__Calditrichae) 50.0%, o__(c__Tissierellia) 50.0%	
+o__UBA1062	4	2	o__(c__Tissierellia) 50.0%, o__Syntrophobacterales(c__Deltaproteobacteria) 50.0%	
+o__UBA6777	4	2	o__Myxococcales(c__Deltaproteobacteria) 50.0%, o__(c__Tissierellia) 50.0%	
+o__UBA3567	4	3	o__(c__Tissierellia) 50.0%, o__Thermoanaerobacterales(c__Clostridia) 25.0%, o__Clostridiales(c__Clostridia) 25.0%	
+o__UBA7937	4	2	o__Anaerolineales 50.0%, o__(c__Tissierellia) 50.0%	
+o__Chloracidobacteriales	3	1	o__(c__Tissierellia) 100.0%	
+o__Thermodesulfobiales	3	1	o__Thermoanaerobacterales(c__Clostridia) 100.0%	
+o__SM1-40	3	1	o__(c__Tissierellia) 100.0%	
+o__B142	3	1	o__(c__Tissierellia) 100.0%	
+o__Entotheonellales	3	1	o__(c__Tissierellia) 100.0%	
+o__DTU014	3	1	o__(c__Tissierellia) 100.0%	
+o__DTU030	3	1	o__(c__Tissierellia) 100.0%	
+o__Moduliflexales	3	1	o__(c__Tissierellia) 100.0%	
+o__GCA-001735895	3	1	o__(c__Tissierellia) 100.0%	
+o__2-12-FULL-50-11	3	1	o__(c__Tissierellia) 100.0%	
+o__Spechtbacterales	3	1	o__(c__Tissierellia) 100.0%	
+o__RBG-13-55-18	3	1	o__(c__Tissierellia) 100.0%	
+o__UBA9980	3	1	o__(c__Tissierellia) 100.0%	
+o__XYB2-FULL-38-15	3	1	o__(c__Tissierellia) 100.0%	
+o__UBA8481	3	1	o__(c__Tissierellia) 100.0%	
+o__2-01-FULL-39-13	3	1	o__(c__Tissierellia) 100.0%	
+o__GCA-001788215	3	1	o__(c__Tissierellia) 100.0%	
+o__CG1-02-64-396	3	1	o__(c__Tissierellia) 100.0%	
+o__CG2-30-40-12	3	1	o__(c__Tissierellia) 100.0%	
+o__MVCY01	3	1	o__(c__Tissierellia) 100.0%	
+o__4484-211	3	1	o__(c__Tissierellia) 100.0%	
+o__F11	3	1	o__(c__Tissierellia) 100.0%	
+o__Selenomonadales_A	3	1	o__Selenomonadales 100.0%	
+o__UBA3054	3	1	o__(c__Tissierellia) 100.0%	
+o__UBA1127	3	1	o__(c__Tissierellia) 100.0%	
+o__UBA994	3	1	o__(c__Tissierellia) 100.0%	
+o__UBA6098	3	1	o__(c__Tissierellia) 100.0%	
+o__UBA11872	3	1	o__(c__Tissierellia) 100.0%	
+o__UBA3088	3	1	o__(c__Tissierellia) 100.0%	
+o__UBA2201	3	1	o__Holophagales(c__Holophagae) 100.0%	
+o__UBA9087	3	1	o__(c__Tissierellia) 100.0%	
+o__GCA-2863065	3	1	o__(c__Tissierellia) 100.0%	
+o__UBA1875	3	1	o__(c__Tissierellia) 100.0%	
+o__Fen-727	3	1	o__(c__Tissierellia) 100.0%	
+o__UBA2200	3	1	o__Anaerolineales 100.0%	
+o__UBA7976	3	1	o__Myxococcales(c__Deltaproteobacteria) 100.0%	
+o__UBA727	3	1	o__Myxococcales(c__Deltaproteobacteria) 100.0%	
+o__UBA1113	3	1	o__Legionellales 100.0%	
+o__UBA4575	3	1	o__(c__Tissierellia) 100.0%	
+o__UBA6595	3	1	o__(c__Tissierellia) 100.0%	
+o__UBA2466	3	1	o__Bdellovibrionales(c__Oligoflexia) 100.0%	
+o__UBA6262	3	1	o__(c__Tissierellia) 100.0%	
+o__UBA1161	3	1	o__Phycisphaerales 100.0%	
+o__BMS3Abin14	3	1	o__(c__Tissierellia) 100.0%	
+o__SZUA-336	3	1	o__(c__Tissierellia) 100.0%	
+o__Palsa-1180	3	1	o__(c__Tissierellia) 100.0%	
+o__HR10	3	1	o__(c__Tissierellia) 100.0%	
+o__UBA8346	3	1	o__(c__Tissierellia) 100.0%	
+o__B68-G9	3	1	o__(c__Tissierellia) 100.0%	
+o__PUPC01	3	1	o__(c__Tissierellia) 100.0%	
+o__PWVN01	3	1	o__Clostridiales(c__Clostridia) 100.0%	
+o__B26-G2	3	1	o__(c__Tissierellia) 100.0%	
+o__AC-67	3	1	o__(c__Tissierellia) 100.0%	
+o__E44-bin80	3	1	o__(c__Tissierellia) 100.0%	
+o__SMXP01	3	1	o__(c__Tissierellia) 100.0%	
+o__RP-AC37	3	1	o__Frankiales(c__Actinobacteria) 100.0%	
+o__ZOR0006	3	2	o__(c__Tissierellia) 66.67%, o__Erysipelotrichales(c__Erysipelotrichia) 33.33%	
+o__Ardenticatenales	3	2	o__Ardenticatenales(c__Ardenticatenia) 66.67%, o__(c__Tissierellia) 33.33%	
+o__Elsterales	3	2	o__Rhodospirillales 66.67%, o__(c__Tissierellia) 33.33%	
+o__DTU086	3	2	o__Clostridiales(c__Clostridia) 66.67%, o__(c__Tissierellia) 33.33%	
+o__Brevinematales	3	2	o__(c__Tissierellia) 66.67%, o__Brevinematales(c__Spirochaetia) 33.33%	
+o__UBA9339	3	2	o__(c__Tissierellia) 66.67%, o__Legionellales 33.33%	
+o__UBA3071	3	2	o__(c__Tissierellia) 66.67%, o__Anaerolineales 33.33%	
+o__TC1	3	2	o__(c__Tissierellia) 66.67%, o__Clostridiales(c__Clostridia) 33.33%	
+o__Limnochordales	3	2	o__(c__Tissierellia) 66.67%, o__Limnochordales 33.33%	
+o__UBA9615	3	2	o__(c__Tissierellia) 66.67%, o__Rickettsiales(c__Alphaproteobacteria) 33.33%	
+o__UBA3561	3	2	o__(c__Tissierellia) 66.67%, o__Clostridiales(c__Clostridia) 33.33%	
+o__GCA-2701885	3	2	o__Rhodospirillales 66.67%, o__(c__Tissierellia) 33.33%	
+o__UBA3569	3	2	o__(c__Tissierellia) 66.67%, o__Clostridiales(c__Clostridia) 33.33%	
+o__Sumerlaeales	3	2	o__(c__Tissierellia) 66.67%, o__Candidatus Sumerlaeales 33.33%	
+o__Bin65	3	2	o__Rhodospirillales 66.67%, o__Holosporales 33.33%	
+o__UBA7966	3	2	o__(c__Tissierellia) 66.67%, o__Chromatiales 33.33%	
+o__SZUA-365	3	2	o__(c__Tissierellia) 66.67%, o__Chromatiales(c__Gammaproteobacteria) 33.33%	
+o__SZUA-140	3	2	o__(c__Tissierellia) 66.67%, o__Chromatiales 33.33%	
+o__Symbiobacteriales	3	2	o__(c__Tissierellia) 66.67%, o__Clostridiales(c__Clostridia) 33.33%	
+o__UBA9673	3	2	o__Clostridiales(c__Clostridia) 66.67%, o__(c__Tissierellia) 33.33%	
+o__Micavibrionales_A	3	2	o__Rhodospirillales 66.67%, o__(c__Tissierellia) 33.33%	
+o__XYA12-FULL-58-9	3	2	o__Bdellovibrionales(c__Oligoflexia) 66.67%, o__(c__Tissierellia) 33.33%	
+o__Caenarcaniphilales	3	2	o__(c__Tissierellia) 66.67%, o__Candidatus Caenarcaniphilales(c__) 33.33%	
+o__PWKZ01	3	2	o__Myxococcales(c__Deltaproteobacteria) 66.67%, o__Bradymonadales(c__Deltaproteobacteria) 33.33%	
+o__Thiohalospirales	3	2	o__(c__Tissierellia) 66.67%, o__Chromatiales 33.33%	
+o__SLOV01	3	2	o__(c__Tissierellia) 66.67%, o__Kiritimatiellales 33.33%	
+o__Minwuiales	3	2	o__Minwuiales 66.67%, o__Rhizobiales 33.33%	
+o__Spirochaetales_A	2	1	o__Spirochaetales 100.0%	
+o__Anaeromusales	2	1	o__Selenomonadales 100.0%	
+o__Caldalkalibacillales	2	1	o__Bacillales 100.0%	
+o__PCC-9006	2	1	o__Synechococcales(c__) 100.0%	
+o__Desulfitibacterales	2	1	o__Clostridiales(c__Clostridia) 100.0%	
+o__Heliobacteriales	2	1	o__Clostridiales(c__Clostridia) 100.0%	
+o__Thiohalorhabdales	2	1	o__(c__Tissierellia) 100.0%	
+o__Kyrpidiales	2	1	o__Bacillales(c__Bacilli) 100.0%	
+o__SM23-31	2	1	o__(c__Tissierellia) 100.0%	
+o__GBS-1	2	1	o__(c__Tissierellia) 100.0%	
+o__Desulfuribacillales	2	1	o__Bacillales(c__Bacilli) 100.0%	
+o__Proteinivoracales	2	1	o__Clostridiales(c__Clostridia) 100.0%	
+o__GWB1-36-13	2	1	o__(c__Tissierellia) 100.0%	
+o__2-12-FULL-37-12	2	1	o__(c__Tissierellia) 100.0%	
+o__XYA2-FULL-43-10	2	1	o__(c__Tissierellia) 100.0%	
+o__2-12-FULL-62-27	2	1	o__(c__Tissierellia) 100.0%	
+o__Bacillales_F	2	1	o__Bacillales 100.0%	
+o__2-12-FULL-54-10	2	1	o__(c__Tissierellia) 100.0%	
+o__54-19	2	1	o__(c__Tissierellia) 100.0%	
+o__RBG-16-64-13	2	1	o__(c__Tissierellia) 100.0%	
+o__2-02-FULL-51-18	2	1	o__(c__Tissierellia) 100.0%	
+o__Hydrothermales	2	1	o__(c__Tissierellia) 100.0%	
+o__AABM5-25-91	2	1	o__(c__Tissierellia) 100.0%	
+o__JdFR-78	2	1	o__(c__Tissierellia) 100.0%	
+o__4484-213	2	1	o__(c__Tissierellia) 100.0%	
+o__UBA5359	2	1	o__(c__Tissierellia) 100.0%	
+o__Bin61	2	1	o__(c__Tissierellia) 100.0%	
+o__UBA4473	2	1	o__(c__Tissierellia) 100.0%	
+o__UBA5214	2	1	o__(c__Tissierellia) 100.0%	
+o__UBA5177	2	1	o__(c__Tissierellia) 100.0%	
+o__UBA2985	2	1	o__(c__Tissierellia) 100.0%	
+o__Bin125	2	1	o__(c__Tissierellia) 100.0%	
+o__UBA1384	2	1	o__(c__Tissierellia) 100.0%	
+o__UBA2247	2	1	o__(c__Tissierellia) 100.0%	
+o__UM-FILTER-43-11	2	1	o__(c__Tissierellia) 100.0%	
+o__GCA-002796325	2	1	o__(c__Tissierellia) 100.0%	
+o__UM-FILTER-49-7	2	1	o__(c__Tissierellia) 100.0%	
+o__UBA6729	2	1	o__(c__Tissierellia) 100.0%	
+o__UBA6191	2	1	o__(c__Tissierellia) 100.0%	
+o__UBA3505	2	1	o__Myxococcales(c__Deltaproteobacteria) 100.0%	
+o__UBA228	2	1	o__Deferribacterales 100.0%	
+o__UBA4092	2	1	o__(c__Tissierellia) 100.0%	
+o__UBA2766	2	1	o__(c__Tissierellia) 100.0%	
+o__UBA8890	2	1	o__(c__Tissierellia) 100.0%	
+o__UBA6952	2	1	o__(c__Tissierellia) 100.0%	
+o__UBA7656	2	1	o__(c__Tissierellia) 100.0%	
+o__16-39-46	2	1	o__(c__Tissierellia) 100.0%	
+o__UBA2392	2	1	o__(c__Tissierellia) 100.0%	
+o__UBA6077	2	1	o__(c__Tissierellia) 100.0%	
+o__SZUA-182	2	1	o__(c__Tissierellia) 100.0%	
+o__SZUA-21	2	1	o__(c__Tissierellia) 100.0%	
+o__SZUA-567	2	1	o__(c__Tissierellia) 100.0%	
+o__Palsa-1295	2	1	o__(c__Tissierellia) 100.0%	
+o__SW-4-49-11	2	1	o__(c__Tissierellia) 100.0%	
+o__UMGS1883	2	1	o__Clostridiales 100.0%	
+o__PUNC01	2	1	o__(c__Tissierellia) 100.0%	
+o__T1Sed10-126	2	1	o__(c__Tissierellia) 100.0%	
+o__J045	2	1	o__(c__Tissierellia) 100.0%	
+o__UBA12178	2	1	o__(c__Tissierellia) 100.0%	
+o__UBA12015	2	1	o__(c__Tissierellia) 100.0%	
+o__SURF-5	2	1	o__(c__Tissierellia) 100.0%	
+o__B3-LCP	2	1	o__(c__Tissierellia) 100.0%	
+o__Termititenacales	2	1	o__Candidatus Termititenacales 100.0%	
+o__SYMT01	2	1	o__(c__Tissierellia) 100.0%	
+o__SMYD01	2	1	o__(c__Tissierellia) 100.0%	
+o__QZLD01	2	1	o__(c__Tissierellia) 100.0%	
+o__SORT01	2	1	o__(c__Tissierellia) 100.0%	
+o__Turneriellales	2	2	o__Leptospirales(c__Spirochaetia) 50.0%, o__(c__Tissierellia) 50.0%	
+o__Acidothermales	2	2	o__Acidothermales(c__Actinobacteria) 50.0%, o__(c__Tissierellia) 50.0%	
+o__HK1	2	2	o__Chromatiales 50.0%, o__(c__Tissierellia) 50.0%	
+o__Desulfofervidales	2	2	o__Syntrophobacterales(c__Deltaproteobacteria) 50.0%, o__(c__Tissierellia) 50.0%	
+o__SM23-61	2	2	o__(c__Tissierellia) 50.0%, o__Syntrophobacterales(c__Deltaproteobacteria) 50.0%	
+o__PH28-bin88	2	2	o__Clostridiales(c__Clostridia) 50.0%, o__(c__Tissierellia) 50.0%	
+o__Thermosulfidibacterales	2	2	o__Aquificales(c__Aquificae) 50.0%, o__(c__Tissierellia) 50.0%	
+o__MHYJ01	2	2	o__(c__Tissierellia) 50.0%, o__Planctomycetales(c__Planctomycetia) 50.0%	
+o__Micavibrionales_B	2	2	o__(c__Tissierellia) 50.0%, o__Rhodospirillales 50.0%	
+o__SK-Y3	2	2	o__Clostridiales 50.0%, o__(c__Tissierellia) 50.0%	
+o__UBA2394	2	2	o__Bacteriovoracales(c__Oligoflexia) 50.0%, o__(c__Tissierellia) 50.0%	
+o__GCA-2731375	2	2	o__(c__Tissierellia) 50.0%, o__Rhodospirillales 50.0%	
+o__UBA1149	2	2	o__(c__Tissierellia) 50.0%, o__Myxococcales(c__Deltaproteobacteria) 50.0%	
+o__UBA995	2	2	o__(c__Tissierellia) 50.0%, o__Clostridiales(c__Clostridia) 50.0%	
+o__SP197	2	2	o__Rhodospirillales 50.0%, o__(c__Tissierellia) 50.0%	
+o__UBA3575	2	2	o__(c__Tissierellia) 50.0%, o__Clostridiales(c__Clostridia) 50.0%	
+o__Bin18	2	2	o__Desulfurellales(c__Deltaproteobacteria) 50.0%, o__(c__Tissierellia) 50.0%	
+o__Abditibacteriales	2	2	o__Abditibacteriales 50.0%, o__(c__Tissierellia) 50.0%	
+o__Capsulimonadales	2	2	o__(c__Tissierellia) 50.0%, o__Capsulimonadales(c__Armatimonadia) 50.0%	
+o__BMS3ABIN01	2	2	o__(c__Tissierellia) 50.0%, o__Gaiellales(c__Rubrobacteria) 50.0%	
+o__UBA8153	2	2	o__Clostridiales(c__Clostridia) 50.0%, o__(c__Tissierellia) 50.0%	
+o__Poseidoniales	2	2	o__Rhizobiales(c__Alphaproteobacteria) 50.0%, o__Verrucomicrobiales(c__Verrucomicrobiae) 50.0%	
+o__Desulfomonilales	1	1	o__Syntrophobacterales(c__Deltaproteobacteria) 100.0%	
+o__Rubeoparvulales	1	1	o__Bacillales 100.0%	
+o__Mahellales	1	1	o__Thermoanaerobacterales(c__Clostridia) 100.0%	
+o__Calditerricolales	1	1	o__Bacillales 100.0%	
+o__PCC-7407	1	1	o__Oscillatoriales(c__) 100.0%	
+o__Neosynechococcales	1	1	o__Synechococcales(c__) 100.0%	
+o__HTCC5015	1	1	o__(c__Tissierellia) 100.0%	
+o__Thermobaculales	1	1	o__(c__Tissierellia) 100.0%	
+o__SDB-A	1	1	o__Desulfuromonadales(c__Deltaproteobacteria) 100.0%	
+o__DG-27	1	1	o__(c__Tissierellia) 100.0%	
+o__SM23-81	1	1	o__(c__Tissierellia) 100.0%	
+o__DG-23	1	1	o__(c__Tissierellia) 100.0%	
+o__GWA2-38-13b	1	1	o__(c__Tissierellia) 100.0%	
+o__OLB16	1	1	o__(c__Tissierellia) 100.0%	
+o__OLB7	1	1	o__(c__Tissierellia) 100.0%	
+o__Adiutricales	1	1	o__(c__Tissierellia) 100.0%	
+o__LBFQ01	1	1	o__(c__Tissierellia) 100.0%	
+o__DTU087	1	1	o__Clostridiales(c__Clostridia) 100.0%	
+o__Latescibacterales	1	1	o__(c__Tissierellia) 100.0%	
+o__GCA-001730085	1	1	o__(c__Tissierellia) 100.0%	
+o__Mor1	1	1	o__(c__Tissierellia) 100.0%	
+o__Gloeomargaritales	1	1	o__Gloeoemargaritales(c__) 100.0%	
+o__Neosynechococcales_A	1	1	o__Synechococcales(c__) 100.0%	
+o__9FT-COMBO-42-15	1	1	o__(c__Tissierellia) 100.0%	
+o__2-01-FULL-59-12	1	1	o__(c__Tissierellia) 100.0%	
+o__RBG-16-64-22	1	1	o__(c__Tissierellia) 100.0%	
+o__43-37	1	1	o__(c__Tissierellia) 100.0%	
+o__RBG-16-55-9	1	1	o__(c__Tissierellia) 100.0%	
+o__UBA8477	1	1	o__(c__Tissierellia) 100.0%	
+o__AqS3	1	1	o__(c__Tissierellia) 100.0%	
+o__AqS2	1	1	o__(c__Tissierellia) 100.0%	
+o__O2-12-FULL-43-9	1	1	o__(c__Tissierellia) 100.0%	
+o__2-12-FULL-45-22	1	1	o__(c__Tissierellia) 100.0%	
+o__9FT-COMBO-53-11	1	1	o__(c__Tissierellia) 100.0%	
+o__RBG-16-42-10	1	1	o__(c__Tissierellia) 100.0%	
+o__2-01-FULL-47-10	1	1	o__(c__Tissierellia) 100.0%	
+o__GWF2-35-9	1	1	o__(c__Tissierellia) 100.0%	
+o__2-01-FULL-66-17	1	1	o__(c__Tissierellia) 100.0%	
+o__GWA2-58-10	1	1	o__(c__Tissierellia) 100.0%	
+o__RBG-13-43-22	1	1	o__(c__Tissierellia) 100.0%	
+o__2-12-FULL-49-11	1	1	o__(c__Tissierellia) 100.0%	
+o__YA12-FULL-61-11	1	1	o__(c__Tissierellia) 100.0%	
+o__2-02-FULL-49-11	1	1	o__(c__Tissierellia) 100.0%	
+o__CG2-30-54-11	1	1	o__(c__Tissierellia) 100.0%	
+o__RBG-13-61-14	1	1	o__(c__Tissierellia) 100.0%	
+o__RBG-13-66-14	1	1	o__(c__Tissierellia) 100.0%	
+o__GCF-002020875	1	1	o__(c__Tissierellia) 100.0%	
+o__4484-49	1	1	o__(c__Tissierellia) 100.0%	
+o__JdFR-97	1	1	o__Desulfarculales(c__Deltaproteobacteria) 100.0%	
+o__JdFR-54	1	1	o__Dehalococcoidales 100.0%	
+o__4484-107	1	1	o__(c__Tissierellia) 100.0%	
+o__AABM5-125-24	1	1	o__(c__Tissierellia) 100.0%	
+o__4572-55	1	1	o__(c__Tissierellia) 100.0%	
+o__4484-93	1	1	o__(c__Tissierellia) 100.0%	
+o__4484-113	1	1	o__Planctomycetales(c__Planctomycetia) 100.0%	
+o__Enterobacterales_A	1	1	o__(c__Tissierellia) 100.0%	
+o__Dehalobacteriales	1	1	o__Clostridiales(c__Clostridia) 100.0%	
+o__Calderihabitantales	1	1	o__Thermoanaerobacterales(c__Clostridia) 100.0%	
+o__UBA7702	1	1	o__Clostridiales(c__Clostridia) 100.0%	
+o__UBA5435	1	1	o__(c__Tissierellia) 100.0%	
+o__Porisulfidales	1	1	o__Chromatiales 100.0%	
+o__GCA-2717565	1	1	o__(c__Tissierellia) 100.0%	
+o__UBA4820	1	1	o__(c__Tissierellia) 100.0%	
+o__GCA-2747255	1	1	o__(c__Tissierellia) 100.0%	
+o__UBA7366	1	1	o__Legionellales 100.0%	
+o__UBA6099	1	1	o__(c__Tissierellia) 100.0%	
+o__UBA3830	1	1	o__Holosporales 100.0%	
+o__UBA4733	1	1	o__(c__Tissierellia) 100.0%	
+o__GCA-2747355	1	1	o__(c__Tissierellia) 100.0%	
+o__UBA6266	1	1	o__(c__Tissierellia) 100.0%	
+o__UBA2565	1	1	o__(c__Tissierellia) 100.0%	
+o__UBA11029	1	1	o__(c__Tissierellia) 100.0%	
+o__UBA5859	1	1	o__Thiotrichales 100.0%	
+o__GCA-2746255	1	1	o__Rhodospirillales 100.0%	
+o__GCA-2400775	1	1	o__(c__Tissierellia) 100.0%	
+o__UBA11136	1	1	o__Rhodospirillales 100.0%	
+o__0-14-0-20-40-13	1	1	o__(c__Tissierellia) 100.0%	
+o__UBA10988	1	1	o__(c__Tissierellia) 100.0%	
+o__UBA2770	1	1	o__(c__Tissierellia) 100.0%	
+o__GCA-2687025	1	1	o__(c__Tissierellia) 100.0%	
+o__Bin95	1	1	o__(c__Tissierellia) 100.0%	
+o__UBA7526	1	1	o__(c__Tissierellia) 100.0%	
+o__GCA-2686955	1	1	o__(c__Tissierellia) 100.0%	
+o__ARS69	1	1	o__(c__Tissierellia) 100.0%	
+o__1-14-2-50-48-13	1	1	o__(c__Tissierellia) 100.0%	
+o__UBA5829	1	1	o__(c__Tissierellia) 100.0%	
+o__UBA2562	1	1	o__(c__Tissierellia) 100.0%	
+o__UBA6919	1	1	o__(c__Tissierellia) 100.0%	
+o__UBA2428	1	1	o__Bacteriovoracales(c__Oligoflexia) 100.0%	
+o__UBA2233	1	1	o__(c__Tissierellia) 100.0%	
+o__UBA1444	1	1	o__(c__Tissierellia) 100.0%	
+o__UBA1439	1	1	o__(c__Tissierellia) 100.0%	
+o__1-14-0-20-64-10	1	1	o__(c__Tissierellia) 100.0%	
+o__UBA6186	1	1	o__Thiotrichales 100.0%	
+o__NMUJ01	1	1	o__(c__Tissierellia) 100.0%	
+o__PEYW01	1	1	o__(c__Tissierellia) 100.0%	
+o__UBA6184	1	1	o__Holosporales 100.0%	
+o__1-14-0-20-42-13	1	1	o__(c__Tissierellia) 100.0%	
+o__UBA1398	1	1	o__(c__Tissierellia) 100.0%	
+o__UBA6926	1	1	o__(c__Tissierellia) 100.0%	
+o__UBA1874	1	1	o__(c__Tissierellia) 100.0%	
+o__0-14-0-80-59-12	1	1	o__Ignavibacteriales(c__Ignavibacteria) 100.0%	
+o__UBA7883	1	1	o__Nitrospinales(c__Nitrospinia) 100.0%	
+o__UBA5070	1	1	o__(c__Tissierellia) 100.0%	
+o__GCA-2746535	1	1	o__(c__Tissierellia) 100.0%	
+o__GCA-2401425	1	1	o__(c__Tissierellia) 100.0%	
+o__UBA5301	1	1	o__(c__Tissierellia) 100.0%	
+o__UBA6002	1	1	o__Legionellales 100.0%	
+o__MC1	1	1	o__Rickettsiales 100.0%	
+o__Bin98	1	1	o__(c__Tissierellia) 100.0%	
+o__UM-FILTER-46-8	1	1	o__(c__Tissierellia) 100.0%	
+o__GCA-2792135	1	1	o__(c__Tissierellia) 100.0%	
+o__PHAN01	1	1	o__(c__Tissierellia) 100.0%	
+o__FEN-1099	1	1	o__(c__Tissierellia) 100.0%	
+o__Azospirillales_A	1	1	o__Rhodospirillales 100.0%	
+o__Eremiobacterales	1	1	o__(c__Tissierellia) 100.0%	
+o__BM002	1	1	o__Desulfobacterales(c__Deltaproteobacteria) 100.0%	
+o__SZUA-242	1	1	o__(c__Tissierellia) 100.0%	
+o__SZUA-149	1	1	o__(c__Tissierellia) 100.0%	
+o__SZUA-146	1	1	o__(c__Tissierellia) 100.0%	
+o__SAR202-VII-2	1	1	o__(c__Tissierellia) 100.0%	
+o__QHYA01	1	1	o__(c__Tissierellia) 100.0%	
+o__HRBIN30	1	1	o__(c__Tissierellia) 100.0%	
+o__RUG730	1	1	o__(c__Tissierellia) 100.0%	
+o__Muirbacteriales	1	1	o__(c__Tissierellia) 100.0%	
+o__BMS3BBIN04	1	1	o__(c__Tissierellia) 100.0%	
+o__BM003	1	1	o__Chromatiales 100.0%	
+o__HRBIN11	1	1	o__(c__Tissierellia) 100.0%	
+o__HRBIN17	1	1	o__(c__Tissierellia) 100.0%	
+o__FEN-1388	1	1	o__(c__Tissierellia) 100.0%	
+o__HRBIN16	1	1	o__(c__Tissierellia) 100.0%	
+o__FEN-1346	1	1	o__(c__Tissierellia) 100.0%	
+o__UMGS1810	1	1	o__Clostridiales 100.0%	
+o__UMGS1840	1	1	o__Clostridiales 100.0%	
+o__RES148	1	1	o__Bacillales 100.0%	
+o__UMGS1260	1	1	o__Selenomonadales 100.0%	
+o__B26-G9	1	1	o__(c__Tissierellia) 100.0%	
+o__B28-G17	1	1	o__(c__Tissierellia) 100.0%	
+o__UCB3	1	1	o__(c__Tissierellia) 100.0%	
+o__QNFN01	1	1	o__(c__Tissierellia) 100.0%	
+o__UBA8349	1	1	o__(c__Tissierellia) 100.0%	
+o__QNDG01	1	1	o__(c__Tissierellia) 100.0%	
+o__B62-G9	1	1	o__(c__Tissierellia) 100.0%	
+o__QNFE01	1	1	o__(c__Tissierellia) 100.0%	
+o__UBA9089	1	1	o__(c__Tissierellia) 100.0%	
+o__J088	1	1	o__(c__Tissierellia) 100.0%	
+o__J058	1	1	o__(c__Tissierellia) 100.0%	
+o__PWPR01	1	1	o__(c__Tissierellia) 100.0%	
+o__B21-G15	1	1	o__(c__Tissierellia) 100.0%	
+o__UBA11236	1	1	o__(c__Tissierellia) 100.0%	
+o__J132	1	1	o__(c__Tissierellia) 100.0%	
+o__ATN3	1	1	o__(c__Tissierellia) 100.0%	
+o__J103	1	1	o__(c__Tissierellia) 100.0%	
+o__J113	1	1	o__(c__Tissierellia) 100.0%	
+o__PIWD01	1	1	o__(c__Tissierellia) 100.0%	
+o__T1SED10-198M	1	1	o__(c__Tissierellia) 100.0%	
+o__B119-G9	1	1	o__(c__Tissierellia) 100.0%	
+o__UBA12135	1	1	o__(c__Tissierellia) 100.0%	
+o__QNBC01	1	1	o__(c__Tissierellia) 100.0%	
+o__CSSED10-310	1	1	o__(c__Tissierellia) 100.0%	
+o__B21-G9	1	1	o__Thermotogales 100.0%	
+o__B22-G15	1	1	o__(c__Tissierellia) 100.0%	
+o__B3-G13	1	1	o__Thermotogales 100.0%	
+o__J025	1	1	o__(c__Tissierellia) 100.0%	
+o__J040	1	1	o__(c__Tissierellia) 100.0%	
+o__PIVX01	1	1	o__(c__Tissierellia) 100.0%	
+o__UBA12247	1	1	o__(c__Tissierellia) 100.0%	
+o__RPQS01	1	1	o__(c__Tissierellia) 100.0%	
+o__J057	1	1	o__(c__Tissierellia) 100.0%	
+o__J002	1	1	o__(c__Tissierellia) 100.0%	
+o__J063	1	1	o__(c__Tissierellia) 100.0%	
+o__SURF-47	1	1	o__(c__Tissierellia) 100.0%	
+o__B130-G9	1	1	o__(c__Tissierellia) 100.0%	
+o__B64-G9	1	1	o__(c__Tissierellia) 100.0%	
+o__B129-G9	1	1	o__(c__Tissierellia) 100.0%	
+o__NPL-UPA2	1	1	o__(c__Tissierellia) 100.0%	
+o__SURF-8	1	1	o__Myxococcales(c__Deltaproteobacteria) 100.0%	
+o__SURF-12	1	1	o__(c__Tissierellia) 100.0%	
+o__UBA11222	1	1	o__(c__Tissierellia) 100.0%	
+o__SURF-26	1	1	o__(c__Tissierellia) 100.0%	
+o__SURF-38	1	1	o__(c__Tissierellia) 100.0%	
+o__B143-G9	1	1	o__(c__Tissierellia) 100.0%	
+o__UBA9088	1	1	o__(c__Tissierellia) 100.0%	
+o__B15-G4	1	1	o__(c__Tissierellia) 100.0%	
+o__B3-B38	1	1	o__(c__Tissierellia) 100.0%	
+o__SXXA01	1	1	o__(c__Tissierellia) 100.0%	
+o__SBBH01	1	1	o__Planctomycetales(c__Planctomycetia) 100.0%	
+o__SMXQ01	1	1	o__(c__Tissierellia) 100.0%	
+o__SHNJ01	1	1	o__(c__Tissierellia) 100.0%	
+o__E44-bin39	1	1	o__(c__Tissierellia) 100.0%	
+o__E44-bin18	1	1	o__(c__Tissierellia) 100.0%	
+o__FW602-bin22	1	1	o__(c__Tissierellia) 100.0%	
+o__SCPX01	1	1	o__(c__Tissierellia) 100.0%	
+o__FW602-bin16	1	1	o__(c__Tissierellia) 100.0%	
+o__SOKK01	1	1	o__(c__Tissierellia) 100.0%	
+o__SKZP01	1	1	o__(c__Tissierellia) 100.0%	
+o__QYQD01	1	1	o__(c__Tissierellia) 100.0%	
+o__SLNR01	1	1	o__(c__Tissierellia) 100.0%	
+o__SLPQ01	1	1	o__(c__Tissierellia) 100.0%	
+o__VBWC01	1	1	o__(c__Tissierellia) 100.0%	
+o__SPJN01	1	1	o__Rhizobiales 100.0%	
+o__HP12	1	1	o__Oceanospirillales 100.0%	
+o__DY22613	1	1	o__Halanaerobiales(c__Clostridia) 100.0%	
+o__DSM-100275	1	1	o__Chromatiales 100.0%	
+o__Hat2	1	1	o__Parachlamydiales 100.0%	
+o__AKS1	1	1	o__Chromatiales 100.0%	
+o__DSM-26407	1	1	o__Chromatiales 100.0%	

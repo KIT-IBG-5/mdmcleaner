@@ -80,6 +80,8 @@ def  _download_db(dbtype, targetdir="."):
 		- "taxdmp_new" (a new experimental format at ncbi. Might as well prepare for that already
 		- "prot_acc2taxid" (for assigning protein accession numbers to taxids)
 		- "prot_acc2taxid_dead" (for assigning old, now deleted protein accession numbers to taxids)
+		- "nucl_acc2taxid" (optinal)
+		- "nucl_acc2taxid_dead"
 	the ftp download paths used are given in "getdb.ftp_source_<dbtype>", respectively.
 	"""
 	import urllib.request #TODO: switch to urllib2 for better error/timeout-handling?
