@@ -279,15 +279,16 @@ def _test_markernames():
 	
 def _test_basicmarkers():
 	infasta = sys.argv[1]
-	tempdir = "delmetemp"
-	#if os.path.exists(tempdir):
-	#	raise Exception("\n'{}' already exists\n".format(tempdir))
-	#os.mkdir(tempdir) #todo: implement tempfile module if available a base module
+	tempdir = sys.argv[2]
+	if not os.path.exists(tempdir):
+		os.mkdir(tempdir) #todo: implement tempfile module if available a base module
+	#else:
+		#raise Exception("\n'{}' already exists\n".format(tempdir))
 	cutofftable = os.path.join(hmmpath, "cutofftable_combined.tsv")
 	cutoff_dict = get_cutoff_dict(cutofftable)
 	sys.stderr.write("\nrunning prodigal...\n")
-	#protfasta = runprodigal(infasta, os.path.join(tempdir, "delme_protfasta"), prodigal="prodigal")
-	protfasta = os.path.join(tempdir, "delme_protfasta")
+	protfasta = runprodigal(infasta, os.path.join(tempdir, "delme_protfasta"), prodigal="prodigal")
+	#protfasta = os.path.join(tempdir, "delme_protfasta")
 	#todo: create a "runparallel function in misc or here
 	level = "all"
 	sys.stderr.write("\nextracting markers for level {}\n".format(level))

@@ -13,7 +13,7 @@ import os
 assert sys.version_info >= (3, 7), "This module requires python 3.7+! You, however, are running '{}'".format(sys.version)
 from collections import namedtuple
 
-from misc import openfile
+from misc import openfile, run_multiple_functions_parallel
 
 def read_lookup_table(lookup_table, table_format = None): #should be able to read tsv, csv and gff. should output a simple dict with locus_tags as keys and contignames as values
 	#consider putting this under "lookup_handler.py"? Probably naaaw...
@@ -178,21 +178,29 @@ def stype2blasthits(blastlinelist, markersetdict): #markersetdict should be deri
 	return blastlinelist
 
 def run_single_blastp(query, db, blast, outname, threads = 1):
-	from Bio.Blast.Applications import NcbiblastpCommandline
-	blastcmd = NcbiblastpCommandline(cmd = blast, query = query, db = db, evalue = 1e-10, out = outname + ".tmp", \
-								outfmt = 6, num_threads = threads)
+#	from Bio.Blast.Applications import NcbiblastpCommandline
+#	blastcmd = NcbiblastpCommandline(cmd = blast, query = query, db = db, evalue = 1e-10, out = outname + ".tmp", \
+#								outfmt = 6, num_threads = threads)
+	import subprocess
+	blastcmd = subprocess.run([blast, "-query", query, "-db", db, "-evalue", "1e-10",\
+							   "-outfmt", "6", "-num_threads", str(threads), "-out", outname + ".tmp"], \
+							   stdout = subprocess.PIPE, stderr = subprocess.PIPE, text = True)
 	try:
-		stderr, stdout = blastcmd()
+		blastcmd.check_returncode()
 	except Exception:
 		sys.stderr.write("\nAn error occured during blastp run with query '{}'\n".format(query))
-		sys.stderr.write("{}\n".format(stderr))
+		sys.stderr.write("{}\n".format(blastcmd.stderr))
 		raise RuntimeError
 	return outname
 
 def run_single_blastn(query, db, blast, outname, threads = 1):
-	from Bio.Blast.Applications import NcbiblastnCommandline
-	blastcmd = NcbiblastnCommandline(cmd = blast, query = query, db = db, evalue = 1e-10, out = outname + ".tmp", \
-								outfmt = 6, num_threads = threads)
+	# ~ from Bio.Blast.Applications import NcbiblastnCommandline
+	# ~ blastcmd = NcbiblastnCommandline(cmd = blast, query = query, db = db, evalue = 1e-10, out = outname + ".tmp", \
+								# ~ outfmt = 6, num_threads = threads)
+	import subprocess
+	blastcmd = subprocess.run([blast, "-query", query, "-db", db, "-evalue", "1e-10",\
+							   "-outfmt", "6", "-num_threads", str(threads), "-out", outname + ".tmp"], \
+							   stdout = subprocess.PIPE, stderr = subprocess.PIPE, text = True)
 	try:
 		stderr, stdout = blastcmd()
 	except Exception:
@@ -201,10 +209,10 @@ def run_single_blastn(query, db, blast, outname, threads = 1):
 		raise RuntimeError
 	return outname
 	
-def run_single_diamondblastp(query, db, diamond, outname, threads = 1):
+def run_single_diamondblastp(query, db, diamond, outname, threads = 1): #TODO: currently not setting "--tmpdir" & "--parallel-tmpdir" here! figure something out if this turns out to be problematic on hpc systems
 	import subprocess
 	blastcmd = subprocess.run([diamond, "--query", query, "--db", db, "--evalue", "1e-10",\
-							   "--outfmt", "6", "--threads", threads, "--out", outname + ".tmp"], \
+							   "--outfmt", "6", "--threads", str(threads), "--out", outname + ".tmp"], \
 							   stdout = subprocess.PIPE, stderr = subprocess.PIPE, text = True)
 	blastcmd.check_returncode() #TODO: TEST THIS! check if it actually returns the sterr error message. Check if it raises an exception if process failed!
 	return outname
@@ -214,16 +222,16 @@ def _run_any_blast(query, db, path_appl, outname, threads):
 	appl = os.path.basename(path_appl)
 	assert appl in ["blastp", "blastn", "diamond"], "\nError: unknown aligner '{}'\n".format(appl)
 	if appl == "blastp":
-		outname = run_single_blastp(query, db, blast, outname, threads)
+		outname = run_single_blastp(query, db, appl, outname, threads)
 	elif appl == "blastn":
-		outname = run_single_blastn(query, db, blast, outname, threads)
+		outname = run_single_blastn(query, db, appl, outname, threads)
 	elif appl == "diamond":
-		run_single_diamondblastp(query, db, diamond, outname, threads)
+		run_single_diamondblastp(query, db, appl, outname, threads)
 	os.rename(outname + ".tmp", outname)
 	return outname
 
 def _distribute_threads_over_jobs(total_threads, num_jobs): # to distribute N threads over M groups as evenly as possible, put (N/M) +1 in (N mod M) groups, and (N/M) in the rest
-	#TODO: consider moving this as a more general multiprocessing function to "misc.py"
+	##TODO: test using misc.run_multiple_functions_parallel() for this instead! DELETE THIS IF MISC VERSION WORKS!
 	if numjobs < total_threads:
 		more_threads_list = [ (total_threads / num_jobs) + 1 ] * (total_threads % num_jobs) #these should go to the lower priority markers, as there will be more of them
 		fewer_threads_list = [ (total_threads / num_jobs) ] * (num_jobs - len(more_threads_list))
@@ -231,7 +239,7 @@ def _distribute_threads_over_jobs(total_threads, num_jobs): # to distribute N th
 	return [1] * num_jobs, total_threads
 
 def run_multiple_blasts_parallel(basic_blastarg_list, outbasename, total_threads): #basic_blastarg_list = list of tuples such as [(query1, db1, blast1), (query2, db2, blast2),...])
-	#TODO: consider moving this as a more general multiprocessing function to "misc.py"
+	#TODO: test using misc.run_multiple_functions_parallel() for this instead! DELETE THIS IF MISC VERSION WORKS!
 	if __name__ == '__main__':
 		from multiprocessing import Pool
 		thread_args, no_processes = _distribute_threads_over_jobs(total_threads, len(basic_blastarg_list))
@@ -268,10 +276,21 @@ def test_prodigal_blasts():
 		sys.stderr.flush()
 	sys.stderr.write("DONE (for now...")
 
+def test_multiblastjobs():
+	print("test_multiblastjobs")
+	query_list = ["query1.fasta", "query2.fasta", "query3.fasta"]
+	db = "/opt/db/blast/nr"
+	tool = "blastp"
+	jobtuplelist = []
+	for query in query_list:
+		jobtuplelist.append(("blasthandler", "_run_any_blast", {"query":query, "db":db, "path_appl": tool, "outname":"{}_{}_vs_{}.tab.tmp".format(tool, os.path.basename(query), os.path.basename(db))}))
+	run_multiple_functions_parallel(jobtuplelist, 8)
+	
 def main():
 	""" for testing purposes only"""
-	test_prodigal_blasts()
-	
+	#test_prodigal_blasts()
+	print("main")
+	test_multiblastjobs()
 
 ####### End of test functions
 
