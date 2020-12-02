@@ -45,6 +45,8 @@ ftp_source_prot_acc2taxid = "{}prot.accession2taxid.gz".format(ftp_adress_access
 ftp_source_prot_acc2taxiddead= "{}dead_prot.accession2taxid.gz".format(ftp_adress_accessiondbs)
 ftp_source_nucl_acc2taxid= "{}nucl.accession2taxid.gz".format(ftp_adress_accessiondbs)
 ftp_source_nucl_acc2taxiddead= "{}dead_nucl.accession2taxid.gz".format(ftp_adress_accessiondbs)
+#TODO: ADD accession2taxig.FULL.gz (which is now new)!
+
 
 testfile= "pub/taxonomy/accession2taxid/dead_prot.accession2taxid.gz"
 _dbsource_dict = { 	"taxdmp" : ftp_source_taxdmp, \
@@ -63,7 +65,7 @@ rank2index = { "no rank" : 0, \
 				"family" : 50, \
 				"genus" : 60, \
 				"species" : 70 } # using increments of 10 in case i want to use the indermediate ranks (e.g. subfamily) at some later point also
-				#rank "root" does not exist (as previously plannes. Instead checking for taxid=1 (= root)
+				#rank "root" does not exist (as previously planned. Instead checking for taxid=1 (= root)
 
 index2rank = { rank2index[key] : key for key in rank2index }
 
@@ -72,106 +74,106 @@ taxdb_outfilebasename = "taxonomy_br.json.gz" #different from krona. additional 
 acc2taxid_outfilebasename = "all.accession2taxid.sorted" #using the same as krona
 lcawalkdb_outfilebasename = "lcawalkdb_br.db"
 
-def  _download_db(dbtype, targetdir="."):
-	""" 
-	downloads from a specific set of ncbi taxonomy database files.
-	dbtype should be one of: 
-		- "taxdmp" (for the nodes.dmp and names.dmp files)
-		- "taxdmp_new" (a new experimental format at ncbi. Might as well prepare for that already
-		- "prot_acc2taxid" (for assigning protein accession numbers to taxids)
-		- "prot_acc2taxid_dead" (for assigning old, now deleted protein accession numbers to taxids)
-		- "nucl_acc2taxid" (optinal)
-		- "nucl_acc2taxid_dead"
-	the ftp download paths used are given in "getdb.ftp_source_<dbtype>", respectively.
-	"""
-	import urllib.request #TODO: switch to urllib2 for better error/timeout-handling?
-	import tarfile
-	import time
-	
-	##### some encapsulated subfunctions: ##################################
-	def reporthook(blockcount, blocksize, totalsize): #todo make this a class with a updatable totalcounter shared between instances
-		if blockcount % 100 == 0:
-			totaldownload = (blockcount * blocksize)
-			gb = 1000**3
-			mb = 1000**2
-			currentstatgb = float(totaldownload)/(gb)
-			totalsizegb = float(totalsize)/(gb)
-			perc = totaldownload / totalsize
-			sys.stderr.write("\r-->Downloaded {:.3f} GB of {:.3f} GB ({:.1%})".format(currentstatgb, totalsizegb, perc))
-		
-	def checkmd5(infile, md5file):
-		import hashlib #for comparing md5-checksums of downloaded databases
-		
-		#calculate hash of downloaded file:
-		blocksize = 2**20 #chunks to read file in
-		with open(infile, "rb") as f:
-			filehash = hashlib.md5()
-			while True:
-				data = f.read(blocksize)
-				if not data:
-					break
-				filehash.update(data)
-		md5ist = filehash.hexdigest()
-		
-		#read hash from md5-checkfile:
-		with open(md5file, "r") as m:
-			md5soll = m.readline().split()[0]
-		
-		sys.stderr.write("\n comparing md5checksums: ")
-		sys.stderr.flush()
-		
-		return md5ist == md5soll
-	##### end of encapsulated subfunctions #################################
-	
-	sys.stderr.flush()
-	
-	max_attempts = 3 #maximum number of times to try to re-download the database if md5sums don't match
-	
-	if dbtype not in _dbsource_dict: #usage help
-		raise KeyError("\nERROR: unknown dbtype '{}'!\nMust be one of {}\n".format(dbtype, ", ".join(sorted(_dbsource_dict.keys()))))
-	tempfilelist = [ os.path.join(targetdir, "delmetemp_{}".format(os.path.basename(_dbsource_dict[dbtype]))) ]
-
-	#attempt to download, and verify md5sums
-	attempt_counter = 1
-	while True:
-		if not (os.path.exists(tempfilelist[0]) and os.path.exists(tempfilelist[0] + ".md5")):
-			sys.stderr.write("\ndownloading {} (attempt Nr. {})\n".format(_dbsource_dict[dbtype], attempt_counter))
-			start = time.time()
-			urllib.request.urlretrieve(_dbsource_dict[dbtype], os.path.join(targetdir, tempfilelist[0]), reporthook)
-			end = time.time()
-			sys.stderr.write("\ndownload took {:.1f} hours\n".format((end-start)/3600))
-			urllib.request.urlretrieve(_dbsource_dict[dbtype] + ".md5", os.path.join(targetdir, tempfilelist[0] + ".md5"))
-			
-		else:
-			sys.stderr.write("\n{} was apparently already downloaded...\n".format(os.path.basename(_dbsource_dict[dbtype])))
-		if checkmd5(tempfilelist[0], tempfilelist[0] +  ".md5"):
-			break
-		sys.stderr.write("--> but md5sums don't match! (need to try again)\n")
-		sys.stderr.flush()
-		#remove faulty files:
-		os.remove(tempfilelist[0])
-		os.remove(tempfilelist[0] + ".md5")
-		assert attempt_counter < max_attempts, "exceeded number of tries to download database. Please check connection!\n"
-		attempt_counter += 1
-	sys.stderr.write(" --> md5sums match! Successful!\n")
-	sys.stderr.flush()
-	
-	#after file is successfully downloaded: IF it is a taxdump.tar.gz, we need some specific files from that tarball
-	if dbtype.startswith("taxdmp"):
-		tf = tarfile.open(tempfilelist[0], "r:gz")
-		wantedfiles = ["nodes.dmp", "names.dmp"]
-		for wantedfile in wantedfiles:
-			tf.extract(wantedfile, targetdir)
-		tf.close()
-		for df in [ tempfilelist[0], tempfilelist[0] + ".md5" ]:
-			os.remove(df)
-		tempfilelist = [ os.path.join("targetdir", wf) for wf in wantedfiles ]
-	return tempfilelist
+#~ def  _download_db(dbtype, targetdir="."):
+	#~ """ 
+	#~ downloads from a specific set of ncbi taxonomy database files.
+	#~ dbtype should be one of: 
+		#~ - "taxdmp" (for the nodes.dmp and names.dmp files)
+		#~ - "taxdmp_new" (a new experimental format at ncbi. Might as well prepare for that already
+		#~ - "prot_acc2taxid" (for assigning protein accession numbers to taxids)
+		#~ - "prot_acc2taxid_dead" (for assigning old, now deleted protein accession numbers to taxids)
+		#~ - "nucl_acc2taxid" (optinal)
+		#~ - "nucl_acc2taxid_dead"
+	#~ the ftp download paths used are given in "getdb.ftp_source_<dbtype>", respectively.
+	#~ """
+	#~ import urllib.request #TODO: switch to urllib2 for better error/timeout-handling?
+	#~ import tarfile
+	#~ import time
+	#~ 
+	#~ ##### some encapsulated subfunctions: ##################################
+	#~ def reporthook(blockcount, blocksize, totalsize): #todo make this a class with a updatable totalcounter shared between instances
+		#~ if blockcount % 100 == 0:
+			#~ totaldownload = (blockcount * blocksize)
+			#~ gb = 1000**3
+			#~ mb = 1000**2
+			#~ currentstatgb = float(totaldownload)/(gb)
+			#~ totalsizegb = float(totalsize)/(gb)
+			#~ perc = totaldownload / totalsize
+			#~ sys.stderr.write("\r-->Downloaded {:.3f} GB of {:.3f} GB ({:.1%})".format(currentstatgb, totalsizegb, perc))
+		#~ 
+	#~ def checkmd5(infile, md5file):
+		#~ import hashlib #for comparing md5-checksums of downloaded databases
+		#~ 
+		#~ #calculate hash of downloaded file:
+		#~ blocksize = 2**20 #chunks to read file in
+		#~ with open(infile, "rb") as f:
+			#~ filehash = hashlib.md5()
+			#~ while True:
+				#~ data = f.read(blocksize)
+				#~ if not data:
+					#~ break
+				#~ filehash.update(data)
+		#~ md5ist = filehash.hexdigest()
+		#~ 
+		#~ #read hash from md5-checkfile:
+		#~ with open(md5file, "r") as m:
+			#~ md5soll = m.readline().split()[0]
+		#~ 
+		#~ sys.stderr.write("\n comparing md5checksums: ")
+		#~ sys.stderr.flush()
+		#~ 
+		#~ return md5ist == md5soll
+	#~ ##### end of encapsulated subfunctions #################################
+	#~ 
+	#~ sys.stderr.flush()
+	#~ 
+	#~ max_attempts = 3 #maximum number of times to try to re-download the database if md5sums don't match
+	#~ 
+	#~ if dbtype not in _dbsource_dict: #usage help
+		#~ raise KeyError("\nERROR: unknown dbtype '{}'!\nMust be one of {}\n".format(dbtype, ", ".join(sorted(_dbsource_dict.keys()))))
+	#~ tempfilelist = [ os.path.join(targetdir, "delmetemp_{}".format(os.path.basename(_dbsource_dict[dbtype]))) ]
+#~ 
+	#~ #attempt to download, and verify md5sums
+	#~ attempt_counter = 1
+	#~ while True:
+		#~ if not (os.path.exists(tempfilelist[0]) and os.path.exists(tempfilelist[0] + ".md5")):
+			#~ sys.stderr.write("\ndownloading {} (attempt Nr. {})\n".format(_dbsource_dict[dbtype], attempt_counter))
+			#~ start = time.time()
+			#~ urllib.request.urlretrieve(_dbsource_dict[dbtype], os.path.join(targetdir, tempfilelist[0]), reporthook)
+			#~ end = time.time()
+			#~ sys.stderr.write("\ndownload took {:.1f} hours\n".format((end-start)/3600))
+			#~ urllib.request.urlretrieve(_dbsource_dict[dbtype] + ".md5", os.path.join(targetdir, tempfilelist[0] + ".md5"))
+			#~ 
+		#~ else:
+			#~ sys.stderr.write("\n{} was apparently already downloaded...\n".format(os.path.basename(_dbsource_dict[dbtype])))
+		#~ if checkmd5(tempfilelist[0], tempfilelist[0] +  ".md5"):
+			#~ break
+		#~ sys.stderr.write("--> but md5sums don't match! (need to try again)\n")
+		#~ sys.stderr.flush()
+		#~ #remove faulty files:
+		#~ os.remove(tempfilelist[0])
+		#~ os.remove(tempfilelist[0] + ".md5")
+		#~ assert attempt_counter < max_attempts, "exceeded number of tries to download database. Please check connection!\n"
+		#~ attempt_counter += 1
+	#~ sys.stderr.write(" --> md5sums match! Successful!\n")
+	#~ sys.stderr.flush()
+	#~ 
+	#~ #after file is successfully downloaded: IF it is a taxdump.tar.gz, we need some specific files from that tarball
+	#~ if dbtype.startswith("taxdmp"):
+		#~ tf = tarfile.open(tempfilelist[0], "r:gz")
+		#~ wantedfiles = ["nodes.dmp", "names.dmp"]
+		#~ for wantedfile in wantedfiles:
+			#~ tf.extract(wantedfile, targetdir)
+		#~ tf.close()
+		#~ for df in [ tempfilelist[0], tempfilelist[0] + ".md5" ]:
+			#~ os.remove(df)
+		#~ tempfilelist = [ os.path.join("targetdir", wf) for wf in wantedfiles ]
+	#~ return tempfilelist
 
 
 #TODO: actually read these downloaded temfiles and create a database
 
-def _download_db2(dbtype, targetdir="."): #test ftp-module --> works. TODO: rename to download_db
+def _download_db2(dbtype, targetdir="."): #test ftp-module --> works. TODO: rename to download_db OR RATHER DECIDE BETWEEN _download_db2 and _download_db3!!!
 	import ftplib
 	#TODO: ensure that there is a check for already downloaded files before redownloading them
 	gb = 1000**3
@@ -698,8 +700,8 @@ class taxdb(object):
 
 ################################################################		
 
-def _test_download2():
-	sys.stderr.write("_test_dowload2\n")
+def _test_download3():
+	sys.stderr.write("_test_dowload3\n")
 	sys.stderr.flush()
 	_download_db3("taxdmp")
 	
