@@ -172,6 +172,20 @@ lcawalkdb_outfilebasename = "lcawalkdb_br.db"
 
 
 #TODO: actually read these downloaded temfiles and create a database
+def calculate_filehash(infile): #TODO probably move to misc.py
+	"""
+	calculate md5-hash of a file
+	"""
+	import hashlib #for comparing md5-checksums of downloaded databases
+	blocksize = 2**20 #chunks to read file in
+	with open(infile, "rb") as f:
+		filehash = hashlib.md5()
+		while True:
+			data = f.read(blocksize)
+			if not data:
+				break
+			filehash.update(data)
+	return filehash.hexdigest()	
 
 def _download_db2(dbtype, targetdir="."): #test ftp-module --> works. TODO: rename to download_db OR RATHER DECIDE BETWEEN _download_db2 and _download_db3!!!
 	import ftplib
@@ -187,27 +201,16 @@ def _download_db2(dbtype, targetdir="."): #test ftp-module --> works. TODO: rena
 	#outfile = openfile(outfilename, "wb")
 	#outmd5file = openfile(outfilename + ".md5", "w")
 
+
+
 	def checkmd5(infile, md5file):
-		import hashlib #for comparing md5-checksums of downloaded databases
-		
-		#calculate hash of downloaded file:
-		blocksize = 2**20 #chunks to read file in
-		with open(infile, "rb") as f:
-			filehash = hashlib.md5()
-			while True:
-				data = f.read(blocksize)
-				if not data:
-					break
-				filehash.update(data)
-		md5ist = filehash.hexdigest()
-		
-		#read hash from md5-checkfile:
-		with open(md5file, "r") as m:
-			md5soll = m.readline().split()[0]
-		
 		sys.stderr.write("\n comparing md5checksums: ")
 		sys.stderr.flush()
-		
+		#calculate actual hash of downloaded file:
+		md5ist = calculate_filehash(infile)		
+		#read expected hash from md5-checkfile:
+		with open(md5file, "r") as m:
+			md5soll = m.readline().split()[0]				
 		return md5ist == md5soll
 	
 	def mycallback(data):
