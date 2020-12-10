@@ -15,6 +15,29 @@ def openfile(infilename, filemode = "rt"):
 		filehandle = open(infilename, filemode)
 	return filehandle 
 
+def untar(infilename, targetdir=".", filemode = None):
+	""" a convenience function for unpacking compressed and ancompressed tar files.
+	accepts a filename(required) and an optional filemode (default = None) argument.
+	filemode may be any of ["r:", "r:gz", None ]. If filemode == None, it will try to determine filemode based on filename-extension
+	".tar" = uncompressed tar --> filemode = "r:", ".tar.gz" = compressed tar --> filemode "r:gz"
+	unpacks tar to targetdir and returns a list of unpacked filenames
+	"""
+	import tarfile
+	import os
+	assert filemode in ["r:", "r:gz", None], "\nERROR: filemode not allowed : '{}'\n".format(filemode)
+	if filemode == None:
+		if filename.endswith(".tar.gz"):
+			filemode = "r:gz"
+		elif filename.endswith(".tar"):
+			filemode = "r:"
+		else:
+			raise RunTimeError("\nError: can't guess filemode for '{}'. Please provide it!\n".format(infilename)
+	infile = tarfile.open(infilename, filemode)
+	contentlist = infile.getnames()
+	infile.extractall(path=targetdir)
+	infile.close()
+	return [ os.path.join(targetdir, f) for f in contentlist ]
+
 def _run_any_function(modulename, functionname, arg_dict, threads=1):
 	module = __import__(modulename)
 	function = getattr(module, functionname)
