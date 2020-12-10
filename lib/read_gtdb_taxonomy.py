@@ -53,15 +53,16 @@ _refseq_vireukcat_list = ["fungi", "invertebrate", "plant", "protozoa", "vertebr
 refseq_dbsource_dict = { refseq_vireukcat : {"url":"{}/{}/".format(ftp_adress_refseqrelease, refseq_vireukcat), "pattern" : "*.protein.faa.gz"} for refseq_vireukcat in _refseq_vireukcat_list }
 refseq_dbsource_dict["crc"] = { "url": "{}/release-catalog/".format(ftp_adress_refseqrelease), "pattern" : "release*.files.installed" } #TODO: add eukaryotic 18S/28S + ITS seqeunces to this! either silva or ncbi?
 
-
 gtdb_server = "https://data.ace.uq.edu.au/public/gtdb/data/releases/latest"
 gtdb_source_dict = { "gtdb_taxfiles" : { "url": "{}/".format(gtdb_server), "pattern" : "*_taxonomy.tsv,MD5SUM" }, \
 					 "gtdb_fastas" : { "url": "{}/genomic_files_reps".format(gtdb_server), "pattern" : "gtdb_genomes_reps.tar.gz,gtdb_proteins_aa_reps.tar.gz" }, \
 					 "gtdb_vs_ncbi_lookup" : { "url" : "{}/auxillary_files".format(gtdb_server), "pattern" : "*_vs_*.xlsx" } }
 
-# TODO: individual fastas also downloadable at silva (https://www.arb-silva.de/no_cache/download/archive/current/Exports/), together with taxonomy_lokuptables (https://www.arb-silva.de/no_cache/download/archive/current/Exports/taxonomy/)
-#    --> TODO: Download fastas (NOT the truncated alignments "*_trunc.fasta.gz", NOT the aligned Fastas, and NOT the *Parc_*.fastas, but just the *Ref_NR99_tax_silva.fasta.gz) !!!!!
-#    --> Grep and filter only EUkaryote sequences from those --> merge with gtdb dataset OR merge them all (if not too large) and make sure taxonomy is updated!'accordingly!
+silva_server = "https://www.arb-silva.de/fileadmin/silva_databases/current/Exports"
+silva_source_dict = { "silva_taxfiles" : { "url" : "{}/taxonomy/".format(silva_server), "pattern" : "taxmap_slv_?su_ref_nr_*.txt.gz*" }, \
+					  "silva_fastas" : { "url" : "{}/".format(silva_server), "pattern" : "*Ref_NR99_tax_silva.fasta.gz*" } } #patterns match md5-files together with the corresponding tax- and fasta-files
+#    --> Consider Grepping and filtering only EUkaryote sequences from these --> merge with gtdb dataset OR merge them all (if not too large) and make sure taxonomy is updated!'accordingly!
+
 import os
 import sys
 import traceback
@@ -82,6 +83,7 @@ def _batchdownload_unixwget(sourcedirurl, pattern, targetdir=None): #adds wget >
 	It will try to resume incomplete downloads and will not repeat downloads of already existing, complete files. If broken downloads are already present in the target folder, they should be manually deleted before calling this function
 	if a ".listing" file still exists in the target from a previous aborted download, but downloads should be resumed anyway, pass a 'force=True' argument to indicate that it can be ignored  
 	"""
+	#TODO: maybe move this to misc.py?
 	import subprocess
 	assert targetdir, "\nERROR: A target directory needs to be specified\n"
 	wgetcmd = ["wget", "-nd", "-np", "-q", "--tries=20", "--wait=1", "--reject-regex=\?C=", "--show-progress", "--progress=bar:force", "-c", "-r", "-l", "1", "-P", targetdir, "-A", pattern, sourcedirurl ]
@@ -128,7 +130,7 @@ def calculate_crc32hash(infile): # TODO: probably move to "misc.py"?
 			crcvalue = zlib.crc32(data, crcvalue) & 0xffffffff
 	return crcvalue
 
-def get_cksum(infile): #for gods sake, the refseq-checksums are equivalent to cksum results rather than md5-checksums (or even crc32)! Cannot recreate, and not a single predefined module for calculating these in python! giving up and calling cksum for this!
+def get_cksum(infile): #for gods sake, contrary to the docs on the ftp server, the refseq-checksums are equivalent to cksum results rather than md5-checksums (or even crc32)! Cannot recreate, and not a single predefined module for calculating these in python! giving up and calling cksum for this!
 	"""
 	AAAAARGH!GODAMIT!ARGH!WHY?!
 	"""
@@ -139,78 +141,9 @@ def get_cksum(infile): #for gods sake, the refseq-checksums are equivalent to ck
 	return outline.split()[0]
 	
 
-def check_crcfile(crc_file, targetdir, patternstring):  # TODO: merge with check_md5file() to ONE function (not that hard)!
-	"""
-	as with _download_unixwget(), 'pattern' can be a comma seperated list of patterns (concatenated to a single string)
-	raises AssertionException if something is wrong with the downloaded files, returns a list of downloaded filenames in everything is fine
-	"""
-	import re
-	import fnmatch
-	patternlist = patternstring.split(",")
-	infile = openfile(crc_file)
-	allisfine = True
-	ok_filelist, bad_filelist, missing_filelist = [], [], []
-	for line in infile:
-		#print(line)
-		tokens = line.strip().split()
-		#print(tokens)
-		checksum = tokens[0]
-		filename = tokens[1]
-		for pattern in patternlist:
-			if fnmatch.fnmatch(filename, pattern):
-				expectedfile = os.path.join(targetdir, filename)
-				if not os.path.isfile(expectedfile):
-					allisfine = False
-					missing_filelist.append(filename)
-					break
-				actualhash = get_cksum(expectedfile)
-				if not str(actualhash) == checksum:
-					allisfine = False
-					print("BAD FILE: {}! {} != {}".format(expectedfile, actualhash, checksum))
-					bad_filelist.append(filename)
-					os.remove(expectedfile)
-					break
-				#print("yay they match! {}! {} != {}".format(expectedfile, actualhash, checksum))
-				ok_filelist.append(expectedfile)
-	infile.close()
-	assert len(ok_filelist) != 0, "\nERROR: None of the expected files appear to have been downloaded. Do you have read/write permissions for the targetfolder?\n"
-	assert allisfine, "\nERROR: something went wrong during download: {} expected files are missing, and {} files have mismatching MD5checksums!\n  --> Missing files: {}\n  --> Corrupted files: {}\n".format(len(missing_filelist), len(bad_filelist), ",".join(missing_filelist), ",".join(bad_filelist))
-	return ok_filelist			
+	
 
-def check_gtdbmd5file(md5_file, targetdir, patternstring): # TODO: merge with check_crcfile() to ONE function (not that hard)!
-	"""
-	as with _download_unixwget(), 'pattern' can be a comma seperated list of patterns (concatenated to a single string)
-	raises AssertionException if something is wrong with the downloaded files, returns a list of downloaded filenames in everything is fine
-	"""
-	import re
-	import fnmatch
-	patternlist = patternstring.split(",")
-	infile = openfile(md5_file)
-	allisfine = True
-	ok_filelist, bad_filelist, missing_filelist = [], [], []
-	for line in infile:
-		tokens = line.strip().split()
-		checksum = tokens[0]
-		filename = os.path.basename(tokens[1])
-		for pattern in patternlist:
-			if fnmatch.fnmatch(filename, pattern):
-				expectedfile = os.path.join(targetdir, filename)
-				if not os.path.isfile(expectedfile):
-					allisfine = False
-					missing_filelist.append(filename)
-					break
-				actualhash = calculate_md5hash(expectedfile)
-				if not str(actualhash) == checksum:
-					allisfine = False
-					bad_filelist.append(filename)
-					os.remove(expectedfile)
-					break
-				#print("yay they match! {}! {} != {}".format(expectedfile, actualhash, checksum))
-				ok_filelist.append(expectedfile)
-	infile.close()
-	assert len(ok_filelist) != 0, "\nERROR: None of the expected files appear to have been downloaded. Do you have read/write permissions for the targetfolder?\n"
-	assert allisfine, "\nERROR: something went wrong during download: {} expected files are missing, and {} files have mismatching CRCchecksums!\n  --> Missing files: {}\n  --> Corrupted files: {}\n".format(len(missing_filelist), len(bad_filelist), ",".join(missing_filelist), ",".join(bad_filelist))
-	return ok_filelist
+
 
 	
 def download_refseq_eukaryote_prots(sourcedict=refseq_dbsource_dict, targetfolder=None):
@@ -220,6 +153,47 @@ def download_refseq_eukaryote_prots(sourcedict=refseq_dbsource_dict, targetfolde
 	sourcedict must also have an entry "crc" pointing to the "release-catalog" folder of the refseq-release (which, unfortunately contains CRC-checksums instead of MD5)
 	returns a list of the names of all files downloaded if successful, None if not.
 	"""
+	# start ot nested subfunctions
+	def check_crcfile(crc_file, targetdir, patternstring):  # TODO: merge with check_md5file() to ONE function (not that hard)!
+		"""
+		as with _download_unixwget(), 'pattern' can be a comma seperated list of patterns (concatenated to a single string)
+		raises AssertionException if something is wrong with the downloaded files, returns a list of downloaded filenames in everything is fine
+		"""
+		import re
+		import fnmatch
+		patternlist = patternstring.split(",")
+		infile = openfile(crc_file)
+		allisfine = True
+		ok_filelist, bad_filelist, missing_filelist = [], [], []
+		for line in infile:
+			#print(line)
+			tokens = line.strip().split()
+			#print(tokens)
+			checksum = tokens[0]
+			filename = tokens[1]
+			for pattern in patternlist:
+				if fnmatch.fnmatch(filename, pattern):
+					expectedfile = os.path.join(targetdir, filename)
+					if not os.path.isfile(expectedfile):
+						allisfine = False
+						missing_filelist.append(filename)
+						break
+					actualhash = get_cksum(expectedfile)
+					if not str(actualhash) == checksum:
+						allisfine = False
+						print("BAD FILE: {}! {} != {}".format(expectedfile, actualhash, checksum))
+						bad_filelist.append(filename)
+						os.remove(expectedfile)
+						break
+					#print("yay they match! {}! {} != {}".format(expectedfile, actualhash, checksum))
+					ok_filelist.append(expectedfile)
+		infile.close()
+		assert len(ok_filelist) != 0, "\nERROR: None of the expected files appear to have been downloaded. Do you have read/write permissions for the targetfolder?\n"
+		assert allisfine, "\nERROR: something went wrong during download: {} expected files are missing, and {} files have mismatching MD5checksums!\n  --> Missing files: {}\n  --> Corrupted files: {}\n".format(len(missing_filelist), len(bad_filelist), ",".join(missing_filelist), ",".join(bad_filelist))
+		return ok_filelist
+		# end of nested subfunctions
+		
+	#TODO: check if a flag file exists, that indicates that this already ran successfully
 	import glob
 	assert targetfolder and os.path.abspath(targetfolder) != os.getcwd(), "\nERROR: You must provide a temporary targetfolder name!\n Temporary Target folder will be created, if it doesn't already exist.\n Temporary Target folder can NOT be the current working directory, as it will be deleted later!\n"
 	temp_download_dict = {}
@@ -243,6 +217,7 @@ def download_refseq_eukaryote_prots(sourcedict=refseq_dbsource_dict, targetfolde
 		if returncode != 0:
 			sys.stderr.write("\nWARNING: wget returned non-zero returncode '{}' after downloading {} \n".format(returncode, vireukcat))
 	download_list = check_crcfile(crcfile, targetfolder, ",".join(["{}*.protein.faa.gz".format(x) for x in sourcedict if x != "crc"])) # todo: correct md5 to crc, to avoid confusion
+	#TODO: create a flag file to indicate that this has already run
 	return download_list
 
 def download_gtdb_stuff(sourcedict = gtdb_source_dict, targetfolder=None):
@@ -251,13 +226,89 @@ def download_gtdb_stuff(sourcedict = gtdb_source_dict, targetfolder=None):
 	sourcedict should have categories as keys and a dictionary of corresponding remote folder urls and searchpatterns as values
 	returns a dictionary listing the names of all files downloaded for each category/subfolder if successful, None if not.
 	"""
+	#TODO: check for a flag file, indicating that this already ran successfully
+	# start ot nested subfunctions
+	def check_gtdbmd5file(md5_file, targetdir, patternstring): # TODO: merge with check_crcfile() to ONE function (not that hard)!
+		"""
+		as with _download_unixwget(), 'pattern' can be a comma seperated list of patterns (concatenated to a single string)
+		raises AssertionException if something is wrong with the downloaded files, returns a list of downloaded filenames in everything is fine
+		"""
+		import re
+		import fnmatch
+		patternlist = patternstring.split(",")
+		infile = openfile(md5_file)
+		allisfine = True
+		ok_filelist, bad_filelist, missing_filelist = [], [], []
+		for line in infile:
+			tokens = line.strip().split()
+			checksum = tokens[0]
+			filename = os.path.basename(tokens[1])
+			for pattern in patternlist:
+				if fnmatch.fnmatch(filename, pattern):
+					expectedfile = os.path.join(targetdir, filename)
+					if not os.path.isfile(expectedfile):
+						allisfine = False
+						missing_filelist.append(filename)
+						break
+					actualhash = calculate_md5hash(expectedfile)
+					if not str(actualhash) == checksum:
+						allisfine = False
+						bad_filelist.append(filename)
+						os.remove(expectedfile)
+						break
+					#print("yay they match! {}! {} != {}".format(expectedfile, actualhash, checksum))
+					ok_filelist.append(expectedfile)
+		infile.close()
+		assert len(ok_filelist) != 0, "\nERROR: None of the expected files appear to have been downloaded. Do you have read/write permissions for the targetfolder?\n"
+		assert allisfine, "\nERROR: something went wrong during download: {} expected files are missing, and {} files have mismatching CRCchecksums!\n  --> Missing files: {}\n  --> Corrupted files: {}\n".format(len(missing_filelist), len(bad_filelist), ",".join(missing_filelist), ",".join(bad_filelist))
+		return ok_filelist
+		# end of nested subfunctions
+		
 	for gtdbcat in sourcedict:
 		sys.stderr.write("\nNow downloading from gtdb: \"{}\"...\n".format(gtdbcat))
 		returncode = _batchdownload_unixwget(sourcedict[gtdbcat]["url"], sourcedict[gtdbcat]["pattern"], targetdir=targetfolder)
 		if returncode != 0:
 			sys.stderr.write("\nWARNING: wget returned non-zero returncode '{}' after downloading {} \n".format(returncode, gtdbcat))
-	download_dict = { gtdbcat : check_gtdbmd5file(os.path.join(targetfolder, "MD5SUM"), targetfolder, sourcedict[x]["pattern"]) for x in sourcedict } #todo: need to do something about MD5SUM file ??
+	download_dict = { x : check_gtdbmd5file(os.path.join(targetfolder, "MD5SUM"), targetfolder, sourcedict[x]["pattern"]) for x in sourcedict } #todo: need to do something about MD5SUM file ??
+	#TODO: create a flag file, indicating that this already ran successfully
 	return download_dict
+
+def download_silva_stuff(sourcedict = silva_source_dict, targetfolder=None):
+	# start of nested subfunctions
+	def check_silvamd5file(md5_file, targetdir, patternstring):
+		import re
+		import fnmatch
+		allisfine = True
+		successlist = []
+		for f in os.listdir(targetfolder):
+			if fnmatch.fnmatch(filename, pattern):
+				myfile = os.path.join(targetfolder, f)
+				md5file = os.path.join(targetfolder, f + ".md5")
+				#calculate md5hash for downloaded file:
+				isthash = calculate_md5hash(myfile)
+				#read hash from md5-checkfile:
+				with open(md5file, "r") as m:
+					md5soll = m.readline().split()[0]	
+				#compare both with eachother:
+				if md5soll == md5ist:
+					successlist.append(myfile)
+				else:
+					os.remove(myfile)
+					os.remove(md5file)
+					allisfine = False
+		assert allisfine, "\nError: Download of silva data failed!\nPlease check connection and retry again later\n"
+		return successlist
+	# end of nested subfunctions
+		
+	for silvacat in sourcedict:
+		sys.stderr.write("\nNow downloading from gtdb: \"{}\"...\n".format(silvacat))
+		returncode = _batchdownload_unixwget(sourcedict[silvacat]["url"], sourcedict[silvacat]["pattern"], targetdir=targetfolder)
+		if returncode != 0:
+			sys.stderr.write("\nWARNING: wget returned non-zero returncode '{}' after downloading {} \n".format(returncode, silvacat))
+	download_dict = { x : check_silvamd5file(targetfolder, sourcedict[x]["pattern"][:-1]) for x in sourcedict } #cutting off the final "*" in each pattern
+	#TODO: create a flag file, indicating that this already ran successfully
+	return download_dict
+		
 		
 def _empty_taxdicts(): #creating basic "pro-forma" enries for Eukaryotes
 	"""
@@ -269,25 +320,31 @@ def _empty_taxdicts(): #creating basic "pro-forma" enries for Eukaryotes
 			   "r__Cellular_organisms": {"parent" : "root", "rank" : 0, "taxname" : "Cellular organisms"}, \
 			   "d__Viruses": {"rank": 10, "taxname" : "Virus"}, \
 			   "d__Eukaryota": {"parent": "r__Cellular_organisms", "rank" : 10, "taxname" : "Eukaryota"}, \
-			   "eukcat__Fungi": {"parent": "d__Eukaryota", "rank" : -1, "taxname" : "Fungi"}, \
-			   "eukcat__Vertebrates": {"parent": "d__Eukaryota", "rank" : -1, "taxname" : "Vertebrates"}, \
-			   "eukcat__Invertebrates": {"parent": "d__Eukaryota", "rank" : -1, "taxname" : "Invertebrates"}, \
-			   "eukcat__Plants": {"parent": "d__Eukaryota", "rank" : -1, "taxname" : "Plants"}, \
-			   "eukcat__Protozoa": {"parent": "d__Eukaryota", "rank" : -1, "taxname" : "Protozoa"} }
+			   "eukcat__fungi": {"parent": "d__Eukaryota", "rank" : -1, "taxname" : "Fungi"}, \
+			   "eukcat__vertebrate": {"parent": "d__Eukaryota", "rank" : -1, "taxname" : "Vertebrates"}, \
+			   "eukcat__invertebrate": {"parent": "d__Eukaryota", "rank" : -1, "taxname" : "Invertebrates"}, \
+			   "eukcat__plant": {"parent": "d__Eukaryota", "rank" : -1, "taxname" : "Plants"}, \
+			   "eukcat__protozoa": {"parent": "d__Eukaryota", "rank" : -1, "taxname" : "Protozoa"}, \
+			   "eukcat__viral": {"parent": "d__Viruses", "rank" : -1, "taxname" : "Viruses"}, \
+			   "eukcat__vertebrate_mammalian": {"parent": "eukcat__vertebrate", "rank" : -1, "taxname" : "Mammalian"}, \
+			   "eukcat__vertebrate_other": {"parent": "eukcat__vertebrate", "rank" : -1, "taxname" : "Non-mammalian_vertebrates"}}
 
 
 	LCA_walktree = {"root": { "level" : 1, "children" : ["r__Cellular_organisms", "r__Viruses"]}, \
 					"r__Cellular_organisms": {"level" : 2, "children" : ["d__Bacteria", "d__Archaea", "d__Eukaryota"]}, \
-					"d__Viruses": {"level" : 2, "children" : []}, \
-					"d__Eukaryota": {"level" : 3, "children" : ["eukcat_Fungi", "eukcat_Vertebrates", "eukcat_Invertebrates", "eukcat_Plants", "eukcat_Protozoa"]}, \
-					"eukcat_Fungi": {"level" : 4, "children" : []}, \
-					"eukcat_Vertebrates": {"level" : 4, "children" : []}, \
-					"eukcat_Invertebrates": {"level" : 4, "children" : []}, \
-					"eukcat_Plants": {"level" : 4, "children" : []}, \
-					"eukcat_Protozoa": {"level" : 4, "children" : []} } #using only refseq-release unofficial categories here because ncbi refseq selection is not very detailed yet: "Plants" (do they inclue red algae??), "vertebrates" "invertebrates", "fungi", "virus", "protozoa" (what does that even mean in ncbi taxonomy?)
+					"d__Viruses": {"level" : 2, "children" : ["eukcat__viral"]}, \
+					"d__Eukaryota": {"level" : 3, "children" : ["eukcat_fungi", "eukcat_vertebrate", "eukcat_invertebrate", "eukcat_plant", "eukcat_protozoa"]}, \
+					"eukcat__fungi": {"level" : 4, "children" : []}, \
+					"eukcat__vertebrate": {"level" : 4, "children" : ["eukcat__vertebrate_mammalian", "eukcat__vertebrate_other"]}, \
+					"eukcat__invertebrate": {"level" : 4, "children" : []}, \
+					"eukcat__plant": {"level" : 4, "children" : []}, \
+					"eukcat__protozoa": {"level" : 4, "children" : []}, \
+					"eukcat__viral": {"level" : 4, "children" : []}, \
+					"eukcat__vertebrate_mammalian": {"level" : 5, "children" : []}, \
+					"eukcat__vertebrate_other": {"level" : 5, "children" : []} } #using only refseq-release unofficial categories here because ncbi refseq selection is not very detailed yet: "Plants" (do they inclue red algae??), "vertebrates" "invertebrates", "fungi", "virus", "protozoa" (what does that even mean in ncbi taxonomy?)
 	return taxdict, LCA_walktree
 
-def read_gtdb_taxonomy_from_tsv(infilename, taxdict=None, LCA_walktree=None):
+def read_gtdb_taxonomy_from_tsv(infilename, taxdict=None, LCA_walktree=None):#todo let this return a acc2taxid dictionary after all
 	"""
 	assumes that taxdict, LCA_walktree either BOTH pre-exist and are passed together, or that NONE of them preexist!
 	returns a taxonomy dictionary, a LCA_walktree dictionary and a preliminary unsorted acc2taxid-filename
@@ -337,29 +394,27 @@ def read_gtdb_taxonomy_from_tsv(infilename, taxdict=None, LCA_walktree=None):
 	infile.close()
 	acc2taxidfile.close()
 	return taxdict, LCA_walktree, acc2taxidfilename #this file should be used to crossreference protein-ids and contig ids with taxids in the gtdb reference-fastas later on! #the filename should also be used as input for "_create_sorted_acc2taxid_lookup()" in getdb.py later on
-
-
-
-
+	#todo: should return acc2taxid_dict after all
+	
 def read_silva_taxonomy_from_tsv(infilename, taxdict, LCA_walktree): #IMPORTANT! ALWAYS PARSE GTSB FIRST, THEN SILVA!
 	"""
 	assumes that taxdict and LCA_walktree pre-exist from parsing the gtdb files first!
-	TODO: add a check for this!
+
 	Originally planned to use the gtdb-to-silva mapping file https://data.ace.uq.edu.au/public/gtdb/data/silva/latest/silva_mapping.tsv
 	BUT that file doesn't help with taxa that are exclusive to gtdb OR exclusive to silva!
 	also there currently is no mapping file for LSU only for SSU.
 	Therefore parsing taxonomy myself the hard way
-	
-	returns a taxonomy dictionary, a LCA_walktree dictionary and a preliminary unsorted acc2taxid-filename
-	"""
-	"""
-	Additional NOTE
+
 	there are many, many conflicts between sivla and gtdb and worse many inconsistent species designations between silva ssu and silva LSU!
 	The Strategy for for here now:
 		- for each silva entry:
 			--> for each taxonomic level in the silva-PATH:
 				--> check if the taxon designation already exists in the gtdb-taxid_dict --> if Yes, assign acc to that taxon
 				Result: in the worst case, some taxa can only be assigned to Bacterium level due to unclear taxon mapping between gtdb and silva
+					
+	returns a taxonomy dictionary, a LCA_walktree dictionary and a preliminary unsorted acc2taxid-filename
+
+
 	"""
 		
 	rank_prefix_dict = { 0 : "d__",\
@@ -388,17 +443,7 @@ def read_silva_taxonomy_from_tsv(infilename, taxdict, LCA_walktree): #IMPORTANT!
 			taxtokens = [t.replace(" ", "_") for t in tokens[3].rstrip(";").split(";") ] #
 		slv_species = "s__" + " ".join(tokens[4].split()[:2]) #4th token is silvas species designation. This often has more than 2 space seperated words, while gtdb only has 2. SO only using first two words of each species designation. this species designation is ignored UNLESS it already exists in the gtdb taxonomy
 		taxlist = [ rank_prefix_dict[x] + taxtokens[x] for x in range(len(taxtokens)) ] + [slv_species] #sticking the taxonlevel-prefixes in front of the taxon-names (gtdb-style)
-		#tdomain = taxlist[0] #tphylum = taxlist[1] #tclass = taxlist[2] #torder = taxlist[3] #tfamily = taxlist[4] #tgenus = taxlist[5] #tspecies = taxlist[6]
 
-
-		# ~ for i in reversed(range(len(taxlist))):
-		## The following section was only needed, when planning to add silva-exclusive taxa to the tree.
-		## since i now decided to only allow taxa that are already in the gtdb taxonomy, i can ignore this
-		# ~ badwords = ["uncultured", "endosymbiont", "Incertae sedis", "problematica", "metagenom"] #slv_taxonomy is full of unhelpful taxon designations such as "metagenome" or "uncultured". Could use silva-Taxids but the taxids make it hard to cross-reference with gtdb (which has some bins without an silva entry). until there is a uniform taxid system shared by gtdb and silva, it seems safer to just skip/ignore such taxons and look for are more specific higher ranking taxon designation		
-			# ~ for fword in badwords:
-				# ~ if fword in taxlist[i]: #slv_taxonomy is full of unhelpful taxon designations such as "metagenome" or "uncultured". Could use silva-Taxids but the taxids make it hard to cross-reference with gtdb (which has some bins without an silva entry). until there is a uniform taxid system shared by gtdb and silva, it seems safer to just skip/ignore such taxons and look for are more specific higher ranking taxon designation
-					# ~ continue
-			# ~ taxid = taxlist[i].split()[0] # silva has some special taxon infos such as e.g. "NIVA-CYA 15" found in the genus designation "Planktothrix NIVA-CYA 15" not recognized by gtdb taxonomy. removing the extra parts here
 		for i in reversed(range(len(taxlist))):			
 			taxid = taxlist[i]
 			level = i + 2
@@ -426,11 +471,188 @@ def make_gtdb_blastdb():
 		- either assign all proteins of each genome to their respective genome/assembly-id (could be slightly faster)
 		- OR: assign the CONTIGS to an taxonomy id and cut of the consecutive prodigal CDS numbering of during parsing
 		- OR: assign each protein-ID to an taxonomy ID (seems wasteful but more compatible with potential future changes of the GTDB-data structure)
-	the last option seems wasteful, but is probably the best way to go (in case gtdb decides to change their reference protein naming scheme)
-	However, choosing the second option for now (compromise bewteen wastefulness and flexibility) and will have to keep an eye on potential changes in the accession-naming at gtdb...
+	The first option is probaly the fastest/least wasteful because it keeps the lookup-dict as small as possible, but is also very unflexible in case anything changes in the way gtdb stores it's reference files and taxonomy
+	the last option seems wasteful, but is probably the most flexible way to go (in case gtdb decides to change their reference protein naming scheme)
+	-->choosing the SECOND option for now (compromise bewteen wastefulness and flexibility) and will have to keep an eye on potential changes in the accession-naming at gtdb...
 	"""
 	pass		
+
+def _concat_fastas(contig_fastalist, outfastahandle, return_headerdict = False, remove_prodigalIDs = False, remove_descriptions = False):
+	"""
+	concatenates the fastafiles given in contig_fastalist
+	if return_headers == True, thisreturns dictionary with assemblyIDs as keys and lists of corresponding fasta-sequenceIDs as values. otherwise returns None
+	if remove_prodigalIDs == True, it will remove the protein id from the fastaids (based on the regex "_\d+ ")
+	(--> naming the proteins simply after the contigs they originated from. additional protein info will remain in the sequence description)
+	if remove_descriptions == True, it will remove all description info from the headers (keep only the sequenceID)
+	"""
+	import re
+	assemblyIDpattern = re.compile("GC._\d+\.\d")
+	prodigalinpattern = re.compile("(^>\w+\.\d+)(_\d+)(.*)")
+	prodigalreplacement = r"\1 \3"
+	#concatfasta = openfile(outfastaname, "wt")
+	headerdict = {}
+	filecounter = seqcounter = 0
+	for cf in contigfastalist:	
+		filebasename = os.path.basename(cf)
+		assemblyid = re.search(assemblyIDpattern, filebasename).group(0)
+		infile = openfile(cf)
+		for line in infile:
+			if line.startswith(">"):
+				seqcounter += 1
+				if remove_descriptions:
+					line = line.split()[0]
+				if remove_prodigalIDs:
+					line = re.sub(prodigalinpattern, prodigalreplacement, line)
+				if return_headerdict:
+					seqid = line.split()[0][1:]
+					if assemblyid in headerdict:
+						headerdict[assemblyid].append(seqid)
+					else:
+						headerdict[assemblyid] = [seqid]
+			#concatfasta.write(line)
+			outfastahandle.write(line)
+		infile.close()
+		os.remove(cf) #delete file because it is no longer needed
+		filecounter += 1
+		if linecounter % 1000 == 0:
+			sys.stderr.write("rread {} of {} files so far, wrote {} sequences to {}".format(filecounter, len(contigfastalist), seqcounter, outfastaname))
+			sys.stderr.flush()
+	sys.stderr.write("rread {} of {} files so far, wrote {} sequences to {}\n".format(filecounter, len(contigfastalist), seqcounter, outfastaname))
+	sys.stderr.flush()
+	#concatfasta.close()
+	return headerdict if return_headerdict else None
 				
+def gtdb_contignames2taxids(contig_fastalist, acc2taxidinfilelist, acc2taxidoutfilename, outfastahandle):
+	"""
+	Todo: read acc2taxidfile line by line (taxids for assemblie-ids)
+	Todo: open_contigfastas (named after assembly-ids, read contig names), read seqeunces and write to concatenated file
+	Todo: assign each contig to taxid based on assembly-id
+	write to new acc2taxidfile
+	return new acc2taxid-filename
+	Note:	sadly the refrence file at gtdb do not follow the same naming scheme for protein and genomic files (or their taxid-lookuptables). 
+			the seqids in their taxid-lookuptables as well as the protein files have a "RS_" or "GB_" prefix, but the genomic files do not.
+			have to remove that prefix here
+	"""
+	import re
+	assemblyIDpattern = re.compile("GC._\d+\.\d")
+	headerdict = _concat_fastas(contig_fastalist, outfastahandle, return_headerdict = True, remove_prodigalIDs = False, remove_descriptions = True)
+	outaccfile = openfile(acc2taxidoutfilename, "wt")
+	linecounter = contigcounter = 0
+	for acc2taxidinfilename in acc2taxidinfilelist:
+		inaccfile = openfile(acc2taxidinfilename)
+		for line in inaccfile:
+			linecounter += 1
+			tokens = line.split()
+			seqid = re.search(assemblyIDpattern,tokens[1]).group(0)
+			taxid = tokens[2]
+			headerlist = headerdict[seqid] 
+			outaccfile.write("\n".join(["0\t{}\t{}\t0".format(contigname, taxid) for contigname in headerlist]))
+			contigcounter += len(headerlist)
+			if lincounter % 100 == 0:
+				sys.stderr.write("\rassigned {} contigs to {} taxids".format(contigcounter, linecounter))
+				sys.stderr.flush()
+		inaccfile.close()
+		outaccfile.close()
+	sys.stderr.write("\rassigned {} contigs to {} taxids\n".format(contigcounter, linecounter))
+	sys.stderr.flush()	
+	return acc2taxidoutfilename
+
+def refseq_contignames2taxids(fastalist, outfasta_filehandle, acc2taxidoutfilename):
+	"""
+	creates simplified accesison2taxid file for refseq viral and eukaryotic data
+	also concatenates the reference sequence files and delets them afterwards
+	returns an acc2taxidoutfilename, and keeps the outfasta_filehandle (does not close it)
+	"""
+	import re
+	suffix_pattern = re.compile("\.\d+\.protein.faa.gz")
+	acc2taxidfile = openfile(acc2taxidoutfilename, "wt")
+	for filename in fastalist:
+		euvircat = "eukcat__" + re.sub(suffix_pattern, "", os.path.basename(filename))
+		infile = openfile(filename)
+		for line in infile:
+			if line.startswith(">"):
+				acc=line.split()[0][1:]
+				acc2taxidfile.write("0\t{}\t{}\t0\n".format(acc, euvircat))
+			outfasta_filehandle.write(line)
+		infile.close()
+		os.remove(filename)
+	acc2taxidfile.close()
+	return acc2taxidoutfilename
+		
+		
+		
+		
+def _download_dbdata_nonncbi(targetdir, continueflag=False):
+	"""
+	Downloads GTDB, SILVA and Refseq Eukaryote data, together with taxonomic info, to create a smaller and more condensed reference dataset compared to NCBI-nr
+	The resulting taxonomy will be based almost exclusively on the GTDB taxonomy (except for Eukaryotes)
+creates files for storing taxdict, LCA_walktree and acc2taxid files and returns the corresponding filenames [TODO: NOPE IT DOESNT]
+	if 'continueflag' is set to True, it will assume an existing targetdir to be from an aborted previous run and will try to continue (or restart) from there
+	if 'continueflag' is set to False and targetdir already exists, it will return an AssertionError
+	returns gtdb_download_dict, refseq_files, silva_download_dict (in that order)
+	"""
+	sys.stderr.write("\nWARNING! This download may take a LONG time! However, you may be able to resume if it is aborted prematurely...\n")
+	assert not os.path.exists(targetdir) or continueflag, "\nError: targetdir '{}' already exists, but continueflag set to {}".format(targetdir, continueflag)
+	assert os.path.abspath(targetdir) != os.getcwd(), "\nERROR: targetdir may not be the current working directory\n"
+	#TODO: add flag files indicating completion of each step! can use open(flagfile, "w").close() for this
+	#step 1: download gtdb
+	gtdb_download_dict = download_gtdb_stuff(gtdb_source_dict, targetdir)
+	#step 2: download refseq-release eukaryotes
+	refseq_files = download_refseq_eukaryote_prots(refseq_dbsource_dict, targetdir)
+	#step 3: download silva stuff
+	silva_download_dict = download_silva_stuff(silva_source_dict, targetdir)
+	return gtdb_download_dict, refseq_files, silva_download_dict
+
+def _prepare_dbdata_nonncbi(targetdir, gtdb_download_dict, refseq_files, silva_download_dict ): #Todo:add continueflag argument
+	import blasthandler
+	#step 4: get gtdb_taxonomy
+	acc2taxidfilelist = []
+	taxdict, lca_walktree = None, None
+	##step 4a: read gtdb_taxonomy files (which use the assembly/genome_accessions as identifiers). NOTE: preliminary reseq taxonomy (knows only domain-level for Eujaryota and Viruses) autmatically added to taxodnomy_dict at this point
+	for gtdbtax in gtdb_download_dict["gtdb_taxfiles"]:
+		taxdict, lca_walktree, acc2taxidfile = read_gtdb_taxonomy_from_tsv(infilename) #todo: change read_gtdb_taxonomy_from_tsv() so that it accepts a filehandle to write acc2taxid-lookup to
+		acc2taxidfilelist.append[acc2taxidfile]
+	###TODO: save current taxdict and lca_walktree to file, so this can be resumed from here later
+	##step 4b: uncompress gtdb-tar-files and read contig names for each genome-file --> assign contigs to taxids and write to acc2taxidfile
+		assert len(gtdb_download_dict["gtdb_fastas"]) == 2, "\nERROR: number of downloaded gtdb tars different than expected: should be 2 but is {}\n".format(len(gtdb_download_dict)) #Notifying myself, so that i don't forget to adapt this if i ever choose to download more or less reference categories from gtdb
+	gtdb_genomefiles = misc.untar(gtdb_download_dict["gtdb_fastas"][0])
+	gtdb_proteinfiles = misc.untar(gtdb_download_dict["gtdb_fastas"][1])
+	#gtdbconcatgenomesfasta = os.path.join(targetdir,"step4b_gtdb_refgenomes.fasta.gz")
+	concatprotfastaname = os.path.join(targetdir, "concat_refprot.faa")
+	concatprotfastaname = os.path.join(targetdir, "concat_refgenomes.fasta")
+	concatgenomefastahandle = openfile(concatgenomefastaname, "wt")
+	concatprotfastahandle = openfile(concatprotfastaname, "wt")
+	acc2taxidfilelist.append(gtdb_contignames2taxids(gtdb_genomefiles, acc2taxidfilelist, "temp_acc2taxid_gtdb.acc2taxid.gz", concatgenomefastahandle))
+	gtdb_genomefiles = [gtdbconcatgenomesfasta] # the single genome fastas have now been deleted. instead keep track of the resulting concatenated genome fasta (more will be concateated to it, later)
+	#gtdbconcatprotsfasta = os.path.join(targetdir,"step4b_gtdb_refprots.faa.gz")#todo: switch this to a filehandle
+	_concat_fastas(gtdb_proteinfiles, concatprotfastahandle, return_headerdict = False, remove_prodigalIDs = True, remove_descriptions = False) #does not return an acc2taxidfile ,because that is already covered by the contig-accessions
+	#gtdb_download_dict["gtdb_fastas"] = [] #TODO: This step probably not necessary?
+	#step5: get silva taxonomy
+	##step 5a: read silva_taxonomy files and add this info to taxdict and LCA_walktree
+	for f in silva_download_dict["silva_taxfiles"]:
+		print("reading {}".format(f))
+		taxdict, LCA_walktree, filename = read_silva_taxonomy_from_tsv(f, taxdict, LCA_walktree)
+		acc2taxidfilelist.append(filename)
+	###TODO: save current taxdict and lca_walktree to file, so this can be resumed from here later
+	#step 6: cocatenate all reference datasets, create blastdbs, and delete associated fastafiles
+	##step6a: concatenate all refseq protein reference-fasta files (to outhandle concatfasta), keep outhandle (concatfasta) and return acc2taxidfile(name)
+	acc2taxidfilelist.append(refseq_contignames2taxids(refseq_files, concatprotfastahandle, acc2taxidoutfilename))
+	concatprotfastahandle.close()
+	##step6b: create protein diamond-db
+	#todo: define outprotdbname
+	blasthandler.make_diamond_db(concatprotfastahandle.name, outprotdbname, "prot")
+	##step6c: concatenate all nucleotide reference-fasta files
+	_concat_fastas(silva_download_dict["silva_fastas"], concatgenomesfastahandle)
+	##step6d: create nucleotide diamond or blastdb (test which one is faster, blast may be faster here, because there are not so many queries as in the protein-blasts)
+	blasthandler.make_blast_db(concatprotfastahandle.name, outprotdbname, "nucl")	
+	#step 7: clean up/delete all remaining intermediate files
+	
+def getNprepare_dbdata_nonncbi(targetdir, continueflag=False):
+	#steps1-3:
+	downloads = _download_dbdata_nonncbi(targetdir, continueflag=False)
+	#steps 4-
+	_prepare_dbdata_nonncbi(targetdir, *downloads)
+		
 ## test functions start here
 def test_ftpwget():
 	sys.stderr.write("\nTESTING WGET WITH VIRAL DATA\n")
@@ -487,13 +709,17 @@ def test_get_lookup_dicts():
 		outfilelist.append(filename)
 	print("outfiles:")
 	print("\n".join(outfilelist))
+
+def test3():
+	getNprepare_dbdata_nonncbi("tempdir", continueflag=False)
 	
 def main():
 	#download_refseq_eukaryote_prots(".")
 	#test_wget()
 	#test_refseq_download()
 	#test_gtdb_download()
-	test_get_lookup_dicts()
+	#test_get_lookup_dicts()
 	#test_httpwget()
+	test3()
 	
 main()	
