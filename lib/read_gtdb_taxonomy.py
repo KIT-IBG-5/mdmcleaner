@@ -58,9 +58,10 @@ gtdb_source_dict = { "gtdb_taxfiles" : { "url": "{}/".format(gtdb_server), "patt
 					 "gtdb_fastas" : { "url": "{}/genomic_files_reps".format(gtdb_server), "pattern" : "gtdb_genomes_reps.tar.gz,gtdb_proteins_aa_reps.tar.gz" }, \
 					 "gtdb_vs_ncbi_lookup" : { "url" : "{}/auxillary_files".format(gtdb_server), "pattern" : "*_vs_*.xlsx" } }
 
-silva_server = "https://www.arb-silva.de/fileadmin/silva_databases/current/Exports"
-silva_source_dict = { "silva_taxfiles" : { "url" : "{}/taxonomy/".format(silva_server), "pattern" : "taxmap_slv_?su_ref_nr_*.txt.gz*" }, \
-					  "silva_fastas" : { "url" : "{}/".format(silva_server), "pattern" : "*Ref_NR99_tax_silva.fasta.gz*" } } #patterns match md5-files together with the corresponding tax- and fasta-files
+silva_server = "https://www.arb-silva.de/fileadmin/silva_databases/current"
+silva_source_dict = { "silva_version" : { "url" : "{}/".format(silva_server), "wishlist" : [ "VERSION.txt" ]}, \
+					  "silva_taxfiles" : { "url" : "{}/Exports/taxonomy/".format(silva_server), "wishlist" : ["taxmap_slv_lsu_ref_nr_{}.txt.gz", "taxmap_slv_lsu_ref_nr_{}.txt.gz.md5", "taxmap_slv_ssu_ref_nr_{}.txt.gz", "taxmap_slv_ssu_ref_nr_{}.txt.gz.md5"] }, \
+					  "silva_fastas" : { "url" : "{}/Exports/".format(silva_server), "wishlist" : ["SILVA_{}_LSURef_NR99_tax_silva.fasta.gz", "SILVA_{}_LSURef_NR99_tax_silva.fasta.gz.md5", "SILVA_{}_SSURef_NR99_tax_silva.fasta.gz", "SILVA_{}_SSURef_NR99_tax_silva.fasta.gz.md5"] } } #currently, silva does not seem to allow recursive downloads based on filename-patterns --> Using this workaround instead. format function will need to replace '{}' with the database version later
 #    --> Consider Grepping and filtering only EUkaryote sequences from these --> merge with gtdb dataset OR merge them all (if not too large) and make sure taxonomy is updated!'accordingly!
 
 import os
@@ -71,24 +72,34 @@ import misc
 from misc import openfile
 
 
-def _batchdownload_unixwget(sourcedirurl, pattern, targetdir=None): #adds wget >1.19 to dependencies, is probably not the best way to do this, but easier and more stable that ftp/urrlib2, automaticcaly resumes failed downloads etc ... working-solution for now, BUT CONSIDER SWITCHING!
+def _download_unixwget(sourceurl, pattern=None, targetdir=None): #adds wget >1.19 to dependencies, is probably not the best way to do this, but easier and more stable that ftp/urrlib2, automaticcaly resumes failed downloads etc ... working-solution for now, BUT CONSIDER SWITCHING!
 	"""
-	Downloads all files from a remote server (specified by 'sourcedirurl') with filenames that match with 'pattern'.
-	"Pattern' should be a bash-wildcard pattern or comma-seperated list of such patterns. Pass 'pattern="*"' for downlading all files in the ftp-directory
-	For downloading only a single file, just use the specific filename as 'pattern'.
-	uses the unix tool wget (v.1.19+) for this, because this already has built-in retry on broken connection, basic verification and even the possibility to continue incomplete downloads
-	an alternative, purely python-based function (usinf ftplib) may be available in future versions, but this sems good enough for now
+	Downloads files from a remote server (specified by 'sourceurl') either specified directly in the url or via a filename-pattern specified with 'pattern'.
+	'sourceurl' should either pint to a specific remote file, or to a remote folder. In the latter case, 'pattern'needs to be specified, to indicate which files in that folder to download
+	
+	'Pattern' should be a bash-wildcard pattern or comma-seperated list of such patterns. Pass 'pattern="*"' for downlading all files in the ftp-directory. 
+	Pass 'pattern=None' to download only a specific file indicated in sourceurl.
+	For downloading only a single file, either specify file in sourceurl and set pattern=None OR just use the specific filename as 'pattern' (IF the server allows recursive downloads/directory listing).
+	
 	A target directory needs to be specified. This should be a dedicated, temporary folder used only for the downloads of this script. The target directory will be created if it doesn't already exist.  
-	This function assumes that only one wget-download is occuring at a given time (based on the existance of a ".listing" file in the target-directory) and could interfere with other parallel downloads
-	It will try to resume incomplete downloads and will not repeat downloads of already existing, complete files. If broken downloads are already present in the target folder, they should be manually deleted before calling this function
-	if a ".listing" file still exists in the target from a previous aborted download, but downloads should be resumed anyway, pass a 'force=True' argument to indicate that it can be ignored  
+		
+	This function uses the unix tool wget (v.1.19+) for this, because this already has built-in 'retry on broken connection', basic file verifications and even the possibility to continue incomplete downloads.
+	An alternative, purely python-based function (using ftplib) may be available in future versions, but this seems good enough (or even more efficient) for now
+	
+	This function will try to resume incomplete downloads and will not repeat downloads of already existing, complete files. If broken downloads are already present in the target folder, they should be manually deleted before calling this function 
 	"""
 	#TODO: maybe move this to misc.py?
 	import subprocess
-	assert targetdir, "\nERROR: A target directory needs to be specified\n"
-	wgetcmd = ["wget", "-nd", "-np", "-q", "--tries=20", "--wait=1", "--reject-regex=\?C=", "--show-progress", "--progress=bar:force", "-c", "-r", "-l", "1", "-P", targetdir, "-A", pattern, sourcedirurl ]
+	assert targetdir, "\nERROR: A target directory needs to be specified\n" #may allow a default value in the future (possibly "."), but not yet
+	wget_basecmd = ["wget", "-nd", "-q", "--tries=20", "--wait=1", "--show-progress", "--progress=bar:force", "-c", "-N", "-P", targetdir]
+	wget_batchargs = ["-r", "-np", "-l", "-1", "--reject-regex=\?C=", "-A", pattern]
 	# "--reject-regex=?C=" is specifically for download from https (but should not interfere with ftp downloads)
-	print(" ".join(wgetcmd))
+	if pattern: #if pattern exists, assume recursive download and resume that sourceurl points to a FOLDER 
+		wgetcmd = wget_basecmd + wget_batchargs + [sourceurl]
+	else: #otherwise, if pattern==None,  assume that sourceurl points to a file and disable recursive download
+		wgetcmd = wget_basecmd + [sourceurl]
+	sys.stderr.write("\n" + " ".join(wgetcmd) + "\n")
+	sys.stderr.flush()
 	wget_proc = subprocess.Popen(wgetcmd, stdout = subprocess.PIPE, stderr = subprocess.PIPE, text = True, universal_newlines=True)
 	while True:
 		output = wget_proc.stderr.readline()
@@ -206,14 +217,14 @@ def download_refseq_eukaryote_prots(sourcedict=refseq_dbsource_dict, targetfolde
 		for f in preexisting_crc:
 			os.remove(f)
 		### now downloading CRC
-	_batchdownload_unixwget(sourcedict["crc"]["url"], sourcedict["crc"]["pattern"], targetdir=targetfolder) 
+	_download_unixwget(sourcedict["crc"]["url"], sourcedict["crc"]["pattern"], targetdir=targetfolder) 
 	downloaded_crc = glob.glob(targetfolder + "/release*.files.installed")
 	assert len(downloaded_crc) == 1, "\nERROR: Expected exactly 1 'release*.files.installed' file in {} after download, but found {}! Be honest, are you messing with me?\n".format(targetfolder, len(downloaded_crc))
 	crcfile = downloaded_crc[0]
 	#### Now that We have the crc file, download the rest:
 	for vireukcat in [ vec for vec in sourcedict if vec != "crc" ]:
 		sys.stderr.write("\nNow downloading refseq release category \"{}\"...\n".format(vireukcat))
-		returncode = _batchdownload_unixwget(sourcedict[vireukcat]["url"], sourcedict[vireukcat]["pattern"], targetdir=targetfolder)
+		returncode = _download_unixwget(sourcedict[vireukcat]["url"], sourcedict[vireukcat]["pattern"], targetdir=targetfolder)
 		if returncode != 0:
 			sys.stderr.write("\nWARNING: wget returned non-zero returncode '{}' after downloading {} \n".format(returncode, vireukcat))
 	download_list = check_crcfile(crcfile, targetfolder, ",".join(["{}*.protein.faa.gz".format(x) for x in sourcedict if x != "crc"])) # todo: correct md5 to crc, to avoid confusion
@@ -266,7 +277,7 @@ def download_gtdb_stuff(sourcedict = gtdb_source_dict, targetfolder=None):
 		
 	for gtdbcat in sourcedict:
 		sys.stderr.write("\nNow downloading from gtdb: \"{}\"...\n".format(gtdbcat))
-		returncode = _batchdownload_unixwget(sourcedict[gtdbcat]["url"], sourcedict[gtdbcat]["pattern"], targetdir=targetfolder)
+		returncode = _download_unixwget(sourcedict[gtdbcat]["url"], sourcedict[gtdbcat]["pattern"], targetdir=targetfolder)
 		if returncode != 0:
 			sys.stderr.write("\nWARNING: wget returned non-zero returncode '{}' after downloading {} \n".format(returncode, gtdbcat))
 	download_dict = { x : check_gtdbmd5file(os.path.join(targetfolder, "MD5SUM"), targetfolder, sourcedict[x]["pattern"]) for x in sourcedict } #todo: need to do something about MD5SUM file ??
@@ -275,37 +286,64 @@ def download_gtdb_stuff(sourcedict = gtdb_source_dict, targetfolder=None):
 
 def download_silva_stuff(sourcedict = silva_source_dict, targetfolder=None):
 	# start of nested subfunctions
-	def check_silvamd5file(md5_file, targetdir, patternstring):
-		import re
-		import fnmatch
+	def check_silvamd5file(filelist):
 		allisfine = True
 		successlist = []
-		for f in os.listdir(targetfolder):
-			if fnmatch.fnmatch(filename, pattern):
-				myfile = os.path.join(targetfolder, f)
-				md5file = os.path.join(targetfolder, f + ".md5")
-				#calculate md5hash for downloaded file:
-				isthash = calculate_md5hash(myfile)
-				#read hash from md5-checkfile:
-				with open(md5file, "r") as m:
-					md5soll = m.readline().split()[0]	
-				#compare both with eachother:
-				if md5soll == md5ist:
-					successlist.append(myfile)
-				else:
-					os.remove(myfile)
-					os.remove(md5file)
-					allisfine = False
+		#print(filelist)
+		for f in filelist:
+			if os.path.exists(f):
+				if os.path.basename(f) != "VERSION.txt":
+					md5file = f + ".md5"
+					#calculate md5hash for downloaded file:
+					md5ist = calculate_md5hash(f)
+					#read hash from md5-checkfile:
+					with open(md5file, "r") as m:
+						md5soll = m.readline().split()[0]	
+					#compare both with eachother:
+					if md5soll != md5ist:
+						os.remove(f)
+						os.remove(md5file)
+						allisfine = False
+						continue
+				successlist.append(f)
+			else:
+				sys.stderr.write("\nExpcted downloaded file '{}', but could not fine it ...\n".format(f))
+				allisfine = False
 		assert allisfine, "\nError: Download of silva data failed!\nPlease check connection and retry again later\n"
 		return successlist
-	# end of nested subfunctions
+	
+	def getsilvaversion(urldict, targetfolder): #yes I know. This could go easier with urllib2 yadayadayada. But for the other stuff wget is better, so ticking with that for now!
+		sys.stderr.write("\n Now trying to get current silva release version...\n")
+		versionfilename = os.path.join(targetfolder, urldict["wishlist"][0])
+		#if os.path.exists(versionfilename):
+		#	sys.stderr.write("\nDeleting pre-existing {}\n".format(versionfilename))
+		#	os.remove(versionfilename)
+		_download_unixwget(urldict["url"] + urldict["wishlist"][0], targetdir=targetfolder)
+		#print("donethat")
 		
-	for silvacat in sourcedict:
-		sys.stderr.write("\nNow downloading from gtdb: \"{}\"...\n".format(silvacat))
-		returncode = _batchdownload_unixwget(sourcedict[silvacat]["url"], sourcedict[silvacat]["pattern"], targetdir=targetfolder)
-		if returncode != 0:
-			sys.stderr.write("\nWARNING: wget returned non-zero returncode '{}' after downloading {} \n".format(returncode, silvacat))
-	download_dict = { x : check_silvamd5file(targetfolder, sourcedict[x]["pattern"][:-1]) for x in sourcedict } #cutting off the final "*" in each pattern
+		with open(versionfilename) as versionfile:
+			version = versionfile.read().strip()
+			#print("wtf")
+		return version
+	# end of nested subfunctions
+	
+	print("silvastuff")
+	version = getsilvaversion(sourcedict["silva_version"], targetfolder)
+	prelim_downloadlist = [os.path.join(targetfolder, sourcedict["silva_version"]["wishlist"][0])]
+	#print(prelim_downloadlist)
+	for silvacat in ["silva_taxfiles", "silva_fastas"]:
+		#print(silvacat)
+		for w in sourcedict[silvacat]["wishlist"]:
+			#print(w)
+			wish = w.format(version)
+			#print("---- {} ---".format(wish))
+			sys.stderr.write("\nNow downloading from silva: \"{}\"...\n".format(wish))
+			returncode = _download_unixwget(sourcedict[silvacat]["url"] + wish, pattern = None, targetdir=targetfolder)
+			if returncode != 0:
+				sys.stderr.write("\nWARNING: wget returned non-zero returncode '{}' after downloading {} \n".format(returncode, wish))
+			prelim_downloadlist.append(os.path.join(targetfolder, wish))
+			#print(prelim_downloadlist)
+	download_dict = { x : check_silvamd5file([df for df in prelim_downloadlist if not df.endswith(".md5")]) for x in sourcedict} # listing all the files that are not md5 files 
 	#TODO: create a flag file, indicating that this already ran successfully
 	return download_dict
 		
@@ -712,6 +750,9 @@ def test_get_lookup_dicts():
 
 def test3():
 	getNprepare_dbdata_nonncbi("tempdir", continueflag=False)
+
+def test_silvadownload():
+	download_silva_stuff(sourcedict = silva_source_dict, targetfolder="hutzehu")
 	
 def main():
 	#download_refseq_eukaryote_prots(".")
@@ -720,6 +761,7 @@ def main():
 	#test_gtdb_download()
 	#test_get_lookup_dicts()
 	#test_httpwget()
-	test3()
+	test_silvadownload()
+	#test3()
 	
 main()	

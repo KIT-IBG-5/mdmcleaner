@@ -15,6 +15,14 @@ def openfile(infilename, filemode = "rt"):
 		filehandle = open(infilename, filemode)
 	return filehandle 
 
+def unixzcat(infilelist, outfilename): #my guess is, that this is probably much faster than doing it natively with python...
+	pass
+	#call zcat to concatenate all files in infilelist to outfilename
+	#check if successful
+	#delete files in infilelist
+	#compress outfile
+	#return outfilename
+
 def untar(infilename, targetdir=".", filemode = None):
 	""" a convenience function for unpacking compressed and ancompressed tar files.
 	accepts a filename(required) and an optional filemode (default = None) argument.
@@ -31,7 +39,7 @@ def untar(infilename, targetdir=".", filemode = None):
 		elif filename.endswith(".tar"):
 			filemode = "r:"
 		else:
-			raise RunTimeError("\nError: can't guess filemode for '{}'. Please provide it!\n".format(infilename)
+			raise RunTimeError("\nError: can't guess filemode for '{}'. Please provide it!\n".format(infilename))
 	infile = tarfile.open(infilename, filemode)
 	contentlist = infile.getnames()
 	infile.extractall(path=targetdir)

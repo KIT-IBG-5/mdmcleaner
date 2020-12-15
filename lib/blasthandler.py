@@ -255,6 +255,12 @@ def run_multiple_blasts_parallel(basic_blastarg_list, outbasename, total_threads
 		masterblaster.join()
 		return outfile_list
 
+def make_diamond_db(infasta, outfilename, db_type):
+	pass
+
+def make_blast_db(infasta, outfilename, db_type):
+	pass
+
 
 ###### Testing functions below:
 def test_prodigal_blasts():
