@@ -32,6 +32,7 @@ things to consider:
 '''
 
 # TODO: change all stderr messages to logger statements!!! make verbosity adjustable!!!
+# TODO: add flags specifying progress, for better being able to resume where it last stopped
 
 # hardcoded for now: where does NCBI currently store the stuff? If that changes, edit the ftp-adresses here:
 # also, binrefiner only considers proteins for now, but including other accession-dbs also for compatability with KRONA
@@ -265,7 +266,7 @@ def lca_and_json_taxdb_from_dmp(download_dir = "."):
 	lca_walk_tree = add_levelinfo(taxdict, lca_walk_tree)
 	#print(lca_walk_tree)
 	sys.stderr.write(" created! now only have to write to file...\n")
-	taxdictjson_file = taxdict2json(taxdict, download_dir)
+	taxdictjson_file = taxdict2json(taxdict, download_dir, taxdb_outfilebasename)
 	print("taxdict")
 	#print(taxdict['375451'])
 	print("----------")
@@ -274,9 +275,9 @@ def lca_and_json_taxdb_from_dmp(download_dir = "."):
 	lca_paths_file = build_lca_db(lca_walk_tree, download_dir)
 	return taxdictjson_file, lca_paths_file 
 
-def taxdict2json(taxdict, targetdir): #assume that targetdir = downloaddir
+def taxdict2json(taxdict, targetdir, outfilebasename): #assume that targetdir = downloaddir
 	import json
-	outdbfilename = os.path.join(targetdir, taxdb_outfilebasename)
+	outdbfilename = os.path.join(targetdir, outfilebasename)
 	outfile = openfile(outdbfilename, 'wt')
 	json.dump(taxdict, outfile)
 	outfile.close()

@@ -643,46 +643,51 @@ creates files for storing taxdict, LCA_walktree and acc2taxid files and returns 
 
 def _prepare_dbdata_nonncbi(targetdir, gtdb_download_dict, refseq_files, silva_download_dict ): #Todo:add continueflag argument
 	import blasthandler
-	#step 4: get gtdb_taxonomy
-	acc2taxidfilelist = []
-	taxdict, lca_walktree = None, None
-	##step 4a: read gtdb_taxonomy files (which use the assembly/genome_accessions as identifiers). NOTE: preliminary reseq taxonomy (knows only domain-level for Eujaryota and Viruses) autmatically added to taxodnomy_dict at this point
-	for gtdbtax in gtdb_download_dict["gtdb_taxfiles"]:
-		taxdict, lca_walktree, acc2taxidfile = read_gtdb_taxonomy_from_tsv(infilename) #todo: change read_gtdb_taxonomy_from_tsv() so that it accepts a filehandle to write acc2taxid-lookup to
-		acc2taxidfilelist.append[acc2taxidfile]
-	###TODO: save current taxdict and lca_walktree to file, so this can be resumed from here later
-	##step 4b: uncompress gtdb-tar-files and read contig names for each genome-file --> assign contigs to taxids and write to acc2taxidfile
+	import getdb.py #for using dict2jsonthis will be obsolete, when this is moved there
+	def step4a():
+		acc2taxidfilelist = []
+		taxdict, lca_walktree = None, None
+		for gtdbtax in gtdb_download_dict["gtdb_taxfiles"]:
+			taxdict, lca_walktree, acc2taxidfile = read_gtdb_taxonomy_from_tsv(infilename) #todo: change read_gtdb_taxonomy_from_tsv() so that it accepts a filehandle to write acc2taxid-lookup to
+			acc2taxidfilelist.append[acc2taxidfile]
+		return taxdict, lca_walktree, acc2taxidfilelist
+		###TODO: save current taxdict and lca_walktree to file, so this can be resumed from here later
+	def step4b()
 		assert len(gtdb_download_dict["gtdb_fastas"]) == 2, "\nERROR: number of downloaded gtdb tars different than expected: should be 2 but is {}\n".format(len(gtdb_download_dict)) #Notifying myself, so that i don't forget to adapt this if i ever choose to download more or less reference categories from gtdb
-	gtdb_genomefiles = misc.untar(gtdb_download_dict["gtdb_fastas"][0])
-	gtdb_proteinfiles = misc.untar(gtdb_download_dict["gtdb_fastas"][1])
-	#gtdbconcatgenomesfasta = os.path.join(targetdir,"step4b_gtdb_refgenomes.fasta.gz")
-	concatprotfastaname = os.path.join(targetdir, "concat_refprot.faa")
-	concatprotfastaname = os.path.join(targetdir, "concat_refgenomes.fasta")
-	concatgenomefastahandle = openfile(concatgenomefastaname, "wt")
-	concatprotfastahandle = openfile(concatprotfastaname, "wt")
-	acc2taxidfilelist.append(gtdb_contignames2taxids(gtdb_genomefiles, acc2taxidfilelist, "temp_acc2taxid_gtdb.acc2taxid.gz", concatgenomefastahandle))
-	gtdb_genomefiles = [gtdbconcatgenomesfasta] # the single genome fastas have now been deleted. instead keep track of the resulting concatenated genome fasta (more will be concateated to it, later)
-	#gtdbconcatprotsfasta = os.path.join(targetdir,"step4b_gtdb_refprots.faa.gz")#todo: switch this to a filehandle
-	_concat_fastas(gtdb_proteinfiles, concatprotfastahandle, return_headerdict = False, remove_prodigalIDs = True, remove_descriptions = False) #does not return an acc2taxidfile ,because that is already covered by the contig-accessions
-	#gtdb_download_dict["gtdb_fastas"] = [] #TODO: This step probably not necessary?
-	#step5: get silva taxonomy
-	##step 5a: read silva_taxonomy files and add this info to taxdict and LCA_walktree
-	for f in silva_download_dict["silva_taxfiles"]:
-		print("reading {}".format(f))
-		taxdict, LCA_walktree, filename = read_silva_taxonomy_from_tsv(f, taxdict, LCA_walktree)
-		acc2taxidfilelist.append(filename)
+		gtdb_genomefiles = misc.untar(gtdb_download_dict["gtdb_fastas"][0])
+		gtdb_proteinfiles = misc.untar(gtdb_download_dict["gtdb_fastas"][1])
+		concatprotfastaname = os.path.join(targetdir, "concat_refprot.faa")
+		concatprotfastaname = os.path.join(targetdir, "concat_refgenomes.fasta")
+		concatgenomefastahandle = openfile(concatgenomefastaname, "wt")
+		concatprotfastahandle = openfile(concatprotfastaname, "wt")
+		acc2taxidfilelist.append(gtdb_contignames2taxids(gtdb_genomefiles, acc2taxidfilelist, "temp_acc2taxid_gtdb.acc2taxid.gz", concatgenomefastahandle))
+		_concat_fastas(gtdb_proteinfiles, concatprotfastahandle, return_headerdict = False, remove_prodigalIDs = True, remove_descriptions = False) #does not return an acc2taxidfile ,because that is already covered by the contig-accessions
+		return concatgenomefastahandle, concatprotfastahandle, acc2taxidfilelist
+	
+	def step5a():
+		for f in silva_download_dict["silva_taxfiles"]:
+			print("reading {}".format(f))
+			taxdict, LCA_walktree, filename = read_silva_taxonomy_from_tsv(f, taxdict, LCA_walktree)
+			acc2taxidfilelist.append(filename)
+		return taxdict, LCA_walktree, acc2taxidfilelist
 	###TODO: save current taxdict and lca_walktree to file, so this can be resumed from here later
+
+	def step6a():	
+		acc2taxidfilelist.append(refseq_contignames2taxids(refseq_files, concatprotfastahandle, acc2taxidoutfilename))
+	
+	#####end of nested subfunctions 
+	#step 4: get gtdb_taxonomy
+	taxdict, lca_walktree, acc2taxidfilelist = step4a() ##step 4a: read gtdb_taxonomy files (which use the assembly/genome_accessions as identifiers). NOTE: preliminary reseq taxonomy (knows only domain-level for Eujaryota and Viruses) autmatically added to taxodnomy_dict at this point
+	concatgenomefastahandle, concatprotfastahandle, acc2taxidfilelist = step4b() ##step 4b: uncompress gtdb-tar-files and read contig names for each genome-file --> assign contigs to taxids and write to acc2taxidfile
+	#step5: get silva taxonomy
+	taxdict, LCA_walktree, acc2taxidfilelist = step5a() ##step 5a: read silva_taxonomy files and add this info to taxdict and LCA_walktree
 	#step 6: cocatenate all reference datasets, create blastdbs, and delete associated fastafiles
-	##step6a: concatenate all refseq protein reference-fasta files (to outhandle concatfasta), keep outhandle (concatfasta) and return acc2taxidfile(name)
-	acc2taxidfilelist.append(refseq_contignames2taxids(refseq_files, concatprotfastahandle, acc2taxidoutfilename))
+	step6a() ##step6a: concatenate all refseq protein reference-fasta files (to outhandle concatfasta), keep outhandle (concatfasta) and return acc2taxidfile(name)
 	concatprotfastahandle.close()
-	##step6b: create protein diamond-db
 	#todo: define outprotdbname
-	blasthandler.make_diamond_db(concatprotfastahandle.name, outprotdbname, "prot")
-	##step6c: concatenate all nucleotide reference-fasta files
-	_concat_fastas(silva_download_dict["silva_fastas"], concatgenomesfastahandle)
-	##step6d: create nucleotide diamond or blastdb (test which one is faster, blast may be faster here, because there are not so many queries as in the protein-blasts)
-	blasthandler.make_blast_db(concatprotfastahandle.name, outprotdbname, "nucl")	
+	blasthandler.make_diamond_db(concatprotfastahandle.name, outprotdbname, "prot")  ##step6b: create protein diamond-db	
+	_concat_fastas(silva_download_dict["silva_fastas"], concatgenomesfastahandle) ##step6c: concatenate all nucleotide reference-fasta files
+	blasthandler.make_blast_db(concatprotfastahandle.name, outprotdbname, "nucl") ##step6d: create nucleotide diamond or blastdb (test which one is faster, blast may be faster here, because there are not so many queries as in the protein-blasts)
 	#step 7: clean up/delete all remaining intermediate files
 	
 def getNprepare_dbdata_nonncbi(targetdir, continueflag=False):
