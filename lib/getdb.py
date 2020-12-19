@@ -266,7 +266,7 @@ def lca_and_json_taxdb_from_dmp(download_dir = "."):
 	lca_walk_tree = add_levelinfo(taxdict, lca_walk_tree)
 	#print(lca_walk_tree)
 	sys.stderr.write(" created! now only have to write to file...\n")
-	taxdictjson_file = taxdict2json(taxdict, download_dir, taxdb_outfilebasename)
+	taxdictjson_file = dict2jsonfile(taxdict, download_dir, taxdb_outfilebasename)
 	print("taxdict")
 	#print(taxdict['375451'])
 	print("----------")
@@ -275,7 +275,7 @@ def lca_and_json_taxdb_from_dmp(download_dir = "."):
 	lca_paths_file = build_lca_db(lca_walk_tree, download_dir)
 	return taxdictjson_file, lca_paths_file 
 
-def taxdict2json(taxdict, targetdir, outfilebasename): #assume that targetdir = downloaddir
+def dict2jsonfile(taxdict, targetdir, outfilebasename): #assume that targetdir = downloaddir
 	import json
 	outdbfilename = os.path.join(targetdir, outfilebasename)
 	outfile = openfile(outdbfilename, 'wt')
@@ -283,6 +283,13 @@ def taxdict2json(taxdict, targetdir, outfilebasename): #assume that targetdir = 
 	outfile.close()
 	return outdbfilename
 
+def jsonfile2dict(jsonfile):#needs to be json format. Krona taxdbs need to be converted to this format first, using the kronadb2json function above
+	import json
+	infile = openfile(taxdbfile)
+	outdict = json.load(infile)
+	infile.close()
+	return outdict
+		
 def json_taxdb_from_kronadb(kronadb):
 	raise Exception("This function does not exist yet")
 	infile = openfile(kronadb)
@@ -382,20 +389,7 @@ class taxdb(object):
 		print("LCA of '{}' & '{}' is '{}'".format(taxA, taxB, lca))
 			
 	def read_taxdb(self, taxdbfile):#needs to be json format. Krona taxdbs need to be converted to this format first, using the kronadb2json function above
-		import json
-		# ~ def keystoint(x): #sumb json format does not allow integers as keys (WHYYY=!) and converts them to strings during dump (WHYY?). doing this in the hope this saves RAM. otherwise just go with stupid strings...
-			# ~ replace_dict = {}
-			# ~ for k, v in x.items():
-				# ~ if type(v) == dict:
-					# ~ replace_dict[int(k)] = v
-				# ~ else:
-					# ~ replace_dict[k] = v
-			# ~ return replace_dict
-		infile = openfile(taxdbfile)
-		# ~ self.taxdict = json.load(infile, object_hook = keystoint) #converting to int does NOT save much RAM BUT costs a LOT of speed!
-		self.taxdict = json.load(infile)
-		#print(list(self.taxdict.keys()))
-		infile.close()
+		self.taxdict = jsonfile2dict(taxdbfile)
 	
 	def acc2taxid(self, queryacc,start = 0):
 		#for using binary search on a simple sorted textfile #reminer to self: do NOT use compressed acc2taxid_lookupfile. It increases time for binary search ca 200x!
