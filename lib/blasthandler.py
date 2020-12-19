@@ -255,11 +255,30 @@ def run_multiple_blasts_parallel(basic_blastarg_list, outbasename, total_threads
 		masterblaster.join()
 		return outfile_list
 
-def make_diamond_db(infasta, outfilename, db_type):
-	pass
+def make_diamond_db(infasta, outfilename, diamond = "diamond", threads = 1):
+	import subprocess
+	mkdbcmd = [ diamond, "makedb", "--in", infasta, "--db", outfilename, "--threads", threads ]
+	mkdbproc = subprocess.run(mkdbcmd, stdout = subprocess.PIPE, stderr = subprocess.PIPE, text = True)
+	try:
+		stderr, stdout = mkdbproc()
+	except Exception:
+		sys.stderr.write("\nAn error occured during blastn run with query '{}'\n".format(query))
+		sys.stderr.write("{}\n".format(stderr))
+		raise RuntimeError
+	return outfilename	
 
-def make_blast_db(infasta, outfilename, db_type):
-	pass
+def make_blast_db(infasta, outfilename, makeblastdb="makeblastdb", db_type="nucl", threads = 1): #threads  argument is ignored. Is only there to work with multiprocessing function
+	import subprocess
+	assert db_type in ["nucl", "prot"]
+	mkdbcmd = [ makeblastdb, "-in", infasta, "-title", outfilename, "-input_type", db_type, "-hash_index" ]
+	mkdbproc = subprocess.run(mkdbcmd, stdout = subprocess.PIPE, stderr = subprocess.PIPE, text = True)
+	try:
+		stderr, stdout = mkdbproc()
+	except Exception:
+		sys.stderr.write("\nAn error occured during blastn run with query '{}'\n".format(query))
+		sys.stderr.write("{}\n".format(stderr))
+		raise RuntimeError
+	return outfilename	
 
 
 ###### Testing functions below:
