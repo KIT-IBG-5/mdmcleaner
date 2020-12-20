@@ -71,9 +71,13 @@ rank2index = { "no rank" : 0, \
 index2rank = { rank2index[key] : key for key in rank2index }
 
 
-taxdb_outfilebasename = "taxonomy_br.json.gz" #different from krona. additional wasteful "children" info per node (may get rid of it again after perfecting LCA). saved as compressed file because uncompression does not increase loading time much but decreases file size a LOT
-acc2taxid_outfilebasename = "all.accession2taxid.sorted" #using the same as krona
-lcawalkdb_outfilebasename = "lcawalkdb_br.db"
+ncbi_taxdb_outfilebasename = "ncbi_taxonomy_br.json.gz" #different from krona. additional wasteful "children" info per node (may get rid of it again after perfecting LCA). saved as compressed file because uncompression does not increase loading time much but decreases file size a LOT
+gtdb_taxdb_outfilebasename = "gtdb_taxonomy_br.json.gz"
+ncbi_acc2taxid_outfilebasename = "all.accession2taxid.sorted" #using the same as krona
+gtdb_acc2taxid_outfilebasename = "gtdb_all.accession2taxid.sorted"
+ncbi_lcawalkdb_outfilebasename = "ncbi_lcawalkdb_br.db"
+gtdb_lcawalkdb_outfilebasename = "gtdb_lcawalkdb_br.db"
+
 
 #TODO: actually read these downloaded temfiles and create a database
 def calculate_filehash(infile): #TODO probably move to misc.py
@@ -218,39 +222,9 @@ def lca_and_json_taxdb_from_dmp(download_dir = "."):
 			lca_walk_tree[taxid]["level"] = get_level(taxdict, taxid)
 		return lca_walk_tree
 			
-	def build_lca_db(lca_walk_tree, targetdir):
-		"""
-		iterates through lca_walk_tree from root to each branch in the form of a "eulers walk". 
-		stores the visited nodes of this eulers walk in a list. stores corresponding node-depths in a second list
-		thoses lists form the actual lookup-table for lca queries
-		"""
-		def walk(lca_walk_tree, walk_list, depth_list, currnode = "1"): #simple attempt to get eulers walk across taxdict
-			walk_list.append(currnode)
-			# ~ print("=========")
-			# ~ print(currnode)
-			# ~ print(lca_walk_tree[currnode])
-			depth_list.append(lca_walk_tree[currnode]["level"])
-			for child in sorted(lca_walk_tree[currnode]["children"]):
-				#print("{} --> {}".format(currnode, child))
-				walk_list, depth_list = walk(lca_walk_tree, walk_list, depth_list, child)
-				walk_list.append(currnode)
-				depth_list.append(lca_walk_tree[currnode]["level"])
-			return walk_list, depth_list
-		
-		walk_list = []
-		depth_list = []
-		walk_list, depth_list = walk(lca_walk_tree, walk_list, depth_list)
-		
-		outfilename = os.path.join(targetdir, lcawalkdb_outfilebasename)
-		outfile = openfile(outfilename, "wt")
-		outfile.write("\t".join(walk_list) + "\n")
-		outfile.write("\t".join([str(l) for l in depth_list]))
-		outfile.close()
-		return outfilename
-
 	# ~ def taxdict2yaml(taxdict, targetdir): #assume that targetdir = downloaddir #optional in cas i decide to switch to yaml
 		# ~ import yaml
-		# ~ outdbfilename = os.path.join(targetdir, taxdb_outfilebasename + ".yaml")
+		# ~ outdbfilename = os.path.join(targetdir, ncbi_taxdb_outfilebasename + ".yaml")
 		# ~ with open(outdbfilename, 'w') as outfile:
 			# ~ yaml.dump(taxdict, outfile)
 		# ~ return outdbfilename
@@ -266,18 +240,47 @@ def lca_and_json_taxdb_from_dmp(download_dir = "."):
 	lca_walk_tree = add_levelinfo(taxdict, lca_walk_tree)
 	#print(lca_walk_tree)
 	sys.stderr.write(" created! now only have to write to file...\n")
-	taxdictjson_file = dict2jsonfile(taxdict, download_dir, taxdb_outfilebasename)
+	taxdictjson_file = dict2jsonfile(taxdict, os.path.join(download_dir, ncbi_taxdb_outfilebasename))
 	print("taxdict")
 	#print(taxdict['375451'])
 	print("----------")
 	print("lca_walk_tree")
 	print(lca_walk_tree)
-	lca_paths_file = build_lca_db(lca_walk_tree, download_dir)
+	lca_paths_file = build_lca_db(lca_walk_tree, os.path.join(download_dir, ncbi_lcawalkdb_outfilebasename))
 	return taxdictjson_file, lca_paths_file 
 
-def dict2jsonfile(taxdict, targetdir, outfilebasename): #assume that targetdir = downloaddir
+def build_lca_db(lca_walk_tree, outfilename):
+	"""
+	iterates through lca_walk_tree from root to each branch in the form of a "eulers walk". 
+	stores the visited nodes of this eulers walk in a list. stores corresponding node-depths in a second list
+	thoses lists form the actual lookup-table for lca queries
+	"""
+	def walk(lca_walk_tree, walk_list, depth_list, currnode = "1"): #simple attempt to get eulers walk across taxdict
+		walk_list.append(currnode)
+		# ~ print("=========")
+		# ~ print(currnode)
+		# ~ print(lca_walk_tree[currnode])
+		depth_list.append(lca_walk_tree[currnode]["level"])
+		for child in sorted(lca_walk_tree[currnode]["children"]):
+			#print("{} --> {}".format(currnode, child))
+			walk_list, depth_list = walk(lca_walk_tree, walk_list, depth_list, child)
+			walk_list.append(currnode)
+			depth_list.append(lca_walk_tree[currnode]["level"])
+		return walk_list, depth_list
+	
+	walk_list = []
+	depth_list = []
+	walk_list, depth_list = walk(lca_walk_tree, walk_list, depth_list)
+	
+	outfilename = os.path.join(targetdir, ncbi_lcawalkdb_outfilebasename)
+	outfile = openfile(outfilename, "wt")
+	outfile.write("\t".join(walk_list) + "\n")
+	outfile.write("\t".join([str(l) for l in depth_list]))
+	outfile.close()
+	return outfilename
+
+def dict2jsonfile(taxdict, outdbfilename): 
 	import json
-	outdbfilename = os.path.join(targetdir, outfilebasename)
 	outfile = openfile(outdbfilename, 'wt')
 	json.dump(taxdict, outfile)
 	outfile.close()
@@ -285,7 +288,7 @@ def dict2jsonfile(taxdict, targetdir, outfilebasename): #assume that targetdir =
 
 def jsonfile2dict(jsonfile):#needs to be json format. Krona taxdbs need to be converted to this format first, using the kronadb2json function above
 	import json
-	infile = openfile(taxdbfile)
+	infile = openfile(jsonfile)
 	outdict = json.load(infile)
 	infile.close()
 	return outdict
@@ -298,7 +301,7 @@ def json_taxdb_from_kronadb(kronadb):
 		
 
 def download_ncbiaccessiondb(targetdir=".", dbmode = "minimal", enforce=False): #TODO: implement filecheck and ask for user-feedback (skippable with "-f" or "-y" argument) if it looks as if a krona-db file could be overwritten
-	acc2taxid_outfilename = os.path.join(targetdir, acc2taxid_outfilebasename) #change to whatever krona is using
+	acc2taxid_outfilename = os.path.join(targetdir, ncbi_acc2taxid_outfilebasename) #change to whatever krona is using
 	if os.path.isfile(acc2taxid_outfilename):
 		warning = "ATTENTION: if you are planning to use/update a database also intended for use with Krona, it is recommended to use Kronas \"updateAccessions.sh\" script instead!\n"
 		if enforce != True:
@@ -359,7 +362,7 @@ class taxdb(object):
 			try:
 				self.read_taxdb(taxdbfile)
 				if lca_pathsfile == None:
-					self.read_lca_paths(os.path.join(os.path.dirname(taxdbfile), lcawalkdb_outfilebasename))
+					self.read_lca_paths(os.path.join(os.path.dirname(taxdbfile), ncbi_lcawalkdb_outfilebasename))
 				else:
 					self.read_lca_paths(os.path.join(lca_pathsfile))
 			except Exception as e: #TODO: replace this with the specific exception throen when there was actually an problem parsing the file as json
@@ -526,7 +529,7 @@ def _test_taxpath():#assumes "nodes.dmp" and "names.dmp" "sorted_shit_yeah.db" a
 
 	sys.stderr.write("\nrcreating db-object and readig taxdb from json_file\n")	
 	start_time = time.time()	
-	db = taxdb("sorted_shit_yeah.db", taxdbfile = taxdb_outfilebasename)
+	db = taxdb("sorted_shit_yeah.db", taxdbfile = ncbi_taxdb_outfilebasename)
 	stop_time = time.time()
 	sys.stderr.write("  --> Done. This took {} seconds ---\n".format(stop_time - start_time))		
 	
@@ -563,7 +566,7 @@ def _test_taxpath():#assumes "nodes.dmp" and "names.dmp" "sorted_shit_yeah.db" a
 def test_opentaxdbspeed():
 	sys.stderr.write("\nrcreating db-object and readig taxdb from json_file\n")	
 	start_time = time.time()	
-	db = taxdb("dummy.tab", taxdbfile = taxdb_outfilebasename)
+	db = taxdb("dummy.tab", taxdbfile = ncbi_taxdb_outfilebasename)
 	stop_time = time.time()
 	sys.stderr.write("  --> Done. This took {} seconds ---\n".format(stop_time - start_time))		
 
@@ -576,7 +579,7 @@ def test_lcawalk():
 	sys.stderr.write("  --> Done. This took {} seconds\n".format(stop_time - start_time))
 	sys.stderr.write("\nrcreating db-object and readig taxdb from json_file\n")	
 	start_time = time.time()	
-	db = taxdb(taxdictjson_file, taxdbfile = taxdb_outfilebasename)
+	db = taxdb(taxdictjson_file, taxdbfile = ncbi_taxdb_outfilebasename)
 	stop_time = time.time()
 	sys.stderr.write("  --> Done. This took {} seconds ---\n".format(stop_time - start_time))		
 	tax1 = sys.argv[1]
