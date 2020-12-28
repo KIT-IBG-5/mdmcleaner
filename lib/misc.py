@@ -23,7 +23,7 @@ def unixzcat(infilelist, outfilename): #my guess is, that this is probably much 
 	#compress outfile
 	#return outfilename
 
-def untar(infilename, targetdir=".", filemode = None):
+def untar(infilename, targetdir=".", filemode = None): #todo: add delete option to misc.unar(). make it delete tar file when finished
 	""" a convenience function for unpacking compressed and ancompressed tar files.
 	accepts a filename(required) and an optional filemode (default = None) argument.
 	filemode may be any of ["r:", "r:gz", None ]. If filemode == None, it will try to determine filemode based on filename-extension
@@ -32,19 +32,35 @@ def untar(infilename, targetdir=".", filemode = None):
 	"""
 	import tarfile
 	import os
+	import sys
+	def track_progress(filelist):
+		for f in range(len(filelist)):
+			if f % 50 == 0:
+				sys.stderr.write("\r extracted {} of {} objects".format(f, len(filelist)))
+				sys.stderr.flush()
+			yield filelist[f]
+		
 	assert filemode in ["r:", "r:gz", None], "\nERROR: filemode not allowed : '{}'\n".format(filemode)
+	sys.stderr.write("    assessing contents of '{}'\n".format(infilename))
+	sys.stderr.flush() 
 	if filemode == None:
-		if filename.endswith(".tar.gz"):
+		if infilename.endswith(".tar.gz"):
 			filemode = "r:gz"
-		elif filename.endswith(".tar"):
+		elif infilename.endswith(".tar"):
 			filemode = "r:"
 		else:
 			raise RunTimeError("\nError: can't guess filemode for '{}'. Please provide it!\n".format(infilename))
 	infile = tarfile.open(infilename, filemode)
-	contentlist = infile.getnames()
-	infile.extractall(path=targetdir)
+	contentlist = infile.getmembers()
+	#print(contentlist)
+	print("found {} files in tar".format(len(contentlist)))
+	sys.stderr.write("    extracting contents of '{}'\n".format(infilename))
+	sys.stderr.flush() 
+	sys.stdout.flush() # todo: only for debugging
+	infile.extractall(path=targetdir, members = track_progress(contentlist))
+	sys.stderr.write("\r finished extracting {}\n".format(infilename))
 	infile.close()
-	return [ os.path.join(targetdir, f) for f in contentlist ]
+	return [ os.path.join(targetdir, f.name) for f in contentlist ] #todo: add check if file or dir
 
 def _run_any_function(modulename, functionname, arg_dict, threads=1):
 	module = __import__(modulename)
