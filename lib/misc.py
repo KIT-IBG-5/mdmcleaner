@@ -54,10 +54,10 @@ def untar(infilename, targetdir=".", filemode = None): #todo: add delete option 
 	contentlist = infile.getmembers()
 	#print(contentlist)
 	print("found {} files in tar".format(len(contentlist)))
+	sys.stdout.flush() # todo: only for debugging
 	sys.stderr.write("    extracting contents of '{}'\n".format(infilename))
 	sys.stderr.flush() 
-	sys.stdout.flush() # todo: only for debugging
-	infile.extractall(path=targetdir, members = track_progress(contentlist))
+	#infile.extractall(path=targetdir, members = track_progress(contentlist)) #todo: uncomment
 	sys.stderr.write("\r finished extracting {}\n".format(infilename))
 	infile.close()
 	return [ os.path.join(targetdir, f.name) for f in contentlist ] #todo: add check if file or dir

@@ -4,9 +4,11 @@ creating, reading and parsing of blast files (Diamond and well as blast+).
 only creates/handles tabular blast files in "-outfmt 6" format
 """
 
-#assign blasts to contigs-proteins in a nother module.
-#  --> in that module create "contigs" classes, that combine all blast hits (and corresponding marker-gene status) for each contig
-#		--> in that module combine contig-objects of an assembly dataset into a dataset-object
+#todo: assign blasts to contigs-proteins in a nother module.
+#todo:   --> in that module create "contigs" classes, that combine all blast hits (and corresponding marker-gene status) for each contig
+#todo:		--> in that module combine contig-objects of an assembly dataset into a dataset-object
+
+#todo: use differend score cutoffs for protein/unknown-contig-blasts and 16S/23S-blasts (für proteins accept hits down to 50% of best score, for 16S/23S accept hits only down to 90-95%% of best score)
 
 import sys
 import os
@@ -202,19 +204,25 @@ def run_single_blastn(query, db, blast, outname, threads = 1):
 							   "-outfmt", "6", "-num_threads", str(threads), "-out", outname + ".tmp"], \
 							   stdout = subprocess.PIPE, stderr = subprocess.PIPE, text = True)
 	try:
-		stderr, stdout = blastcmd()
+		blastcmd.check_returncode()
 	except Exception:
 		sys.stderr.write("\nAn error occured during blastn run with query '{}'\n".format(query))
-		sys.stderr.write("{}\n".format(stderr))
+		sys.stderr.write("{}\n".format(blastcmd.stderr))
 		raise RuntimeError
 	return outname
 	
 def run_single_diamondblastp(query, db, diamond, outname, threads = 1): #TODO: currently not setting "--tmpdir" & "--parallel-tmpdir" here! figure something out if this turns out to be problematic on hpc systems
+	#TODO: add a maxmem arguemt that states how much memory can be used. use this to determine optimal blocksize and chunks for more efficient blasting. BLOCKSIZE=INT(MEMORY/6) CHUNKS=4/2/1 IF MEMORY >=12/24/48
 	import subprocess
 	blastcmd = subprocess.run([diamond, "--query", query, "--db", db, "--evalue", "1e-10",\
 							   "--outfmt", "6", "--threads", str(threads), "--out", outname + ".tmp"], \
 							   stdout = subprocess.PIPE, stderr = subprocess.PIPE, text = True)
-	blastcmd.check_returncode() #TODO: TEST THIS! check if it actually returns the sterr error message. Check if it raises an exception if process failed!
+	try:
+		blastcmd.check_returncode()
+	except Exception:
+		sys.stderr.write("\nAn error occured during diamond blastp run with query '{}'\n".format(query))
+		sys.stderr.write("{}\n".format(blastcmd.stderr))
+		raise RuntimeError
 	return outname
 	
 def _run_any_blast(query, db, path_appl, outname, threads):
@@ -257,30 +265,65 @@ def run_multiple_blasts_parallel(basic_blastarg_list, outbasename, total_threads
 
 def make_diamond_db(infasta, outfilename, diamond = "diamond", threads = 1):
 	import subprocess
-	mkdbcmd = [ diamond, "makedb", "--in", infasta, "--db", outfilename, "--threads", threads ]
+	mkdbcmd = [ diamond, "makedb", "--in", infasta, "--db", outfilename, "--threads", str(threads) ]
 	mkdbproc = subprocess.run(mkdbcmd, stdout = subprocess.PIPE, stderr = subprocess.PIPE, text = True)
+	sys.stderr.write("\n creating diamond-db \"{}\"...".format(outfilename))
+	sys.stderr.flush()
 	try:
-		stderr, stdout = mkdbproc()
+		mkdbproc.check_returncode()
+		sys.stderr.write("...finished!\n")
+		sys.stderr.flush()
 	except Exception:
-		sys.stderr.write("\nAn error occured during blastn run with query '{}'\n".format(query))
-		sys.stderr.write("{}\n".format(stderr))
+		sys.stderr.write("\nAn error occured while creating '{}'\n".format(outfilename))
+		sys.stderr.write("{}\n".format(mkdbproc.stderr))
 		raise RuntimeError
 	return outfilename	
 
 def make_blast_db(infasta, outfilename, makeblastdb="makeblastdb", db_type="nucl", threads = 1): #threads  argument is ignored. Is only there to work with multiprocessing function
 	import subprocess
-	assert db_type in ["nucl", "prot"]
-	mkdbcmd = [ makeblastdb, "-in", infasta, "-title", outfilename, "-input_type", db_type, "-hash_index" ]
+	assert db_type in ["nucl", "prot"],  "dbtype has to be either 'nucl' or 'prot'"
+	sys.stderr.write("\n-->creating blastdb {}...\n".format(outfilename))
+	sys.stderr.flush()
+	mkdbcmd = [ makeblastdb, "-in", infasta, "-title", outfilename, "-out", outfilename, "-dbtype", db_type, "-max_file_sz", "4GB"] #hash_index apparently not possible for very large datasets
+	print(" ".join(mkdbcmd))
 	mkdbproc = subprocess.run(mkdbcmd, stdout = subprocess.PIPE, stderr = subprocess.PIPE, text = True)
+	sys.stderr.write("\n creating blastdb-db \"{}\"...".format(outfilename))
+	sys.stderr.flush()
 	try:
-		stderr, stdout = mkdbproc()
+		mkdbproc.check_returncode()
+		sys.stderr.write("...finished!\n")
+		sys.stderr.flush()
 	except Exception:
-		sys.stderr.write("\nAn error occured during blastn run with query '{}'\n".format(query))
-		sys.stderr.write("{}\n".format(stderr))
+		sys.stderr.write("\nAn error occured while creating '{}'\n".format(outfilename))
+		sys.stderr.write("{}\n".format(mkdbproc.stderr))
 		raise RuntimeError
 	return outfilename	
 
-
+def make_blast_db_from_gz(infasta, outfilename, makeblastdb="makeblastdb", db_type="nucl", threads = 1): #threads  argument is ignored. Is only there to work with multiprocessing function
+	import subprocess
+	# todo: if this works,incorporate it with "make_blast_db" above! check if infasta ends with .gz. If yes: pipe from zcat, otherwise run makeblastdb directly
+	sys.stderr.write("\ncreating blastdb {}...\n".format(outfilename))
+	sys.stderr.flush()
+	if not infasta.endswith(".gz"):
+		sys.stderr.write("\ninput is not compressed! using standard make_blast_db function".format(outfilename))
+		return make_blast_db(infasta, outfilename, makeblastdb, db_type, threads) #todo: make this the other way round. make it call this function if it finds input to be compressed
+	assert db_type in ["nucl", "prot"],  "dbtype has to be either 'nucl' or 'prot'"
+	zcatcmd = [ "zcat", infasta]
+	mkdbcmd = [ makeblastdb, "-title", outfilename, "-out", outfilename, "-dbtype", db_type, "-max_file_sz", "4GB"] #hash_index apparently not possible for very large datasets
+	import time
+	start = time.time()
+	zcatproc = subprocess.Popen(zcatcmd, stdout = subprocess.PIPE, stderr = subprocess.PIPE, text = True)
+	print(" ".join(mkdbcmd))
+	sys.stdout.flush()
+	mkdbproc = subprocess.Popen(mkdbcmd, stdin = zcatproc.stdout, stdout = subprocess.PIPE, stderr = subprocess.PIPE, text = True)
+	stdout, stderr = mkdbproc.communicate()
+	mkdbproc.wait()
+	end = time.time()
+	print("piping it this way took : {}".format(end - start))
+	sys.stdout.flush()
+	return outfilename
+	#todo: compare how long it take to pipe this via python subprocess and ow long to do the same on the bash shell
+	
 ###### Testing functions below:
 def test_prodigal_blasts():
 	blastfile = sys.argv[1]

@@ -249,7 +249,7 @@ def lca_and_json_taxdb_from_dmp(download_dir = "."):
 	lca_paths_file = build_lca_db(lca_walk_tree, os.path.join(download_dir, ncbi_lcawalkdb_outfilebasename))
 	return taxdictjson_file, lca_paths_file 
 
-def build_lca_db(lca_walk_tree, outfilename):
+def build_lca_db(lca_walk_tree, outfilename, startingnode = "1"): #this default starting node only works for ncbi based taxonomy. need to pass other staring node when using gtdb
 	"""
 	iterates through lca_walk_tree from root to each branch in the form of a "eulers walk". 
 	stores the visited nodes of this eulers walk in a list. stores corresponding node-depths in a second list
@@ -270,9 +270,9 @@ def build_lca_db(lca_walk_tree, outfilename):
 	
 	walk_list = []
 	depth_list = []
-	walk_list, depth_list = walk(lca_walk_tree, walk_list, depth_list)
+	walk_list, depth_list = walk(lca_walk_tree, walk_list, depth_list, startingnode)
 	
-	outfilename = os.path.join(targetdir, ncbi_lcawalkdb_outfilebasename)
+	#outfilename = os.path.join(targetdir, ncbi_lcawalkdb_outfilebasename)
 	outfile = openfile(outfilename, "wt")
 	outfile.write("\t".join(walk_list) + "\n")
 	outfile.write("\t".join([str(l) for l in depth_list]))
