@@ -5,7 +5,7 @@ import os
 import sys
 import time
 import traceback
-
+import misc
 from misc import openfile
 '''
 module for downloading and parsing the ncbi taxonomy databases for bin refinerwork in progress
@@ -131,43 +131,43 @@ def _create_sorted_acc2taxid_lookup(acc2taxidfilelist, acc2taxid_outfilename):
 	return acc2taxid_outfilename
 
 class taxdb(object):
-	def __init__(self, acc2taxid_lookupfile, taxdbfile = None, lca_pathsfile = None):
+	def __init__(self, acc2taxid_lookupfile, taxdbfile = None, lca_pathsfile = None): #todo: create and read a "config file" to get file-locations from
 		#self.taxdict = self.read_taxddbfile(taxdbfile) #todo: write tis!
-		self.acc_lookup_handle = openfile(acc2taxid_lookupfile)
+		self.acc_lookup_handle = misc.openfile(acc2taxid_lookupfile)
 		self.acc_lookup_handle_filesize = self.acc_lookup_handle.seek(0,2) #jump to end of file and give bytesize (alternative to "os.path.getsize()")
 		if taxdbfile != None:
+			assert lca_pathsfile, "Error: have to specify BOTH 'taxdbfile' and 'lca_pathsfile'"
 			try:
-				self.read_taxdb(taxdbfile)
-				if lca_pathsfile == None:
-					self.read_lca_paths(os.path.join(os.path.dirname(taxdbfile), ncbi_lcawalkdb_outfilebasename))
-				else:
-					self.read_lca_paths(os.path.join(lca_pathsfile))
+				self.read_taxdb(taxdbfile)					
 			except Exception as e: #TODO: replace this with the specific exception throen when there was actually an problem parsing the file as json
 				sys.stderr.write("\n{}\n".format(e, traceback.print_exc()))
 				sys.stderr.write("\nperhabs the taxdbfile is not in json-format? Assuming a krona-taxonomydb and trying to covert it to json\n")
 				self.taxdbfile = json_taxdb_from_kronadb(taxdbfile)
 				self.read_taxdb(self.taxdbfile)
+			self.read_lca_paths(os.path.join(lca_pathsfile))
 		else:
 			self.taxdict = None
+			self.walk_list = None
+			self.depth_list = None
 	
 	def read_lca_paths(self, lca_pathsfile):
-		infile = openfile(lca_pathsfile)
+		infile = misc.openfile(lca_pathsfile)
 		#only two lines are recognized. if there is anything else, it will be ignored
 		self.walk_list = infile.readline().strip().split("\t")
 		self.depth_list = [ int(l) for l in infile.readline().strip().split("\t") ]
 		infile.close()
 		
-	
 	def get_lca(self, taxA, taxB):
 		indexA = self.walk_list.index(taxA)
 		indexB = self.walk_list.index(taxB)
 		walk_slice = self.walk_list[min([indexA, indexB]):max([indexA, indexB])]
 		depth_slice = self.depth_list[min([indexA, indexB]):max([indexA, indexB])]
-		print("Walk slice:")
-		print(walk_slice)
+		#print("Walk slice:")
+		#print(walk_slice)
 		slice_tuples = sorted([ (w,d) for w,d in zip(walk_slice, depth_slice) ], key = lambda x:x[1])
 		lca = slice_tuples[0][0]
 		print("LCA of '{}' & '{}' is '{}'".format(taxA, taxB, lca))
+		return lca
 			
 	def read_taxdb(self, taxdbfile):#needs to be json format. Krona taxdbs need to be converted to this format first, using the kronadb2json function above
 		self.taxdict = jsonfile2dict(taxdbfile)
@@ -341,26 +341,13 @@ def _test_taxpath():#assumes "nodes.dmp" and "names.dmp" "sorted_shit_yeah.db" a
 	sys.stderr.write("\nwriting results to file...\n")
 	outfile = openfile("testfulltaxpath.out.tsv", "wt")
 	outfile.write("\n".join(outlines))
-
-def test_opentaxdbspeed():
-	sys.stderr.write("\nrcreating db-object and readig taxdb from json_file\n")	
-	start_time = time.time()	
-	db = taxdb("dummy.tab", taxdbfile = ncbi_taxdb_outfilebasename)
-	stop_time = time.time()
-	sys.stderr.write("  --> Done. This took {} seconds ---\n".format(stop_time - start_time))		
+	
 
 def test_lcawalk():
-	import time
-	sys.stderr.write("\ncreating json_taxdb from dmp-files\n")
-	start_time = time.time()
-	taxdictjson_file, lca_paths_file = lca_and_json_taxdb_from_dmp()
-	stop_time = time.time()
-	sys.stderr.write("  --> Done. This took {} seconds\n".format(stop_time - start_time))
-	sys.stderr.write("\nrcreating db-object and readig taxdb from json_file\n")	
-	start_time = time.time()	
-	db = taxdb(taxdictjson_file, taxdbfile = ncbi_taxdb_outfilebasename)
-	stop_time = time.time()
-	sys.stderr.write("  --> Done. This took {} seconds ---\n".format(stop_time - start_time))		
+	acc2taxid_lookupfile = "tempdir/gtdb_all.accession2taxid.sorted"
+	taxdictjson_file = "tempdir/gtdb_taxonomy_br.json.gz"
+	lcawalk_file = "tempdir/gtdb_lcawalkdb_br.db"
+	db = taxdb(acc2taxid_lookupfile, taxdictjson_file, lcawalk_file)		
 	tax1 = sys.argv[1]
 	tax2 = sys.argv[2]
 	db.get_lca(tax1,tax2)

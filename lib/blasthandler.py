@@ -281,6 +281,7 @@ def make_diamond_db(infasta, outfilename, diamond = "diamond", threads = 1):
 
 def make_blast_db(infasta, outfilename, makeblastdb="makeblastdb", db_type="nucl", threads = 1): #threads  argument is ignored. Is only there to work with multiprocessing function
 	import subprocess
+	#todo: combine with "make_blast_db_from_gz" below: check if infasta ends with .gz. If yes: pipe from zcat, otherwise run makeblastdb directly
 	assert db_type in ["nucl", "prot"],  "dbtype has to be either 'nucl' or 'prot'"
 	sys.stderr.write("\n-->creating blastdb {}...\n".format(outfilename))
 	sys.stderr.flush()

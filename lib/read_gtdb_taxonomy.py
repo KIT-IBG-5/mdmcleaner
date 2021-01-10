@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 infile_arch="ar122_taxonomy.tsv"
 infile_bac="bac120_taxonomy.tsv"
-
+#todo: rename progress files to progess_getgtdb_..... (create own type of progressfile for different sections of pipeline, because download of dbs is only done once (and differently for gtdb and ncbi) but lca etc is done again and again for each analysis
 
 """
 suggestion 1 for eukaryote part of taxtree:
