@@ -98,6 +98,20 @@ def run_multiple_functions_parallel(jobtuple_list, total_threads): #jobtuple_lis
 	jobpool.join()
 	return outfile_list
 	
+def calculate_md5hash(infile):
+	"""
+	calculate md5-hash of a file
+	"""
+	import hashlib #for comparing md5-checksums of downloaded databases
+	blocksize = 2**20 #chunks to read file in
+	with open(infile, "rb") as f:
+		filehash = hashlib.md5()
+		while True:
+			data = f.read(blocksize)
+			if not data:
+				break
+			filehash.update(data)
+	return filehash.hexdigest()	
 	
 if __name__ == '__main__':
 	pass
