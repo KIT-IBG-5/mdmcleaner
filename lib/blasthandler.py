@@ -229,6 +229,7 @@ def _run_any_blast(query, db, path_appl, outname, threads):
 	#TODO: fix stupid problem that blast (unfortunately) cannot handle gzipped query files
 	appl = os.path.basename(path_appl)
 	assert appl in ["blastp", "blastn", "diamond"], "\nError: unknown aligner '{}'\n".format(appl)
+	_command_available(command=appl)
 	if appl == "blastp":
 		outname = run_single_blastp(query, db, appl, outname, threads)
 	elif appl == "blastn":
@@ -265,6 +266,7 @@ def run_multiple_blasts_parallel(basic_blastarg_list, outbasename, total_threads
 
 def make_diamond_db(infasta, outfilename, diamond = "diamond", threads = 1):
 	import subprocess
+	_command_available(command="diamond")
 	mkdbcmd = [ diamond, "makedb", "--in", infasta, "--db", outfilename, "--threads", str(threads) ]
 	mkdbproc = subprocess.run(mkdbcmd, stdout = subprocess.PIPE, stderr = subprocess.PIPE, text = True)
 	sys.stderr.write("\n creating diamond-db \"{}\"...".format(outfilename))
@@ -302,6 +304,7 @@ def make_blast_db(infasta, outfilename, makeblastdb="makeblastdb", db_type="nucl
 
 def make_blast_db_from_gz(infasta, outfilename, makeblastdb="makeblastdb", db_type="nucl", threads = 1): #threads  argument is ignored. Is only there to work with multiprocessing function
 	import subprocess
+	_command_available(command="makeblastdb")
 	# todo: if this works,incorporate it with "make_blast_db" above! check if infasta ends with .gz. If yes: pipe from zcat, otherwise run makeblastdb directly
 	sys.stderr.write("\ncreating blastdb {}...\n".format(outfilename))
 	sys.stderr.flush()
@@ -324,6 +327,19 @@ def make_blast_db_from_gz(infasta, outfilename, makeblastdb="makeblastdb", db_ty
 	sys.stdout.flush()
 	return outfilename
 	#todo: compare how long it take to pipe this via python subprocess and ow long to do the same on the bash shell
+
+def _command_available(command="diamond"): #todo: move this to misc, maybe?
+	'''
+	for checking if diamond or blast are actually installed in the current environment
+	'''
+	import subprocess
+	try:
+		subprocess.call([command],stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+	except FileNotFoundError:
+		raise FileNotFoundError("\nError: can't run command '{}'. Maybe it is not installen in PATH, or you do not have the right conda environment activated?\n")
+	else:
+		return True
+	return False
 	
 ###### Testing functions below:
 def test_prodigal_blasts():
