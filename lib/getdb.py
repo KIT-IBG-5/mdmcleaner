@@ -79,6 +79,7 @@ def dict2jsonfile(taxdict, outdbfilename): #TODO: move this to misc?
 
 def jsonfile2dict(jsonfile):#needs to be json format. Krona taxdbs need to be converted to this format first, using the json_taxdb_from_kronadb function below  #TODO: move this to misc?
 	import json
+	#print("loading {}".format(jsonfile))
 	infile = openfile(jsonfile)
 	outdict = json.load(infile)
 	infile.close()
