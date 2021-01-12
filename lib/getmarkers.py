@@ -33,42 +33,74 @@ cutofftablefile = os.path.join(hmmpath, "cutofftable_combined.tsv")
 
 
 
-def split_fasta_for_parallelruns(infasta, outputbasename, threads = 2):
+def split_fasta_for_parallelruns(infasta, minlength = 0, number_of_fractions = 2):
 	"""
 	splits large multifastas into several portions, to enable parallel runs of single threaded processes, such as rnammer or prodigal
 	requires subdivide_multifas.py
+	returns a list of lists of sequence records
+	each list of sequence records should then be passed to the stdin of a seperate RNAmmer or prodigal call (not necessary for barrnap, because that already supports multithreading)
 	"""
-	from subdivide_multifas import subdivide
-	return subdivide(fastaname, threads, outputbasename)
+	#from subdivide_multifas import subdivide
+	#return subdivide(fastaname, threads, outputbasename)
+	import random
+	from Bio import SeqIO
+	sys.stderr.write("\nsubdividing contigs of {} for multiprocessing\n".format(infasta))
+	fastafile = openfile(infasta)
+	outlist = [[] for x in range(number_of_fractions)]
+	seqcount = 0
+	for record in SeqIO.parse(fastafile, "fasta"):
+		if len(record) < minlength:
+			continue
+		seqcount += 1
+		randindex = random.randint(0,number_of_fractions - 1) #distributes randomly in subdivisions, to avoid having all large contigs in one, and all small contigs in another fraction
+		#print(randindex)
+		#print(outlist)
+		outlist[randindex].append(record)
+	outlist = [ x for x in outlist if len(x) > 0 ]
+	if len(outlist) < number_of_fractions:
+		sys.stderr.write("\nnot enough contigs to divide into {} fractions".format(number_of_fractions))
+	sys.stderr.write("divided {} contigs into {} fractions".format(seqcount, len(outlist)))
+	return outlist
+	
 
 # def run_parallel(input_list, 
 
-def runprodigal(infasta, outfilename, prodigal="prodigal"): #todo: allow piping via stdin
+def runprodigal(infasta, outfilename, prodigal="prodigal", threads = 1): #todo: allow piping via stdin (if input is a list: simply expect it to be a list of seqrecords)
 	"""
 	creates a protein fasta file of all CDS identified in the inputfasta via prodigal,
 	all other prodigal output is ignored
 	prodigal is called using the "-p meta" argument for metagenomes, in the assumption that the input fasta MAY consist of mutliple organisms
 	The return value is simply the value of 'outfilename'
 	"""
-	prodigal_cmd = subprocess.run([prodigal, "-a", outfilename, "-p", "meta", "-q", "-o", "/dev/null", "-i", infasta], stdout = subprocess.PIPE, stderr = subprocess.PIPE, text = True) # TODO: maybe add option to change translation table ("-g")? Although table 11 should be general enough? 
+	prodigal_cmd = [prodigal, "-a", outfilename, "-p", "meta", "-q", "-o", "/dev/null"] # TODO: maybe add option to change translation table ("-g")? Although table 11 should be general enough?
+	if type(infasta) == str and os.path.isfile(infasta):
+		prodigal_cmd += ["-i", infasta]
+		inputarg = None
+	elif type(infasta) == list:
+		inputarg =  "\n".join([record.format("fasta") for record in infasta])
+	else:
+		raise IOError("\nERROR: don't recognize query argument\n")
 	try:
-		prodigal_cmd.check_returncode()
+		prodigal_proc = subprocess.run(prodigal_cmd, input = inputarg, stdout = subprocess.PIPE, stderr = subprocess.PIPE, text = True)  
+		prodigal_proc.check_returncode()
 	except Exception:
-		sys.stderr.write(hmmsearch_cmd.stderr)
+		sys.stderr.write(prodigal_proc.stderr)
 		raise Exception("\nERROR: Something went wrong while trying to call prodigal...\n")
 	return outfilename
 	
-def runbarrnap(infasta, outfilename, barrnap="barrnap"): #todo: allow piping via stdin
-	barrnap_cmd = subprocess.run([barrnap, "-a", outfilename, "-p", "meta", "-q", "-o", "/dev/null"], stdout = subprocess.PIPE, stderr = subprocess.PIPE, text = True) 
+def runbarrnap(infasta, outfilename, barrnap="barrnap", kingdom = "Bacteria", threads=1): #todo: allow piping via stdin
+	barrnap_cmd = [barrnap, "--kingdom", kingdom, "--outseq", outfilename, "--threads", "threads", "-q", "-o", "/dev/null"]
+	barrnap_proc = subprocess.run(barrnap_cmd, stdout = subprocess.PIPE, stderr = subprocess.PIPE, text = True) 
+	assert os.path.isfile(infasta), "Error. can't find input file {}".format(infasta) # since barrnap can do multithreading, do not accet subdivided input_fasta for this
 	try:
-		barrnap_cmd.check_returncode()
+		barrnap_proc.check_returncode()
 	except Exception:
-		sys.stderr.write(hmmsearch_cmd.stderr)
+		sys.stderr.write(barrnap_proc.stderr)
 		raise Exception("\nERROR: Something went wrong while trying to call barrnap...\n")
 	return outfilename
 
 def runrnammer(infasta, outfilename, threads = 1): #todo: allow piping via stdin
-	pass
+	pass #todo: implement this (not a priority since rnammer is painful to install for most users)
 
 def hmmersearch(hmmsearch, model, query, outfilename, score_cutoff = None, eval_cutoff = None, threads = 1):# todo: strict parameters = gathering threshold (GA), sensitive parameters = noise cutoff (NC)
 	"""
@@ -92,15 +124,19 @@ def hmmersearch(hmmsearch, model, query, outfilename, score_cutoff = None, eval_
 			eval_cutoff_arg = ["-E", eval_cutoff]
 		if score_cutoff != None:
 			score_cutoff_arg = ["-T", score_cutoff]
-	if type(query) == str: #TODO: This assumes "if query is a string, it must be a filename." That is obviously BS! implement a check that tests if string is a fasta-record!
-		hmmsearch_cmd = subprocess.run([hmmsearch, "--noali", "--cpu", str(threads), "--domtblout", outfilename] \
-		 + eval_cutoff_arg + score_cutoff_arg + [model, query], stdout = subprocess.PIPE, stderr = subprocess.PIPE, text = True)
-	else:	#otherwise it must be something to pipe via stdin
-		pass #TODO: add this!
+	hmmsearch_cmd = [hmmsearch, "--noali", "--cpu", str(threads), "--domtblout", outfilename] + eval_cutoff_arg + score_cutoff_arg + [model]
+	if type(query) == str: #TODO: This assumes "if query is a string, it must be a filename." That is obviously BS! implement a check that tests if string is a fasta-record! #note to to self: for now i will assume fasta via stdin if query is a list of seqrecords 
+		hmmsearch_cmd.append(query)
+		inputarg = None
+	elif type(query) == list:	#otherwise, if it is a list of seqrecords it must be something to pipe via stdin
+		inputarg = "\n".join([record.format("fasta") for record in query])
+	else:
+		raise IOError("\nERROR: don't recognize query argument\n")
 	try:
-		hmmsearch_cmd.check_returncode()
+		hmmsearch_proc = subprocess.run(hmmsearch_cmd, input = inputarg, stdout = subprocess.PIPE, stderr = subprocess.PIPE, text = True)
+		hmmsearch_proc.check_returncode()
 	except Exception:# Todo: define/choose more detailed exception categories
-		sys.stderr.write(hmmsearch_cmd.stderr)
+		sys.stderr.write(hmmsearch_proc.stderr)
 		raise Exception("\nERROR: something went wrong while trying to call hmmsearch...\n")
 	return outfilename
 
@@ -214,7 +250,7 @@ def deduplicate_markers(list_of_markerdicts): # For proteins with hits to differ
 			
 	
 
-def __get_markerseqs(proteinfastafile, markerdict):
+def __get_markerseqs(proteinfastafile, markerdict): #todo: implement piping proteinfastafile from stdin
 	"""
 	returns a list of proteinsequences corresponding to markers found in markerdict
 	marker designation and score alue are written to the description of each protein sequence
@@ -231,7 +267,7 @@ def __get_markerseqs(proteinfastafile, markerdict):
 	#print(markerdict)
 	return markerlist
 
-def get_markers(proteinfastafile, cutoff_dict = cutofftablefile, cmode = "moderate", level = "prok", outfile_basename = "markerprots", threads = 1):
+def get_markers(proteinfastafile, cutoff_dict = cutofftablefile, cmode = "moderate", level = "prok", outfile_basename = "markerprots", threads = 1): #todo: hardcode "cutofftablefile"?
 	"""
 	writes fasta sequences of detected markergenes in fasta format to outfile, with marker-designation and hmm score value in description
 	'cmode' refers to "cutoff_mode" and can be one of ["strict", "moderate", or "sensitive"]. Sets the score cutoff_values to use for selecting hits. For each marker-designation and cutoff-mode 
@@ -265,6 +301,31 @@ def write_markerdict(markerdict, outfilename):
 		outline = "{}\t{}\n".format(m, "\t".join([ str(markerdict[m][v]) for v in markerdict[m].keys() ]))
 		outfile.write(outline)
 	return outfilename
+######################################################
+# test functions below (can be deleted)
+
+def combine_multiple_fastas(infastalist, outfilename = None, delete_original = True):
+	"""
+	different steps in getmarkers may subdivide input into fractions for better multiprocessing, and subsequently produce multiple output files
+	This function is meant to combine such fastas to either a single output file (outfilename) or a list of seqrecords (if outfilename==None)
+	Will delete the original fraction-fastas unless delete_original is set to False
+	"""
+	from Bio import SeqIO
+	outrecordlist=[]
+	for f in infastalist:
+		infile=openfile(f)
+		outrecordlist.extend(list(SeqIO.parse(f, "fasta")))
+		infile.close()
+	if outfilename:
+		outfile = openfile(outfilename, "wt")
+		SeqIO.write(outrecordlist, outfile, "fasta")
+		outfile.close()
+		output = outfilename
+	else:
+		output = outrecordlist
+	for f in infastalist:
+		os.remove(f)
+	return output
 	
 def _test_markernames():
 	sys.stderr.write("\ntesting get_markernames...")
@@ -296,10 +357,25 @@ def _test_basicmarkers():
 	sys.stderr.write("  --> created files: '{}'".format(", ".join(outfastalist)))
 	#todo: implement automatic blasts
 	#todo implement actual lca
+
+def _test_multiprodigal():
+	import getdb
+	infasta = sys.argv[1]
+	threads = int(sys.argv[2])
+	import misc
+	subfastas = split_fasta_for_parallelruns(infasta, minlength = 0, number_of_fractions = threads)
+	print("huhuhuhuhuhuhuhuhuhu")
+	commandlist = [("getmarkers", "runprodigal", {"infasta" : subfastas[i], "outfilename" : "test_prodigal_{}.faa".format(i) }) for i in range(len(subfastas))] 
+	protfiles = misc.run_multiple_functions_parallel(commandlist, threads)
+	print(protfiles)
+	protfile = combine_multiple_fastas(protfiles, outfilename = "combined_protfiles.faa", delete_original = True)
+	markerdict = get_markernames(protfile, cutoff_dict = cutofftablefile, hmmsearch = "hmmsearch", outdir = ".", cmode = "moderate", level = "prok", threads = "1")
+	getdb.dict2jsonfile(markerdict, "test.json")
 	
 def main():
 	#_test_markernames()
-	_test_basicmarkers()
+	#_test_basicmarkers()
+	_test_multiprodigal()
 
 if __name__ == '__main__':
 	main()

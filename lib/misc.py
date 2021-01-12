@@ -23,7 +23,7 @@ def unixzcat(infilelist, outfilename): #my guess is, that this is probably much 
 	#compress outfile
 	#return outfilename
 
-def untar(infilename, targetdir=".", filemode = None): #todo: add delete option to misc.unar(). make it delete tar file when finished
+def untar(infilename, targetdir=".", filemode = None, removetar = False): #todo: add delete option to misc.unar(). make it delete tar file when finished
 	""" a convenience function for unpacking compressed and ancompressed tar files.
 	accepts a filename(required) and an optional filemode (default = None) argument.
 	filemode may be any of ["r:", "r:gz", None ]. If filemode == None, it will try to determine filemode based on filename-extension
@@ -57,9 +57,12 @@ def untar(infilename, targetdir=".", filemode = None): #todo: add delete option 
 	sys.stdout.flush() # todo: only for debugging
 	sys.stderr.write("    extracting contents of '{}'\n".format(infilename))
 	sys.stderr.flush() 
-	#infile.extractall(path=targetdir, members = track_progress(contentlist)) #todo: uncomment
+	infile.extractall(path=targetdir, members = track_progress(contentlist)) #todo: uncomment
 	sys.stderr.write("\r finished extracting {}\n".format(infilename))
 	infile.close()
+	if removetar:
+		sys.stderr.write("\n\ndeleting {}".format(infilename))
+		os.remove(infilename)
 	return [ os.path.join(targetdir, f.name) for f in contentlist ] #todo: add check if file or dir
 
 def _run_any_function(modulename, functionname, arg_dict, threads=1):
@@ -90,7 +93,7 @@ def run_multiple_functions_parallel(jobtuple_list, total_threads): #jobtuple_lis
 	thread_args, no_processes = _distribute_threads_over_jobs(total_threads, len(jobtuple_list))
 	arglist = []
 	for i in range(len(jobtuple_list)):
-		print("{} + {}".format(tuple(job for job in jobtuple_list[i]), thread_args[i]))
+		#print("{} + {}".format(tuple(job for job in jobtuple_list[i]), thread_args[i]))
 		arglist.append(tuple(job for job in jobtuple_list[i]) + tuple([thread_args[i]]))
 	jobpool = Pool(processes = no_processes)
 	outfile_list = jobpool.starmap(_run_any_function, arglist)
