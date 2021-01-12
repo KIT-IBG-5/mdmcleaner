@@ -88,16 +88,106 @@ def runprodigal(infasta, outfilename, prodigal="prodigal", threads = 1): #todo: 
 		raise Exception("\nERROR: Something went wrong while trying to call prodigal...\n")
 	return outfilename
 	
-def runbarrnap(infasta, outfilename, barrnap="barrnap", kingdom = "Bacteria", threads=1): #todo: allow piping via stdin
-	barrnap_cmd = [barrnap, "--kingdom", kingdom, "--outseq", outfilename, "--threads", "threads", "-q", "-o", "/dev/null"]
-	barrnap_proc = subprocess.run(barrnap_cmd, stdout = subprocess.PIPE, stderr = subprocess.PIPE, text = True) 
+def runbarrnap_single(infasta, barrnap="barrnap", kingdom = "bac", threads=1): #todo: allow piping via stdin #todo instead of  the function doing a call for all kindoms at the same time, take a "kingdom" argument and do a seperate run for each kingdom --> allows better parallel multiprocessing!
+	#tempfastalist, gffoutputs = [], []
+	#for kingdom in ["bac", "arc", "euk"]:
+	tempfasta = "temp_barrnap_{}.fasta".format(kingdom)
+	barrnap_cmd = [barrnap, "--kingdom", kingdom, "--outseq", tempfasta, "--threads", str(threads), "-q", infasta] #todo: enable piping via stdin 
 	assert os.path.isfile(infasta), "Error. can't find input file {}".format(infasta) # since barrnap can do multithreading, do not accet subdivided input_fasta for this
 	try:
+		barrnap_proc = subprocess.run(barrnap_cmd, stdout = subprocess.PIPE, stderr = subprocess.PIPE, text = True)
 		barrnap_proc.check_returncode()
 	except Exception:
 		sys.stderr.write(barrnap_proc.stderr)
 		raise Exception("\nERROR: Something went wrong while trying to call barrnap...\n")
+	gff_output = barrnap_proc.stdout
+	#todo: need to parse barrnap results from stdout (gff-output) rather than output-fasta-headers
+	return (tempfasta, gff_output) #todo: make sure these results are then collected for each kingdom and run through deduplicate_barrnap_results()
+
+def runbarrnap_all(infasta, outfilename, barrnap="barrnap", threads=3):
+	from Bio import SeqIO
+	import misc
+	joblist = []
+	for kingdom in ["bac", "arc", "euk"]:
+		joblist.append(("getmarkers", "runbarrnap_single", {"infasta" : infasta, "barrnap" : barrnap, "kingdom" : kingdom }))
+	outputlist = misc.run_multiple_functions_parallel(joblist, threads)
+	tempfasta_list = [op[0] for op in outputlist]
+	gff_outputlist = [ op[1] for op in outputlist]
+	final_fastas = deduplicate_barrnap_results(tempfasta_list, gff_outputlist) #todo: also get a dictionary which which markers are on which contig
+	outfile = openfile(outfilename, "wt")
+	SeqIO.write(final_fastas, outfile, "fasta")
+	outfile.close()
 	return outfilename
+
+def deduplicate_barrnap_results(tempfastas, gff_outputs):
+	from Bio import SeqIO
+	import os
+	contig_hit_dict = {}
+	for gff in gff_outputs:
+		#print("printing another gff")
+		#print(gff)
+		#print("---------------_")
+		for line in gff.rstrip().split("\n"):
+			if line.startswith("#"):
+				continue
+			tokens = line.split()
+			#print(tokens)
+			contig = tokens[0]
+			start = int(tokens[3])
+			stop = int(tokens[4])
+			evalue = float(tokens[5])
+			orient = tokens[6]
+			rrna = tokens[8].split(";")[0][5:]
+			seqid = "{}::{}:{}-{}({})".format(rrna, contig, start, stop, orient)
+			altseqid = "{}::{}:{}-{}({})".format(rrna, contig, start-1, stop, orient) ##todo: remove this if barrnap issue is resolved. barrnap currently (v.0.9) gives different start position in fasta header and in gff output. Until i am sure what is the reason, or to make this work when if that is fixed in barrnap, i have to check for both variants
+			if rrna == "5S_rRNA":
+				continue #ignoring 5S rRNA for now
+			if contig in contig_hit_dict:
+				#todo find out if overlaps by more than 50%
+				#if yes take only the one that has lower evalue
+				#otherwise take both
+				redundant = False
+				index = 0
+				while index < len(contig_hit_dict[contig]):
+					evalueold = contig_hit_dict[contig][index]["evalue"]
+					rangenew = set(range(start, stop))
+					rangeold = range(contig_hit_dict[contig][index]["coords"][0], contig_hit_dict[contig][index]["coords"][1])
+					intersection = rangenew.intersection(rangeold)
+					if len(intersection)/min([len(rangenew), len(rangeold)]) > 0.5: #if it intersects by more than 50%, keep only the one with the better evalue
+						if evalue < evalueold:
+							contig_hit_dict[contig].pop(index)
+							continue
+						else:
+							redundant = True
+					index += 1
+				if not redundant:
+					contig_hit_dict[contig].append({"seqid" : seqid, "altseqid" : altseqid, "coords" : (start, stop, orient), "evalue" : evalue })	#todo: "altseqid" key not needed if barrnap issue is resolved				 
+			else:
+				contig_hit_dict[contig] = [{"seqid" : seqid, "altseqid" : altseqid, "coords" : (start, stop, orient), "evalue" : evalue }] #todo: "altseqid" key not needed if barrnap issue is resolved
+	finalseqids = set()
+	for contig in contig_hit_dict:
+		for seq in contig_hit_dict[contig]:
+			finalseqids.add(seq["seqid"])
+			finalseqids.add(seq["altseqid"]) #todo: remove this if barrnap issue is resolved
+	finalfastas = []
+	beforecounter = 0
+	for fasta in tempfastas:
+		#todo: add a seqcounter for before and after dedup
+		infile = openfile(fasta)
+		for record in SeqIO.parse(infile, "fasta"):
+			beforecounter += 1
+			#print("\"{}\"".format(record.id))
+			if record.id in finalseqids: # todo:/note: I realize that if two models (e.g. arc & bac) detect the exact same region with the exact same coordinates, this would lead to a dupicate genesequence in the rRNA-predictions. However, currently it seems this would be without consequences for the further workflow
+				#print("    --> YES it may stay!")
+				finalfastas.append(record)
+			#else:
+				#print("    GO AWAY")
+		#print(finalseqids)
+	for fasta in tempfastas: #currently doing this AFTER the previous loop, to make sure the files are only deleted when everything went well (debugging purposes)
+		os.remove(fasta)
+
+	return finalfastas		#todo: also return a dictionary with contignames as keys and type of marker as values?
+					
 
 def runrnammer(infasta, outfilename, threads = 1): #todo: allow piping via stdin
 	pass #todo: implement this (not a priority since rnammer is painful to install for most users)
@@ -200,7 +290,7 @@ def parse_hmmer(hmmerfile, cutoff_dict = cutofftablefile, cmode = "moderate", pr
 			#print(markerdict)
 	return markerdict 
 
-def get_markernames(proteinfastafile, cutoff_dict = cutofftablefile, hmmsearch = "hmmsearch", outdir = ".", cmode = "moderate", level = "prok", threads = "1"):
+def get_markernames(proteinfastafile, cutoff_dict = cutofftablefile, hmmsearch = "hmmsearch", outdir = ".", cmode = "moderate", level = "prok", threads = "1"): #todo: turn list of markerdicts into dict of markerdits
 	"""
 	runs hmmersearch and and parse_hmmer on designated proteinfasta using models for designated level. Requires a cutoff_dict as returned by "get_gutoff_dict()"
 	cutoff_dict should be a dictinary with the "strict", "moderate" and "sensitive" cutoff-values for each marker-model, but CAN also be a filename from which to parse that dict (default = parse from default file)
@@ -225,9 +315,10 @@ def get_markernames(proteinfastafile, cutoff_dict = cutofftablefile, hmmsearch =
 			#print(markerdict)
 			print("--------------------------")
 		list_of_markerdicts.append(markerdict)
-	return deduplicate_markers(list_of_markerdicts) #list_of_markerdicts will be in tis order: [prok[, bact[, arch]]]
+	return deduplicate_markers(list_of_markerdicts) #list_of_markerdicts will be in this order: [prok[, bact[, arch]]]
 
 def deduplicate_markers(list_of_markerdicts): # For proteins with hits to different models, just keep the hit with the highest score. This function is a highly convoluted way to do this, but it is late and my brain is tired
+	#todo: turn list of markerdicts into dict of markerdits
 	print("deduplicating")
 	print("{}".format(", ".join([str(len(x)) for x in list_of_markerdicts])))
 	keys = set([ key for md in list_of_markerdicts for key in md ])
@@ -267,7 +358,7 @@ def __get_markerseqs(proteinfastafile, markerdict): #todo: implement piping prot
 	#print(markerdict)
 	return markerlist
 
-def get_markers(proteinfastafile, cutoff_dict = cutofftablefile, cmode = "moderate", level = "prok", outfile_basename = "markerprots", threads = 1): #todo: hardcode "cutofftablefile"?
+def get_markers(proteinfastafile, cutoff_dict = cutofftablefile, cmode = "moderate", level = "prok", outfile_basename = "markerprots", threads = 1): #todo: turn list of markerdicts into dict of markerdits
 	"""
 	writes fasta sequences of detected markergenes in fasta format to outfile, with marker-designation and hmm score value in description
 	'cmode' refers to "cutoff_mode" and can be one of ["strict", "moderate", or "sensitive"]. Sets the score cutoff_values to use for selecting hits. For each marker-designation and cutoff-mode 
@@ -358,7 +449,7 @@ def _test_basicmarkers():
 	#todo: implement automatic blasts
 	#todo implement actual lca
 
-def _test_multiprodigal():
+def _test_pipeline():
 	import getdb
 	infasta = sys.argv[1]
 	threads = int(sys.argv[2])
@@ -369,13 +460,22 @@ def _test_multiprodigal():
 	protfiles = misc.run_multiple_functions_parallel(commandlist, threads)
 	print(protfiles)
 	protfile = combine_multiple_fastas(protfiles, outfilename = "combined_protfiles.faa", delete_original = True)
-	markerdict = get_markernames(protfile, cutoff_dict = cutofftablefile, hmmsearch = "hmmsearch", outdir = ".", cmode = "moderate", level = "prok", threads = "1")
-	getdb.dict2jsonfile(markerdict, "test.json")
+	markerdictlist = get_markernames(protfile, cutoff_dict = cutofftablefile, hmmsearch = "hmmsearch", outdir = ".", cmode = "moderate", level = "all", threads = "1")
+	getdb.dict2jsonfile(markerdictlist, "test.json")
+	print(len(markerdictlist))
+
+def _test_barrnap():
+	from Bio import SeqIO
+	infasta = sys.argv[1]
+	threads = int(sys.argv[2])
+	tempfilelist, gfflist = [], []
+	rRNA_fasta = runbarrnap_all(infasta=infasta, outfilename="new_test_barrnap_results_dedup.fasta", barrnap="barrnap", threads=threads)
+
 	
 def main():
 	#_test_markernames()
 	#_test_basicmarkers()
-	_test_multiprodigal()
-
+	#_test_multiprodigal()
+	_test_barrnap()
 if __name__ == '__main__':
 	main()
