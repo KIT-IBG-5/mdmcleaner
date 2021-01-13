@@ -31,7 +31,7 @@ hmmpathdict={	"prok" : [hmmpath_prok], \
 cutofftablefile = os.path.join(hmmpath, "cutofftable_combined.tsv")
 #each path in hmmpathdict should contain a number of hmm files named e.g. COG.hmm, PFAM.hmm or TIGR.hmm, containing concatenated hmm models for each level/db-type
 
-
+protmarkerlevel_dict = { 0 : "prok_marker", 1 : "bac_marker", 2 : "arc_marker" }
 
 def split_fasta_for_parallelruns(infasta, minlength = 0, number_of_fractions = 2):
 	"""
@@ -47,11 +47,13 @@ def split_fasta_for_parallelruns(infasta, minlength = 0, number_of_fractions = 2
 	sys.stderr.write("\nsubdividing contigs of {} for multiprocessing\n".format(infasta))
 	fastafile = openfile(infasta)
 	outlist = [[] for x in range(number_of_fractions)]
+	contigdict = {}
 	seqcount = 0
 	for record in SeqIO.parse(fastafile, "fasta"):
 		if len(record) < minlength:
 			continue
 		seqcount += 1
+		contigdict[record.id] = {"contiglen": [len(record)], "totalprotcount" : [0], "ssu_rRNA" : [], "lsu_rRNA" : [], "prok_marker" : [], "bac_marker" : [], "arc_marker" : []} #starting lookup_dict of contignames that can later be associated with corresponding markers
 		randindex = random.randint(0,number_of_fractions - 1) #distributes randomly in subdivisions, to avoid having all large contigs in one, and all small contigs in another fraction
 		#print(randindex)
 		#print(outlist)
@@ -60,10 +62,8 @@ def split_fasta_for_parallelruns(infasta, minlength = 0, number_of_fractions = 2
 	if len(outlist) < number_of_fractions:
 		sys.stderr.write("\nnot enough contigs to divide into {} fractions".format(number_of_fractions))
 	sys.stderr.write("divided {} contigs into {} fractions".format(seqcount, len(outlist)))
-	return outlist
-	
+	return outlist, contigdict #TODO: add contig_lengths and totalprotcount to contigdict! both should be stored as lists, despite being single values, in order to make parsing of this dict easier
 
-# def run_parallel(input_list, 
 
 def runprodigal(infasta, outfilename, prodigal="prodigal", threads = 1): #todo: allow piping via stdin (if input is a list: simply expect it to be a list of seqrecords)
 	"""
@@ -104,7 +104,7 @@ def runbarrnap_single(infasta, barrnap="barrnap", kingdom = "bac", threads=1): #
 	#todo: need to parse barrnap results from stdout (gff-output) rather than output-fasta-headers
 	return (tempfasta, gff_output) #todo: make sure these results are then collected for each kingdom and run through deduplicate_barrnap_results()
 
-def runbarrnap_all(infasta, outfilename, barrnap="barrnap", threads=3):
+def runbarrnap_all(infasta, outfilebasename, barrnap="barrnap", threads=3): #todo: split rRNA outputfiles by TYPE (16S & 23S)!. Also: return a contig2rRNA_dict in addition to the outfastaname!
 	from Bio import SeqIO
 	import misc
 	joblist = []
@@ -113,25 +113,24 @@ def runbarrnap_all(infasta, outfilename, barrnap="barrnap", threads=3):
 	outputlist = misc.run_multiple_functions_parallel(joblist, threads)
 	tempfasta_list = [op[0] for op in outputlist]
 	gff_outputlist = [ op[1] for op in outputlist]
-	final_fastas = deduplicate_barrnap_results(tempfasta_list, gff_outputlist) #todo: also get a dictionary which which markers are on which contig
-	outfile = openfile(outfilename, "wt")
-	SeqIO.write(final_fastas, outfile, "fasta")
-	outfile.close()
-	return outfilename
+	final_fastadict, contig_rrnadict = deduplicate_barrnap_results(tempfasta_list, gff_outputlist) #todo: also get a dictionary which which markers are on which contig
+	for ff in final_fastadict:
+		outfile = openfile("{}_{}.fasta".format(outfilebasename, ff), "wt")
+		SeqIO.write(final_fastadict[ff], outfile, "fasta")
+		outfile.close()
+		final_fastadict[ff] = outfile.name
+	return final_fastadict, contig_rrnadict
 
 def deduplicate_barrnap_results(tempfastas, gff_outputs):
 	from Bio import SeqIO
 	import os
 	contig_hit_dict = {}
+	seqtype_dict = { "18S_rRNA": "ssu_rRNA", "16S_rRNA": "ssu_rRNA",  "23S_rRNA": "lsu_rRNA",  "23S_rRNA": "lsu_rRNA"}
 	for gff in gff_outputs:
-		#print("printing another gff")
-		#print(gff)
-		#print("---------------_")
 		for line in gff.rstrip().split("\n"):
 			if line.startswith("#"):
 				continue
 			tokens = line.split()
-			#print(tokens)
 			contig = tokens[0]
 			start = int(tokens[3])
 			stop = int(tokens[4])
@@ -161,33 +160,39 @@ def deduplicate_barrnap_results(tempfastas, gff_outputs):
 							redundant = True
 					index += 1
 				if not redundant:
-					contig_hit_dict[contig].append({"seqid" : seqid, "altseqid" : altseqid, "coords" : (start, stop, orient), "evalue" : evalue })	#todo: "altseqid" key not needed if barrnap issue is resolved				 
+					contig_hit_dict[contig].append({"seqid" : seqid, "altseqid" : altseqid, "coords" : (start, stop, orient), "evalue" : evalue, "seqtype" : seqtype_dict[rrna] })	#todo: "altseqid" key not needed if barrnap issue is resolved				 
 			else:
-				contig_hit_dict[contig] = [{"seqid" : seqid, "altseqid" : altseqid, "coords" : (start, stop, orient), "evalue" : evalue }] #todo: "altseqid" key not needed if barrnap issue is resolved
+				contig_hit_dict[contig] = [{"seqid" : seqid, "altseqid" : altseqid, "coords" : (start, stop, orient), "evalue" : evalue, "seqtype" : seqtype_dict[rrna] }] #todo: "altseqid" key not needed if barrnap issue is resolved
 	finalseqids = set()
 	for contig in contig_hit_dict:
 		for seq in contig_hit_dict[contig]:
 			finalseqids.add(seq["seqid"])
 			finalseqids.add(seq["altseqid"]) #todo: remove this if barrnap issue is resolved
-	finalfastas = []
-	beforecounter = 0
+	finalfastadict = {"ssu_rRNA" : [], "lsu_rRNA" : []} #16S & 18S are "ssu_rRNAs", 23S & 28S are "lsu_rRNAs". 5S is ignored
+	#beforecounter = 0
+	contig_rrna_dict = {}
 	for fasta in tempfastas:
 		#todo: add a seqcounter for before and after dedup
 		infile = openfile(fasta)
 		for record in SeqIO.parse(infile, "fasta"):
-			beforecounter += 1
-			#print("\"{}\"".format(record.id))
+			recordtype, contig = parse_barrnap_headers(record.id)
+			#recordtype = record.id[0:9] #todo: not the best way to get the marker type (16S_rRNA or 23S_rRNA) from the fasta-headers. but good enough for now...
+			#beforecounter += 1
 			if record.id in finalseqids: # todo:/note: I realize that if two models (e.g. arc & bac) detect the exact same region with the exact same coordinates, this would lead to a dupicate genesequence in the rRNA-predictions. However, currently it seems this would be without consequences for the further workflow
-				#print("    --> YES it may stay!")
-				finalfastas.append(record)
-			#else:
-				#print("    GO AWAY")
-		#print(finalseqids)
+				finalfastadict[seqtype_dict[recordtype]].append(record)
+				if contig not in contig_rrna_dict:
+					contig_rrna_dict[contig] = {"ssu_rRNA" : [], "lsu_rRNA" : [] }
+				contig_rrna_dict[contig][seqtype_dict[recordtype]].append({"seqid": record.id, "marker" : recordtype})
 	for fasta in tempfastas: #currently doing this AFTER the previous loop, to make sure the files are only deleted when everything went well (debugging purposes)
 		os.remove(fasta)
 
-	return finalfastas		#todo: also return a dictionary with contignames as keys and type of marker as values?
+	return finalfastadict, contig_rrna_dict		#todo: also return a dictionary with contignames as keys and type of marker as values?
 					
+def parse_barrnap_headers(header):
+	tokens = header.lstrip(">").split(":") #todo: add some kind of test to verify that this is actually barrnap-result-fasta-header
+	recordtype = tokens[0]
+	contig = tokens[2]
+	return recordtype, contig
 
 def runrnammer(infasta, outfilename, threads = 1): #todo: allow piping via stdin
 	pass #todo: implement this (not a priority since rnammer is painful to install for most users)
@@ -230,7 +235,7 @@ def hmmersearch(hmmsearch, model, query, outfilename, score_cutoff = None, eval_
 		raise Exception("\nERROR: something went wrong while trying to call hmmsearch...\n")
 	return outfilename
 
-### NOTE TO SELF: perform hmmsearch always mit "sensitive" cutoff, and only PARSE hits with higher cutoffs --> enables reanalyses with different cutoffs without redoing hmmsearch!
+### NOTE TO SELF: perform hmmsearch always with "sensitive" cutoff, and only PARSE hits with higher cutoffs --> enables reanalyses with different cutoffs without redoing hmmsearch!
 
 def get_cutoff_dict(cutofffilename = cutofftablefile): #todo lookupfile with cutoffs for ALL used models. TODO: better: parse this from model.hmm files (require GA, TC and NC fields in all used models!)
 	"""
@@ -240,7 +245,7 @@ def get_cutoff_dict(cutofffilename = cutofftablefile): #todo lookupfile with cut
 		- second column = strict cutoff
 		- third column = moderate cutoff
 		- fourth column = sensitive cutoff"
-	"""
+	""" #also todo: make sure this is loaded only once for multiple input fastas (not reloaded again and again for each input)
 	cutofffile = openfile(cutofffilename)
 	cutoff_dict = {}
 	for line in cutofffile:
@@ -290,7 +295,7 @@ def parse_hmmer(hmmerfile, cutoff_dict = cutofftablefile, cmode = "moderate", pr
 			#print(markerdict)
 	return markerdict 
 
-def get_markernames(proteinfastafile, cutoff_dict = cutofftablefile, hmmsearch = "hmmsearch", outdir = ".", cmode = "moderate", level = "prok", threads = "1"): #todo: turn list of markerdicts into dict of markerdits
+def get_markerprotnames(proteinfastafile, cutoff_dict = cutofftablefile, hmmsearch = "hmmsearch", outdir = ".", cmode = "moderate", level = "prok", threads = "1"): #todo: turn list of markerdicts into dict of markerdits
 	"""
 	runs hmmersearch and and parse_hmmer on designated proteinfasta using models for designated level. Requires a cutoff_dict as returned by "get_gutoff_dict()"
 	cutoff_dict should be a dictinary with the "strict", "moderate" and "sensitive" cutoff-values for each marker-model, but CAN also be a filename from which to parse that dict (default = parse from default file)
@@ -310,14 +315,14 @@ def get_markernames(proteinfastafile, cutoff_dict = cutofftablefile, hmmsearch =
 			sys.stderr.write("\nsearching {} ...".format(hmmfile))
 			outfile = hmmersearch(hmmsearch, hmmfile, proteinfastafile, os.path.join(outdir, os.path.basename(hmmfile) + ".domtblout"), "sensitive", None, threads)
 			markerdict = parse_hmmer(outfile, cutoff_dict, cmode, markerdict)
-			print(hmmfile)
-			print(len(markerdict))
+			#print(hmmfile)
+			#print(len(markerdict))
 			#print(markerdict)
-			print("--------------------------")
+			#print("--------------------------")
 		list_of_markerdicts.append(markerdict)
-	return deduplicate_markers(list_of_markerdicts) #list_of_markerdicts will be in this order: [prok[, bact[, arch]]]
+	return deduplicate_markerprots(list_of_markerdicts) #list_of_markerdicts will be in this order: [prok[, bact[, arch]]]
 
-def deduplicate_markers(list_of_markerdicts): # For proteins with hits to different models, just keep the hit with the highest score. This function is a highly convoluted way to do this, but it is late and my brain is tired
+def deduplicate_markerprots(list_of_markerdicts): # For proteins with hits to different models, just keep the hit with the highest score. This function is a highly convoluted way to do this, but it is late and my brain is tired
 	#todo: turn list of markerdicts into dict of markerdits
 	print("deduplicating")
 	print("{}".format(", ".join([str(len(x)) for x in list_of_markerdicts])))
@@ -341,7 +346,7 @@ def deduplicate_markers(list_of_markerdicts): # For proteins with hits to differ
 			
 	
 
-def __get_markerseqs(proteinfastafile, markerdict): #todo: implement piping proteinfastafile from stdin
+def __get_markerprotseqs(proteinfastafile, markerdict): #todo: implement piping proteinfastafile from stdin
 	"""
 	returns a list of proteinsequences corresponding to markers found in markerdict
 	marker designation and score alue are written to the description of each protein sequence
@@ -358,7 +363,7 @@ def __get_markerseqs(proteinfastafile, markerdict): #todo: implement piping prot
 	#print(markerdict)
 	return markerlist
 
-def get_markers(proteinfastafile, cutoff_dict = cutofftablefile, cmode = "moderate", level = "prok", outfile_basename = "markerprots", threads = 1): #todo: turn list of markerdicts into dict of markerdits
+def get_markerprots(proteinfastafile, cutoff_dict = cutofftablefile, cmode = "moderate", level = "prok", outfile_basename = "markerprots", threads = 1): #todo: turn list of markerdicts into dict of markerdits
 	"""
 	writes fasta sequences of detected markergenes in fasta format to outfile, with marker-designation and hmm score value in description
 	'cmode' refers to "cutoff_mode" and can be one of ["strict", "moderate", or "sensitive"]. Sets the score cutoff_values to use for selecting hits. For each marker-designation and cutoff-mode 
@@ -371,10 +376,10 @@ def get_markers(proteinfastafile, cutoff_dict = cutofftablefile, cmode = "modera
 	if type(cutoff_dict) != dict: #alternative for parsing cutoff_dict will be read from a file (better to pass it as dict, though)
 		#TODO: add logger message that cutoff dict is being read from file
 		cutoff_dict = get_cutoff_dict(cutoff_dict)
-	list_of_markerdicts = get_markernames(proteinfastafile, cutoff_dict, hmmsearch = "hmmsearch", outdir = outdir, cmode = "moderate", level = level, threads = threads)
+	list_of_markerdicts = get_markerprotnames(proteinfastafile, cutoff_dict, hmmsearch = "hmmsearch", outdir = outdir, cmode = "moderate", level = level, threads = threads)
 	outfilelist = []
 	for i in range(len(list_of_markerdicts)):
-		markerseqs = __get_markerseqs(proteinfastafile, list_of_markerdicts[i])
+		markerseqs = __get_markerprotseqs(proteinfastafile, list_of_markerdicts[i])
 		outfilename = "{}_{}.faa".format(outfile_basename, levelorder[i])
 		outfile = openfile(outfilename, "wt")
 		SeqIO.write(markerseqs, outfile, "fasta")
@@ -382,9 +387,9 @@ def get_markers(proteinfastafile, cutoff_dict = cutofftablefile, cmode = "modera
 		outfilelist.append(outfilename)
 	return outfilelist
 	
-def write_markerdict(markerdict, outfilename):
+def write_markerdict(markerdict, outfilename):# todo: improve markerdict
 	"""
-	writes the marker dictionary, obtained by get_markernames(), to an overview file in tab-seperated text-table format
+	writes the marker dictionary, obtained by get_markerprotnames(), to an overview file in tab-seperated text-table format
 	return value is simply the name of the outfile
 	"""
 	outfile = openfile(outfilename, "wt")
@@ -392,10 +397,8 @@ def write_markerdict(markerdict, outfilename):
 		outline = "{}\t{}\n".format(m, "\t".join([ str(markerdict[m][v]) for v in markerdict[m].keys() ]))
 		outfile.write(outline)
 	return outfilename
-######################################################
-# test functions below (can be deleted)
 
-def combine_multiple_fastas(infastalist, outfilename = None, delete_original = True):
+def combine_multiple_fastas(infastalist, outfilename = None, delete_original = True, contigdict = None): #pass contigdict in order to ba able to capture totalproteincounts per contig. currently only works for prodigal_output# todo: find a more flexible solution!
 	"""
 	different steps in getmarkers may subdivide input into fractions for better multiprocessing, and subsequently produce multiple output files
 	This function is meant to combine such fastas to either a single output file (outfilename) or a list of seqrecords (if outfilename==None)
@@ -416,8 +419,47 @@ def combine_multiple_fastas(infastalist, outfilename = None, delete_original = T
 		output = outrecordlist
 	for f in infastalist:
 		os.remove(f)
+	if contigdict:
+		import re
+		pattern = re.compile("_\d+$")	
+		for record in outrecordlist:
+			contigname = re.sub(pattern, "", record.id)
+			contigdict[contigname]["totalprotcount"][0] += 1 #todo: if i understand python scopes correctly, te dictionary should be changed globally, even if not explicitely returned... check this!
 	return output
+
+def parse_protmarkerdict(protmarkerdict, contigdict, protmarkerlevel):
+	import re
+	pattern = re.compile("_\d+$")
+	marker = protmarkerlevel_dict[protmarkerlevel]
+	for protid in protmarkerdict:
+		contigname = re.sub(pattern, "", protid)
+		contigdict[contigname][marker].append({"seqid" : protid, "marker" : protmarkerdict[protid]["marker"]})
+	return contigdict
+
+def add_rrnamarker_to_contigdict(rrnamarkerdict, contigdict):
+	for contig in rrnamarkerdict:
+		#print(contigdict[contig])
+		#print("-"*50)
+		#print(rrnamarkerdict[contig])
+		contigdict[contig].update(rrnamarkerdict[contig])
+	return contigdict
+
+def get_all_markers(infasta, outfilebasename, threads, cutoffdict = cutofftablefile): #todo: cutoffdict should be a dict optimally, but can be the name of a cutoffdict-file (from which to parse cutoffdict). also todo: for now running steps prodigal, barrnap etc one after another. but infuture find a way how to optimize paralellization
+	import misc
+	subfastas, contigdict = split_fasta_for_parallelruns(infasta, minlength = 0, number_of_fractions = threads)
+	commandlist = [("getmarkers", "runprodigal", {"infasta" : subfastas[i], "outfilename" : "test_prodigal_{}.faa".format(i) }) for i in range(len(subfastas))]
+	tempprotfiles = misc.run_multiple_functions_parallel(commandlist, threads)
+	totalprotfile = combine_multiple_fastas(tempprotfiles, outfilename = outfilebasename + "_totalprots.faa", delete_original = True, contigdict = contigdict) #todo: add support for gzipped protfiles in hmmsearch!
+	protmarkerdictlist = get_markerprotnames(totalprotfile, cutoffdict, hmmsearch = "hmmsearch", outdir = ".", cmode = "moderate", level = "all", threads = "4")
+	for pml in range(len(protmarkerdictlist)):
+		contigdict = parse_protmarkerdict(protmarkerdictlist[pml], contigdict, pml)
+	rRNA_fasta_dict, rrnamarkerdict = runbarrnap_all(infasta=infasta, outfilebasename=outfilebasename + "_rRNA", barrnap="barrnap", threads=threads)
+	contigdict = add_rrnamarker_to_contigdict(rrnamarkerdict, contigdict)
+	progressdump = { "ssu_rRNA_file" :  rRNA_fasta_dict["ssu_rRNA"], "ssu_rRNA_file" :  rRNA_fasta_dict["ssu_rRNA"], "totalprot_file" : totalprotfile, "protmarkerdictlist" : protmarkerdictlist, "contigdict" : contigdict }
+	return progressdump
 	
+######################################################
+# test functions below (can be deleted)
 def _test_markernames():
 	sys.stderr.write("\ntesting get_markernames...")
 	proteinfastafile = sys.argv[1]
@@ -425,7 +467,7 @@ def _test_markernames():
 	sys.stderr.write("\nreading cutofftable")
 	cutoffdict = get_cutoff_dict(cutofftable)
 	sys.stderr.write("\nsearching markers")
-	markerdict = get_markernames(proteinfastafile, cutoffdict, hmmsearch = "hmmsearch", outdir = ".", cmode = "moderate", level = "prok", threads = "4")
+	markerdict = get_markerprotnames(proteinfastafile, cutoffdict, hmmsearch = "hmmsearch", outdir = ".", cmode = "moderate", level = "prok", threads = "4")
 	sys.stderr.write("\nwriting results\n")
 	write_markerdict(markerdict, "delmetestresults.tsv")
 	
@@ -444,7 +486,7 @@ def _test_basicmarkers():
 	#todo: create a "runparallel function in misc or here
 	level = "all"
 	sys.stderr.write("\nextracting markers for level {}\n".format(level))
-	outfastalist = get_markers(protfasta, cutoff_dict, level = level, outfile_basename = os.path.join(tempdir, "markers".format(level)), threads = 4)
+	outfastalist = get_markerprots(protfasta, cutoff_dict, level = level, outfile_basename = os.path.join(tempdir, "markers".format(level)), threads = 4)
 	sys.stderr.write("  --> created files: '{}'".format(", ".join(outfastalist)))
 	#todo: implement automatic blasts
 	#todo implement actual lca
@@ -454,15 +496,16 @@ def _test_pipeline():
 	infasta = sys.argv[1]
 	threads = int(sys.argv[2])
 	import misc
-	subfastas = split_fasta_for_parallelruns(infasta, minlength = 0, number_of_fractions = threads)
-	print("huhuhuhuhuhuhuhuhuhu")
-	commandlist = [("getmarkers", "runprodigal", {"infasta" : subfastas[i], "outfilename" : "test_prodigal_{}.faa".format(i) }) for i in range(len(subfastas))] 
-	protfiles = misc.run_multiple_functions_parallel(commandlist, threads)
-	print(protfiles)
-	protfile = combine_multiple_fastas(protfiles, outfilename = "combined_protfiles.faa", delete_original = True)
-	markerdictlist = get_markernames(protfile, cutoff_dict = cutofftablefile, hmmsearch = "hmmsearch", outdir = ".", cmode = "moderate", level = "all", threads = "1")
-	getdb.dict2jsonfile(markerdictlist, "test.json")
-	print(len(markerdictlist))
+	outfilebasename = "testtesttest2"
+	progressdump = get_all_markers(infasta, outfilebasename, threads, cutoffdict = cutofftablefile)
+	getdb.dict2jsonfile(progressdump, "gelallmarkers.json")
+	outfile = openfile("testcontigmarkers.tsv", "wt")
+	contigdict = progressdump["contigdict"]
+	sys.stderr.write("\nwriting results\n")
+	outfile.write("contig\t{}\n".format("\t".join([x for x in contigdict[list(contigdict.keys())[0]]])))
+	for contig in contigdict:
+		line = "{}\t{}\n".format(contig, "\t".join([";".join([y["seqid"] if type(y) == dict else str(y) for y in contigdict[contig][x] ]) for x in contigdict[contig]])) #todo: in protmarkerdicts change "protid" to "seqid". Add "seqid" and "marker" keys to ssu and lsu entries
+		outfile.write(line)
 
 def _test_barrnap():
 	from Bio import SeqIO
@@ -476,6 +519,7 @@ def main():
 	#_test_markernames()
 	#_test_basicmarkers()
 	#_test_multiprodigal()
-	_test_barrnap()
+	#_test_barrnap()
+	_test_pipeline()
 if __name__ == '__main__':
 	main()
