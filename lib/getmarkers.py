@@ -35,7 +35,7 @@ cutofftablefile = os.path.join(hmmpath, "cutofftable_combined.tsv")
 
 protmarkerlevel_dict = { 0 : "prok_marker", 1 : "bac_marker", 2 : "arc_marker" }
 
-def split_fasta_for_parallelruns(infasta, minlength = 0, number_of_fractions = 2):
+def split_fasta_for_parallelruns(infasta, minlength = 0, number_of_fractions = 2, outfilebasename = None):
 	"""
 	splits large multifastas into several portions, to enable parallel runs of single threaded processes, such as rnammer or prodigal
 	requires subdivide_multifas.py
@@ -44,21 +44,42 @@ def split_fasta_for_parallelruns(infasta, minlength = 0, number_of_fractions = 2
 	"""
 	import random
 	from Bio import SeqIO
+
 	sys.stderr.write("\nsubdividing contigs of {} for multiprocessing\n".format(infasta))
 	fastafile = openfile(infasta)
-	recordlist = list(SeqIO.parse(fastafile, "fasta"))
-	contigdict = { record.id : {"contiglen": [len(record)], "totalprotcount" : [0], "ssu_rRNA" : [], "lsu_rRNA" : [], "prok_marker" : [], "bac_marker" : [], "arc_marker" : []} for record in recordlist}
+	records = SeqIO.parse(fastafile, "fasta")
+	contigdict = {}
 	outlist = [[] for x in range(number_of_fractions)]
-	index = -1
-	for record in recordlist: #distribute contigs evenly over fractions by iterating up and down the fractions again and again --> ensures even size distribution if possible...
-			if index > len(outlist):
-				direction = -1
-			if index < 0:
-				direction = 1
-			index += direction	
-			outlist[index].append(record)
+	contigcounter = 0
+	index = 0
+	direction = 1
+
+	for record in records: #distribute contigs evenly over fractions by iterating up and down the fractions again and again --> ensures even size distribution if possible...
+		if len(record) < minlength:
+			continue
+		contigcounter += 1
+		contigdict[record.id] = {"contiglen": [len(record)], "totalprotcount" : [0], "ssu_rRNA" : [], "lsu_rRNA" : [], "prok_marker" : [], "bac_marker" : [], "arc_marker" : []}
+		if index > len(outlist)-1:
+			direction = -1
+			index = len(outlist) -1
+		if index < 0:
+			direction = 1
+			index = 0
+		outlist[index].append(record)
+		index += direction
+		
 	outlist = [ x for x in outlist if len(x) > 0 ] #removing any leftover fractions that did not get contigs (in case number of contigs was lower than number of fractions)
-	sys.stderr.write("divided {} contigs into {} fractions\n".format(len(recordlist), len(outlist)))
+	sys.stderr.write("divided {} contigs into {} fractions\n".format(contigcounter, len(outlist)))
+
+	if outfilebasename != None: #IF an outfilenasename is specified --> Do NOT return a list of lists of seqrecords, but instead write fractions fo tempfiles and return list of linemanes instead
+		outfilenamelist = []
+		for i in range(len(outlist)):
+			outfilenamelist.append("{}_temp_fraction_{}.fasta".format(outfilebasename, i))
+			with openfile(outfilenamelist[-1], "wt") as outfile:
+				print("writing to {}".format(outfile.name))
+				SeqIO.write(outlist[i], outfile, "fasta")
+		return outfilenamelist, contigdict
+
 	return outlist, contigdict 
 
 def runprodigal(infasta, outfilename, prodigal="prodigal", threads = 1): #todo: allow piping via stdin (if input is a list: simply expect it to be a list of seqrecords)
@@ -400,28 +421,36 @@ def combine_multiple_fastas(infastalist, outfilename = None, delete_original = T
 	This function is meant to combine such fastas to either a single output file (outfilename) or a list of seqrecords (if outfilename==None)
 	Will delete the original fraction-fastas unless delete_original is set to False
 	"""
+	#todo: create an alternative version that writes to the outfile on the fly, for parsing huge assemblies
+	import re
 	from Bio import SeqIO
+	pattern = re.compile("_\d+$")
 	outrecordlist=[]
+	if outfilename != None:
+		outfile = openfile(outfilename, "wt")
 	for f in infastalist:
 		infile=openfile(f)
-		outrecordlist.extend(list(SeqIO.parse(f, "fasta")))
+		if outfilename!= None:
+			for record in SeqIO.parse(f, "fasta"):
+				SeqIO.write([record], outfilename, "fasta")
+				if contigdict:
+					contigname = re.sub(pattern, "", record.id)
+					contigdict[contigname]["totalprots"] += record.id #todo: if i understand python scopes correctly, te dictionary should be changed globally, even if not explicitely returned... check this!				
+		else:
+			outrecordlist.extend(list(SeqIO.parse(f, "fasta")))
+			for record in outrecordlist:
+				contigname = re.sub(pattern, "", record.id)
+				contigdict[contigname]["totalprots"] += record.id #todo: if i understand python scopes correctly, te dictionary should be changed globally, even if not explicitely returned... check this!
 		infile.close()
-	if outfilename:
-		outfile = openfile(outfilename, "wt")
-		SeqIO.write(outrecordlist, outfile, "fasta")
+	if outfilename != None:
 		outfile.close()
 		output = outfilename
 	else:
 		output = outrecordlist
-	for f in infastalist:
-		os.remove(f)
-	if contigdict:
-		import re
-		pattern = re.compile("_\d+$")	
-		for record in outrecordlist:
-			contigname = re.sub(pattern, "", record.id)
-			contigdict[contigname]["totalprotcount"][0] += 1 #todo: if i understand python scopes correctly, te dictionary should be changed globally, even if not explicitely returned... check this!
-	return output
+	if delete_original:
+		for f in infastalist:
+			os.remove(f)
+	return outrecordlist
 
 def parse_protmarkerdict(protmarkerdict, contigdict, protmarkerlevel):
 	import re
@@ -469,7 +498,7 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 				os.mkdir(d)
 		self._get_all_markers(threads, mincontiglength, cutofftable)
 		#todo:finish this
-	
+	    #todo: simplify all those dicts
 	def _get_all_markers(self, threads, mincontiglength, cutofftable): #todo: split into a.) get totalprots b.) get_markerprots c.) get rRNA genes!
 		subfastas, self.contigdict = split_fasta_for_parallelruns(self.binfastafile, minlength = mincontiglength, number_of_fractions = threads)
 		commandlist = [("getmarkers", "runprodigal", {"infasta" : subfastas[i], "outfilename" : os.path.join(self.bin_resultfolder, "tempfile_{}_prodigal_{}.faa".format(self.bin_tempname, i)) }) for i in range(len(subfastas))]
@@ -480,15 +509,39 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 			self.contigdict = parse_protmarkerdict(self.protmarkerdictlist[pml], self.contigdict, pml)
 		self.rRNA_fasta_dict, self.rrnamarkerdict = runbarrnap_all(infasta=self.binfastafile, outfilebasename=os.path.join(self.bin_resultfolder, self.bin_tempname + "_rRNA"), barrnap="barrnap", threads=threads) #todo add option for rnammer (using the subdivided fastafiles)?
 		self.contigdict = add_rrnamarker_to_contigdict(self.rrnamarkerdict, self.contigdict)
-		#todo: simplify all those dicts
+		
 		#todo: save progress as pickle of this the currenc instance of this class-object
+	
+	def _prep_contigsANDtotalprots():
+		subfastas, self.contigdict = split_fasta_for_parallelruns(self.binfastafile, minlength = mincontiglength, number_of_fractions = threads)
+		commandlist = [("getmarkers", "runprodigal", {"infasta" : subfastas[i], "outfilename" : os.path.join(self.bin_resultfolder, "tempfile_{}_prodigal_{}.faa".format(self.bin_tempname, i)) }) for i in range(len(subfastas))]
+		tempprotfiles = misc.run_multiple_functions_parallel(commandlist, threads)
+		self.totalprotfile = combine_multiple_fastas(tempprotfiles, outfilename = os.path.join(self.bin_resultfolder, self.bin_tempname + "_totalprots.faa"), delete_original = True, contigdict = self.contigdict)
+	
+	def _prep_protmarker():
+		self.protmarkerdictlist = get_markerprotnames(self.totalprotfile, cutofftable, hmmsearch = "hmmsearch", outdir = self.bin_resultfolder, cmode = "moderate", level = "all", threads = "4") #todo: delete hmm_intermediate_results
+		for pml in range(len(self.protmarkerdictlist)):
+			self.contigdict = parse_protmarkerdict(self.protmarkerdictlist[pml], self.contigdict, pml)	
+
+	def _prep_rRNAmarker():
+		self.rRNA_fasta_dict, self.rrnamarkerdict = runbarrnap_all(infasta=self.binfastafile, outfilebasename=os.path.join(self.bin_resultfolder, self.bin_tempname + "_rRNA"), barrnap="barrnap", threads=threads) #todo add option for rnammer (using the subdivided fastafiles)?
+		self.contigdict = add_rrnamarker_to_contigdict(self.rrnamarkerdict, self.contigdict)
+				
+	def _prep_onlycontigs():
+		pass #todo: create a function that reads in contig fasta to intitiate contig_dct. For use in cases where ORF-calling was done on the complete metagenome 
+	
 	def get_contig_fastas(self):
 		"""
 		returns the bin contig-/scaffold-records in fasta format as a list
 		"""
 		with openfile(self.binfastafile) as infile:
 			return list(SeqIO.parse(openfile, "fasta"))
+	
+	def pickleyourself(self):
+		pass
 		
+	def unpickleyourself(self):
+		pass	
 		
 	def get_contig2prot_dict():
 		pass #todo: make this
@@ -571,6 +624,12 @@ def _test_pipelineobj():
 		line = "{}\t{}\n".format(contig, "\t".join([";".join([y["seqid"] if type(y) == dict else str(y) for y in testbin.contigdict[contig][x] ]) for x in testbin.contigdict[contig]])) #todo: in protmarkerdicts change "protid" to "seqid". Add "seqid" and "marker" keys to ssu and lsu entries
 		outfile.write(line)	
 
+def _test_splitfasta2file():
+	infasta = sys.argv[1]
+	threads = int(sys.argv[2])
+	outfilebasename = "huhudelmetest/fractiontest"
+	a,b=split_fasta_for_parallelruns(infasta = infasta, number_of_fractions = threads, outfilebasename = outfilebasename)
+	print(a)
 def main():
 	#_test_markernames()
 	#_test_basicmarkers()
@@ -578,6 +637,6 @@ def main():
 	#_test_barrnap()
 	#_test_pipeline()
 	_test_pipelineobj()
-	
+	#_test_splitfasta2file()
 if __name__ == '__main__':
 	main()

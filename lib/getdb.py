@@ -158,7 +158,7 @@ class taxdb(object):
 		self.depth_list = [ int(l) for l in infile.readline().strip().split("\t") ]
 		infile.close()
 		
-	def get_lca(self, taxA, taxB):
+	def get_strict_pairwise_lca(self, taxA, taxB):
 		indexA = self.walk_list.index(taxA)
 		indexB = self.walk_list.index(taxB)
 		walk_slice = self.walk_list[min([indexA, indexB]):max([indexA, indexB])]
@@ -203,7 +203,16 @@ class taxdb(object):
 			outdict[queryacc], start = self.acc2taxid(queryacc, start)
 		return outdict
 	
-	def taxid2taxpath(self, taxid, fullpath = True, unofficials = True): #may skip the outformat and return all levels as tuples (taxname, taxid, rank). MAy change fullpath default to False AFTER i checked how to best deal with "unofficial candidate phyla"
+	def taxid2taxpath(self, taxid, fullpath = True, unofficials = False): #may skip the outformat and return all levels as tuples (taxname, taxid, rank). MAy change fullpath default to False AFTER i checked how to best deal with "unofficial candidate phyla"
+		# todo: switch tuples to namedtuples
+		"""
+		Returns a list of tuples representing the taxonomic Path for a given Taxid.
+		Each tuple represents a single taxonomic level and consists of three values: ( taxon name [String] , taxon ID [String] , rank [Integer])
+		The returned path will include all ranks,including minor intermediade ranks such as "Subfamily" if fullpath == True, otherwise it will consistonly of the 7 major ranks.
+		When using the ncbi taxonomic system, set unofficials==True to include unofficial ranks such as Candidate phyla or "Incertae sedis" taxa. 
+		When using the gtdb taxonomy, set unofficials==False.
+		"""
+		
 		#todo: veryfy that this works for ncbi as well as for gtdb taxonomy-dbs
 		# ~ id_candidate_phyla = 1783234
 		# ~ id_bacteria_incertae_sedis = 2323 
@@ -351,7 +360,7 @@ def test_lcawalk():
 	db = taxdb(acc2taxid_lookupfile, taxdictjson_file, lcawalk_file)		
 	tax1 = sys.argv[1]
 	tax2 = sys.argv[2]
-	db.get_lca(tax1,tax2)
+	db.get_strict_pairwise_lca(tax1,tax2)
 
 if __name__ == '__main__':	
 	#_test_lookup()
