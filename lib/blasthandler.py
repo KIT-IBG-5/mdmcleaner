@@ -229,13 +229,13 @@ def _run_any_blast(query, db, path_appl, outname, threads):
 	#TODO: fix stupid problem that blast (unfortunately) cannot handle gzipped query files
 	appl = os.path.basename(path_appl)
 	assert appl in ["blastp", "blastn", "diamond"], "\nError: unknown aligner '{}'\n".format(appl)
-	_command_available(command=appl)
+	_command_available(command=path_appl)
 	if appl == "blastp":
-		outname = run_single_blastp(query, db, appl, outname, threads)
+		outname = run_single_blastp(query, db, path_appl, outname, threads)
 	elif appl == "blastn":
-		outname = run_single_blastn(query, db, appl, outname, threads)
+		outname = run_single_blastn(query, db, path_appl, outname, threads)
 	elif appl == "diamond":
-		run_single_diamondblastp(query, db, appl, outname, threads)
+		run_single_diamondblastp(query, db, path_appl, outname, threads)
 	os.rename(outname + ".tmp", outname)
 	return outname
 
