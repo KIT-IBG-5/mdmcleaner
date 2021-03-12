@@ -49,7 +49,8 @@ def split_fasta_for_parallelruns(infasta, minlength = 0, number_of_fractions = 2
 	fastafile = openfile(infasta)
 	records = SeqIO.parse(fastafile, "fasta")
 	contigdict = {}
-	outlist = [[] for x in range(number_of_fractions)]
+	#print("whooooooo --{}-- whooooooo".format(number_of_fractions))
+	outlist = [[] for x in range(int(number_of_fractions))]
 	contigcounter = 0
 	index = 0
 	direction = 1
@@ -58,7 +59,7 @@ def split_fasta_for_parallelruns(infasta, minlength = 0, number_of_fractions = 2
 		if len(record) < minlength:
 			continue
 		contigcounter += 1
-		contigdict[record.id] = {"contiglen": [len(record)], "totalprotcount" : [0], "ssu_rRNA" : [], "lsu_rRNA" : [], "prok_marker" : [], "bac_marker" : [], "arc_marker" : []}
+		contigdict[record.id] = {"contiglen": [len(record)], "totalprotcount" : [0], "ssu_rRNA" : [], "lsu_rRNA" : [], "prok_marker" : [], "bac_marker" : [], "arc_marker" : [], "totalprots" : []}
 		if index > len(outlist)-1:
 			direction = -1
 			index = len(outlist) -1
@@ -237,6 +238,7 @@ def hmmersearch(hmmsearch, model, query, outfilename, score_cutoff = None, eval_
 		if score_cutoff != None:
 			score_cutoff_arg = ["-T", score_cutoff]
 	hmmsearch_cmd = [hmmsearch, "--noali", "--cpu", str(threads), "--domtblout", outfilename] + eval_cutoff_arg + score_cutoff_arg + [model]
+	#print("\nquery = {}\n".format(query))
 	if type(query) == str: #TODO: This assumes "if query is a string, it must be a filename." That is obviously BS! implement a check that tests if string is a fasta-record! #note to to self: for now i will assume fasta via stdin if query is a list of seqrecords 
 		hmmsearch_cmd.append(query)
 		inputarg = None
@@ -318,6 +320,7 @@ def get_markerprotnames(proteinfastafile, cutoff_dict = cutofftablefile, hmmsear
 	cutoff_dict should be a dictinary with the "strict", "moderate" and "sensitive" cutoff-values for each marker-model, but CAN also be a filename from which to parse that dict (default = parse from default file)
 	returns a nested dictionary containing protein-identifiers as main keys and subdictionaries with respective marker-designations (key = "marker") and score values (key = "fscore")  as values for each hmm hit that passed cutoff criteria
 	"""
+	#print("\nget_markerprotnames()  --> proteinfastafile = {}\n".format(proteinfastafile))
 	assert level in ["prok", "bact", "arch", "all"], "\nError: dont recognize level \"{}\"! mode must be one of [\"prok\", \"bact\", \"arch\", \"all\"]\n"
 	assert cmode in  ["strict", "moderate", "sensitive"], "\nError: dont recognize mode \"{}\"! mode must be one of [\"strict\", \"moderate\", \"sensitive\"]\n" 
 	if type(cutoff_dict) != dict: #alternative for parsing cutoff_dict will be read from a file (better to pass it as dict, though)
@@ -424,6 +427,7 @@ def combine_multiple_fastas(infastalist, outfilename = None, delete_original = T
 	#todo: create an alternative version that writes to the outfile on the fly, for parsing huge assemblies
 	import re
 	from Bio import SeqIO
+	recordcount = 0
 	pattern = re.compile("_\d+$")
 	outrecordlist=[]
 	if outfilename != None:
@@ -432,10 +436,14 @@ def combine_multiple_fastas(infastalist, outfilename = None, delete_original = T
 		infile=openfile(f)
 		if outfilename!= None:
 			for record in SeqIO.parse(f, "fasta"):
-				SeqIO.write([record], outfilename, "fasta")
+				recordcount += 1
+				SeqIO.write([record], outfile, "fasta")
 				if contigdict:
 					contigname = re.sub(pattern, "", record.id)
-					contigdict[contigname]["totalprots"] += record.id #todo: if i understand python scopes correctly, te dictionary should be changed globally, even if not explicitely returned... check this!				
+					#print(contigdict[contigname].keys())
+					contigdict[contigname]["totalprots"].append(record.id) #todo: if i understand python scopes correctly, te dictionary should be changed globally, even if not explicitely returned... check this!				
+					contigdict[contigname]["totalprotcount"][0] += 1
+					#print(contigdict[contigname]["totalprots"])
 		else:
 			outrecordlist.extend(list(SeqIO.parse(f, "fasta")))
 			for record in outrecordlist:
@@ -450,7 +458,8 @@ def combine_multiple_fastas(infastalist, outfilename = None, delete_original = T
 	if delete_original:
 		for f in infastalist:
 			os.remove(f)
-	return outrecordlist
+	print("protein_recordcount = {}".format(recordcount))
+	return output
 
 def parse_protmarkerdict(protmarkerdict, contigdict, protmarkerlevel):
 	import re
@@ -489,12 +498,14 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 		self.binfastafile = contigfile
 		bin_tempname = os.path.basename(contigfile)
 		for suffix in [".gz", ".fa", ".fasta", ".fna", ".fas", ".fsa"]:
-			bin_tempname = bin_tempname[:-len(suffix)]
+			if bin_tempname.endswith(suffix):
+				bin_tempname = bin_tempname[:-len(suffix)]
 		self.outbasedir = outbasedir		
 		self.bin_tempname = bin_tempname
 		self.bin_resultfolder = os.path.join(self.outbasedir, self.bin_tempname)
 		for d in [self.outbasedir, self.bin_resultfolder]:
 			if not os.path.exists(d):
+				print("creating {}".format(d))
 				os.mkdir(d)
 		self._get_all_markers(threads, mincontiglength, cutofftable)
 		#todo:finish this
@@ -504,7 +515,7 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 		commandlist = [("getmarkers", "runprodigal", {"infasta" : subfastas[i], "outfilename" : os.path.join(self.bin_resultfolder, "tempfile_{}_prodigal_{}.faa".format(self.bin_tempname, i)) }) for i in range(len(subfastas))]
 		tempprotfiles = misc.run_multiple_functions_parallel(commandlist, threads)
 		self.totalprotfile = combine_multiple_fastas(tempprotfiles, outfilename = os.path.join(self.bin_resultfolder, self.bin_tempname + "_totalprots.faa"), delete_original = True, contigdict = self.contigdict)
-		self.protmarkerdictlist = get_markerprotnames(self.totalprotfile, cutofftable, hmmsearch = "hmmsearch", outdir = self.bin_resultfolder, cmode = "moderate", level = "all", threads = "4") #todo: delete hmm_intermediate_results
+		self.protmarkerdictlist = get_markerprotnames(self.totalprotfile, cutofftable, hmmsearch = "hmmsearch", outdir = self.bin_resultfolder, cmode = "moderate", level = "all", threads = threads) #todo: delete hmm_intermediate_results
 		for pml in range(len(self.protmarkerdictlist)):
 			self.contigdict = parse_protmarkerdict(self.protmarkerdictlist[pml], self.contigdict, pml)
 		self.rRNA_fasta_dict, self.rrnamarkerdict = runbarrnap_all(infasta=self.binfastafile, outfilebasename=os.path.join(self.bin_resultfolder, self.bin_tempname + "_rRNA"), barrnap="barrnap", threads=threads) #todo add option for rnammer (using the subdivided fastafiles)?

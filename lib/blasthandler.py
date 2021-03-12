@@ -214,7 +214,7 @@ def run_single_blastn(query, db, blast, outname, threads = 1):
 def run_single_diamondblastp(query, db, diamond, outname, threads = 1): #TODO: currently not setting "--tmpdir" & "--parallel-tmpdir" here! figure something out if this turns out to be problematic on hpc systems
 	#TODO: add a maxmem arguemt that states how much memory can be used. use this to determine optimal blocksize and chunks for more efficient blasting. BLOCKSIZE=INT(MEMORY/6) CHUNKS=4/2/1 IF MEMORY >=12/24/48
 	import subprocess
-	blastcmd = subprocess.run([diamond, "--query", query, "--db", db, "--evalue", "1e-10",\
+	blastcmd = subprocess.run([diamond, "blastp", "--query", query, "--db", db, "--evalue", "1e-10",\
 							   "--outfmt", "6", "--threads", str(threads), "--out", outname + ".tmp"], \
 							   stdout = subprocess.PIPE, stderr = subprocess.PIPE, text = True)
 	try:
