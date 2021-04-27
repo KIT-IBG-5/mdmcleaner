@@ -110,7 +110,7 @@ def read_blast_tsv(infilename, max_evalue = None, min_ident = None):
 	infile.close()
 	return blastlinelist
 
-def contigs2blasthits(blastlinelist, parsetype = "prodigal", lookup_table = None):
+def add_contigs2blasthits_later(blastlinelist, parsetype = "prodigal", lookup_table = None):
 	"""
 	assigns contigs to blast hits
 	parsetype must be one of ["prodigal", "rnammer", "barrnap", "lookup"]
@@ -167,16 +167,19 @@ def contigs2blasthits(blastlinelist, parsetype = "prodigal", lookup_table = None
 		return _parse_rnammer(blastlinelist)
 	if parsetype == "barrnap":
 		return _parse_barrnap(blastlinelist)
-			
 	
-	
-def stype2blasthits(blastlinelist, markersetdict): #markersetdict should be derived from a different module "fastahandler.py" that reads the markerfastas and returns either the sequences, or just the locus_tags/fasta_headers.
+def _add_stype2blasthits_later(blastlinelist, markersetdict): #markersetdict should be derived from a different module "fastahandler.py" that reads the markerfastas and returns either the sequences, or just the locus_tags/fasta_headers.
 	#"markersetlist" should be a list of sets. sets should be ordered in decreasing hierarchy (16S first, then 23S then markerprots then totalprots)
 	#each set contains the locus_tags of the markers used in the blast
 	for blindex in range(len(blastlinelist)):
 		for ms in markersetdict:
 			if blastlinelist[bl]["query"] in markersetdict[ms]:
 				blastlinelist[bl]["stype"] = ms
+	return blastlinelist
+
+def _add_taxid2blasthits_later(blastlinelist, db_obj):
+	for blindex in range(len(blastlinelist)):
+		blastlinelist[bl]["taxid"] = db_obj.acc2taxid(blastlinelist[bl]["taxid"]["subject"]
 	return blastlinelist
 
 def run_single_blastp(query, db, blast, outname, threads = 1):

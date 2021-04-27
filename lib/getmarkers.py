@@ -17,6 +17,7 @@ import os
 from Bio import SeqIO
 import misc
 from misc import openfile
+import re
 #import Bio.SearchIO.HmmerIO.hmmer3_domtab.Hmmer3DomtabHmmhitParser #probably better to parse it my self
 
 #currently the marker-hmms only encompass universal SINGLE-COPY genes. It would be interesting to include the multicopy-universal genes as well! --> parse the COG-database for this...?
@@ -136,7 +137,7 @@ def runbarrnap_all(infasta, outfilebasename, barrnap="barrnap", threads=3): #tod
 		outfile = openfile("{}_{}.fasta".format(outfilebasename, ff), "wt")
 		SeqIO.write(final_fastadict[ff], outfile, "fasta")
 		outfile.close()
-		final_fastadict[ff] = outfile.name
+		final_fastadict[ff] = outfile.name #todo: perhaps, instead of a dict, return fastafilenames as list?
 	return final_fastadict, contig_rrnadict
 
 def deduplicate_barrnap_results(tempfastas, gff_outputs):
@@ -418,15 +419,17 @@ def write_markerdict(markerdict, outfilename):# todo: improve markerdict
 		outfile.write(outline)
 	return outfilename
 
-def combine_multiple_fastas(infastalist, outfilename = None, delete_original = True, contigdict = None): #pass contigdict in order to ba able to capture totalproteincounts per contig. currently only works for prodigal_output# todo: find a more flexible solution!
+def combine_multiple_fastas(infastalist, outfilename = None, delete_original = True, contigdict = None, return_markerdict = False): #pass contigdict in order to ba able to capture totalproteincounts per contig. currently only works for prodigal_output# todo: find a more flexible solution!
 	"""
 	different steps in getmarkers may subdivide input into fractions for better multiprocessing, and subsequently produce multiple output files
 	This function is meant to combine such fastas to either a single output file (outfilename) or a list of seqrecords (if outfilename==None)
 	Will delete the original fraction-fastas unless delete_original is set to False
 	"""
 	#todo: create an alternative version that writes to the outfile on the fly, for parsing huge assemblies
+	#todo: check if contigdict is needed in this form at all
 	import re
 	from Bio import SeqIO
+	markerdict = {}
 	recordcount = 0
 	pattern = re.compile("_\d+$")
 	outrecordlist=[]
@@ -437,6 +440,7 @@ def combine_multiple_fastas(infastalist, outfilename = None, delete_original = T
 		if outfilename!= None:
 			for record in SeqIO.parse(f, "fasta"):
 				recordcount += 1
+				markerdict[record.id] = "total" #all proteins are by default set to type "total" at first. will be ssigned to markes after hmm-analyses later. possible markertypes=["total", "prok", "bac", "arc", "lsu", "ssu"] 
 				SeqIO.write([record], outfile, "fasta")
 				if contigdict:
 					contigname = re.sub(pattern, "", record.id)
@@ -459,42 +463,43 @@ def combine_multiple_fastas(infastalist, outfilename = None, delete_original = T
 		for f in infastalist:
 			os.remove(f)
 	print("protein_recordcount = {}".format(recordcount))
+	if return_markerdict:
+		return output, markerdict
 	return output
 
-def parse_protmarkerdict(protmarkerdict, contigdict, protmarkerlevel):
-	import re
+def prodigalprot2contig(protid):
 	pattern = re.compile("_\d+$")
+	contigname = re.sub(pattern, "", protid)
+	return contigname
+
+def parse_protmarkerdict(protmarkerdict, contigdict, protmarkerlevel, markerdict = None): #todo make this a hidden object-function of bindata objects. check if contigdict actually needed
+	#import re #todo: already imported globally. make sure this works even when calling externally. Then delete this line if not required
+	#pattern = re.compile("_\d+$")
 	marker = protmarkerlevel_dict[protmarkerlevel]
 	for protid in protmarkerdict:
-		contigname = re.sub(pattern, "", protid)
-		contigdict[contigname][marker].append({"seqid" : protid, "marker" : protmarkerdict[protid]["marker"]})
+		contigname = prodigalprot2contig(protid)
+		markername = protmarkerdict[protid]["marker"]
+		contigdict[contigname][marker].append({"seqid" : protid, "marker" : markername})
+		if markerdict != None:  #todo: if i understand python scopes correctly, te dictionary should be changed globally, even if not explicitely returned... check this!				
+			markerdict[protid] = "{} {}".format(marker, markername) #stored as space seperated string with "<marker type> <marker_hmm>". should be split later to get only markertype# TODO: in case someone insists on using spaces in contignames/proteinIDS, maybe change delimintor to tab (\t)?
 	return contigdict
 
-def add_rrnamarker_to_contigdict(rrnamarkerdict, contigdict):
+def add_rrnamarker_to_contigdict_and_markerdict(rrnamarkerdict, contigdict, markerdict): #todo make this a hidden object-function of bindata objects. check if contigdict actually needed
 	for contig in rrnamarkerdict:
 		#print(contigdict[contig])
 		#print("-"*50)
 		#print(rrnamarkerdict[contig])
 		contigdict[contig].update(rrnamarkerdict[contig])
-	return contigdict
-
-def get_all_markers(infasta, outfilebasename, threads, cutoffdict = cutofftablefile): #todo: cutoffdict should be a dict optimally, but can be the name of a cutoffdict-file (from which to parse cutoffdict). also todo: for now running steps prodigal, barrnap etc one after another. but infuture find a way how to optimize paralellization
-	#todo: this is probably going to be replaced by instantiation of a "bindata" object
-	import misc
-	subfastas, contigdict = split_fasta_for_parallelruns(infasta, minlength = 0, number_of_fractions = threads)
-	commandlist = [("getmarkers", "runprodigal", {"infasta" : subfastas[i], "outfilename" : "test_prodigal_{}.faa".format(i) }) for i in range(len(subfastas))]
-	tempprotfiles = misc.run_multiple_functions_parallel(commandlist, threads)
-	totalprotfile = combine_multiple_fastas(tempprotfiles, outfilename = outfilebasename + "_totalprots.faa", delete_original = True, contigdict = contigdict) #todo: add support for gzipped protfiles in hmmsearch!
-	protmarkerdictlist = get_markerprotnames(totalprotfile, cutoffdict, hmmsearch = "hmmsearch", outdir = ".", cmode = "moderate", level = "all", threads = "4")
-	for pml in range(len(protmarkerdictlist)):
-		contigdict = parse_protmarkerdict(protmarkerdictlist[pml], contigdict, pml)
-	rRNA_fasta_dict, rrnamarkerdict = runbarrnap_all(infasta=infasta, outfilebasename=outfilebasename + "_rRNA", barrnap="barrnap", threads=threads)
-	contigdict = add_rrnamarker_to_contigdict(rrnamarkerdict, contigdict)
-	progressdump = { "ssu_rRNA_file" :  rRNA_fasta_dict["ssu_rRNA"], "ssu_rRNA_file" :  rRNA_fasta_dict["ssu_rRNA"], "totalprot_file" : totalprotfile, "protmarkerdictlist" : protmarkerdictlist, "contigdict" : contigdict }
-	return progressdump
+		for rRNA_type in rrnamarkerdict[contig]:
+			for rRNA_instance in rrnamarkerdict[contig][rRNA_type]:
+				markerdict[rRNA_instance["seqid"] = rRNA_instance["marker"]
+	return contigdict, markerdict
 
 class bindata(object): #meant for gathering all contig/protein/marker info
 	def __init__(self, contigfile, threads = 1, outbasedir = "mdmcleaner_results", mincontiglength = 0, cutofftable = cutofftablefile): #todo: enable init with additional precalculated infos
+		import re
+		self.barrnap_pattern = re.compile("^\d{1,2}S_rRNA::(.+):\d+-\d+\([+-]\)")
+		self.rnammer_pattern = re.compile("^rRNA_(.+)_\d+-\d+_DIR[+-]")
 		self.binfastafile = contigfile
 		bin_tempname = os.path.basename(contigfile)
 		for suffix in [".gz", ".fa", ".fasta", ".fna", ".fas", ".fsa"]:
@@ -508,19 +513,24 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 				print("creating {}".format(d))
 				os.mkdir(d)
 		self._get_all_markers(threads, mincontiglength, cutofftable)
+		self.protdict 
 		#todo:finish this
 	    #todo: simplify all those dicts
+	    # todo the contigdict is probably not necessary in that form...
+	    # todo: one function mapping protein-ids to contigs (just based on prodigal-nomenclature) --> DONE
+	    #	todo: a new dict mapping gene/protein-ids to markers ["ssu", "lsu", "prok", "bact", "arch", "total"] --> started (self.markerdict)
+	    # todo: inititate all dicts/variables set in _get_all_markers as None here, so that an overview remains possible
+	     
 	def _get_all_markers(self, threads, mincontiglength, cutofftable): #todo: split into a.) get totalprots b.) get_markerprots c.) get rRNA genes!
 		subfastas, self.contigdict = split_fasta_for_parallelruns(self.binfastafile, minlength = mincontiglength, number_of_fractions = threads)
 		commandlist = [("getmarkers", "runprodigal", {"infasta" : subfastas[i], "outfilename" : os.path.join(self.bin_resultfolder, "tempfile_{}_prodigal_{}.faa".format(self.bin_tempname, i)) }) for i in range(len(subfastas))]
 		tempprotfiles = misc.run_multiple_functions_parallel(commandlist, threads)
-		self.totalprotfile = combine_multiple_fastas(tempprotfiles, outfilename = os.path.join(self.bin_resultfolder, self.bin_tempname + "_totalprots.faa"), delete_original = True, contigdict = self.contigdict)
+		self.totalprotfile, self.markerdict = combine_multiple_fastas(tempprotfiles, outfilename = os.path.join(self.bin_resultfolder, self.bin_tempname + "_totalprots.faa"), delete_original = True, contigdict = self.contigdict, return_markerdict = True) #todo: check if conticdict is actually neccessary/helpful in this form
 		self.protmarkerdictlist = get_markerprotnames(self.totalprotfile, cutofftable, hmmsearch = "hmmsearch", outdir = self.bin_resultfolder, cmode = "moderate", level = "all", threads = threads) #todo: delete hmm_intermediate_results
-		for pml in range(len(self.protmarkerdictlist)):
+		for pml in range(len(self.protmarkerdictlist)): #todo: contigdict is probably not needed in this form. choose simpler dicts ?
 			self.contigdict = parse_protmarkerdict(self.protmarkerdictlist[pml], self.contigdict, pml)
 		self.rRNA_fasta_dict, self.rrnamarkerdict = runbarrnap_all(infasta=self.binfastafile, outfilebasename=os.path.join(self.bin_resultfolder, self.bin_tempname + "_rRNA"), barrnap="barrnap", threads=threads) #todo add option for rnammer (using the subdivided fastafiles)?
-		self.contigdict = add_rrnamarker_to_contigdict(self.rrnamarkerdict, self.contigdict)
-		
+		self.contigdict, self.markerdict = add_rrnamarker_to_contigdict_and_markerdict(self.rrnamarkerdict, self.contigdict, self.markerdict) #todo: contigdict is probably not needed in this form. choose simpler dicts?
 		#todo: save progress as pickle of this the currenc instance of this class-object
 	
 	def _prep_contigsANDtotalprots():
@@ -538,8 +548,12 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 		self.rRNA_fasta_dict, self.rrnamarkerdict = runbarrnap_all(infasta=self.binfastafile, outfilebasename=os.path.join(self.bin_resultfolder, self.bin_tempname + "_rRNA"), barrnap="barrnap", threads=threads) #todo add option for rnammer (using the subdivided fastafiles)?
 		self.contigdict = add_rrnamarker_to_contigdict(self.rrnamarkerdict, self.contigdict)
 				
-	def _prep_onlycontigs():
-		pass #todo: create a function that reads in contig fasta to intitiate contig_dct. For use in cases where ORF-calling was done on the complete metagenome 
+	def _prep_onlycontigs(self):
+		infile = openfile(self.binfastafile)
+		self.contigdict = {}
+		for record in SeqIO.parse(infile, "fasta"):
+			self.contigdict[record.id] = {"contiglen": [len(record)], "totalprotcount" : [0], "ssu_rRNA" : [], "lsu_rRNA" : [], "prok_marker" : [], "bac_marker" : [], "arc_marker" : [], "totalprots" : []}
+		pass #todo: this is meant to intitiate contig_dct just from contig_fasta. For use in cases where ORF-calling was done on the complete metagenome 
 	
 	def get_contig_fastas(self):
 		"""
@@ -548,19 +562,34 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 		with openfile(self.binfastafile) as infile:
 			return list(SeqIO.parse(openfile, "fasta"))
 	
+	def marker2contig(self, seqid):
+		
+		#try to determine if rnammer or barrnap rRNA or protein based on regex
+		#if protein: use prot2contig
+		#if barrnapRNA use barrnap2contig
+	
+	def prot2contig(self, protid):
+		contigname = prodigalprot2contig(protid)
+		assert contigname in self.contigdict, "Protein id \"{}\" should correspond to a contig \"{}\", but no such contig in bindata!"
+		return contigname
+	
 	def pickleyourself(self):
 		pass
 		
 	def unpickleyourself(self):
 		pass	
 		
-	def get_contig2prot_dict():
+	def get_contig2prot_dict(self): #todo: check if actually needed usful in any case... seems uneccessary as long as proteins can be assigned to contigs based on prodigal naming scheme. But MAY be useful in the futire, if planned to allow including ready made (e.g. Prokka) annotations?
 		pass #todo: make this
 	
-	def get_prot2contig_dict():
-		pass #todo: make this
+	def get_prot2contig_dict(self): #todo: check if actually needed usful in any case... seems uneccessary as long as proteins can be assigned to contigs based on prodigal naming scheme. But MAY be useful in the futire, if planned to allow including ready made (e.g. Prokka) annotations?
+		prot2contigdict = {}
+		for contig in self.contigdict:
+			for protein in self.contigdict[contig]["totalprots"]
+			prot2contigdict[protein] = contig
+		return prot2contigdict
 	
-	def get_prot2marker_dict():
+	def get_prot2marker_dict(self):
 		pass #todo: make this
 		
 	
