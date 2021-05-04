@@ -513,7 +513,6 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 				print("creating {}".format(d))
 				os.mkdir(d)
 		self._get_all_markers(threads, mincontiglength, cutofftable)
-		self.protdict 
 		#todo:finish this
 	    #todo: simplify all those dicts
 	    # todo the contigdict is probably not necessary in that form...

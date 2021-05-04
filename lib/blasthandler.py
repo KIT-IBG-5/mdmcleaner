@@ -90,23 +90,23 @@ def read_lookup_table(lookup_table, table_format = None): #should be able to rea
 		return _parse_simpletable(",")
 
 
-class blastdata(object):
+class blastdata(object): #todo: define differently for protein or nucleotide blasts (need different score/identity cutoffs)
 	_blasttsv_columnnames = {"query" : 0, "subject" : 1, "ident" : 2, "alignlen" : 3, "qstart": 6, "qend" : 7, "sstart" : 8, "ssend" : 9, "evalue" : 10, "score" : 11, "contig" : None, "stype" : None, "taxid": None} #reading in all fields, in case functionality is added later that also uses the sstat send etc fields
-	def __init__(self, max_evalue = None, min_ident = None, score_cutoff_fraction = 0.5, keep_max_hit_fraction = 0.5, keep_min_hit_count = 2, *blastfiles):
+	def __init__(self, *blastfiles, max_evalue = None, min_ident = None, score_cutoff_fraction = 0.5, keep_max_hit_fraction = 0.5, keep_min_hit_count = 2): #todo: add a min_score 
 		#methods:
 		#	method 1: filter by query-genes. For each gene remove all hits with score below <score_cutoff_fraction> (default = 0.5) of maximum score for that gene
 		#			  from these keep the <keep_max_hit_fraction> of hits (default = 0.5), but keep at least <keep_min_fraction> (default = 2) in every case if possible
 		#			  later classify each gene by simple lca
+		# note: for 16S/23S the score should be more than 1000 and the identity should be above 90??
 		self.min_ident = min_ident
 		self.max_evalue = max_evalue
 		self.blastlinelist = []
 		for bf in blastfiles:
 			read_blast_tsv(bf, max_evalue = max_evalue, min_ident = min_ident) #TODO: Note: not passing bindata-object right here. if it needs to be looped through later anyway (after condensing the list) it makes more sense to do all further assignments later at that point
 		self.blastlinelist = self.sort_blastlines_by_gene()
-		filter_hits_per_gene(score_cutoff_fraction, keep_max_hit_fraction, keep_min_hit_count)
-		
-		
-	def filter_hits_per_gene(self, score_cutoff_fraction = 0.5, keep_max_hit_fraction = 0.5, keep_min_hit_count = 2):
+		self.filter_hits_per_gene(score_cutoff_fraction, keep_max_hit_fraction, keep_min_hit_count)
+			
+	def filter_hits_per_gene(self, score_cutoff_fraction = 0.5, keep_max_hit_fraction = 0.5, keep_min_hit_count = 2): #todo: allow additional filter settings for rRNA data (e.g. filter by identity not score)
 		"""
 		assumes the blastlinelist is already sorted by decreasind score!
 		"""
@@ -132,20 +132,20 @@ class blastdata(object):
 				query_best_score = currline["score"]
 		self.blastlinelist = filtered_blastlinelist
 	
-	 def add_info_to_blastlines(self, bindata_obj, taxdb_obj = None):
-		 for i in range(len(self.blastlinelist)):
-			 self.blastlinelist[i]["contig"] = bindata_obj.marker2contig(self.blastlinelist[i]["query"])
-			 self.blastlinelist[i]["stype"] = bindataobj.markerdict[self.blastlinelist[i]["query"]]
-			 if taxdb_obj != None:
+	def add_info_to_blastlines(self, bindata_obj, taxdb_obj = None):
+		for i in range(len(self.blastlinelist)):
+			self.blastlinelist[i]["contig"] = bindata_obj.marker2contig(self.blastlinelist[i]["query"])
+			self.blastlinelist[i]["stype"] = bindataobj.markerdict[self.blastlinelist[i]["query"]]
+			if taxdb_obj != None:
 				self.blastlinelist[i]["taxid"] = taxdb_obj.acc2taxid(self.blastlinelist[i]["subject"])
 	
 	def sort_blastlines_by_gene(self):
-		return sorted(self.blastlinelist.sort, key = lambda x: (x["contig"], x["query"], -x["score"])) #sorts hits first increasingly by contig and query-name (not the same in case of rRNA genes), then decreasingly by score	
+		return sorted(self.blastlinelist, key = lambda x: (x["contig"], x["query"], -x["score"])) #sorts hits first increasingly by contig and query-name (not the same in case of rRNA genes), then decreasingly by score	
 
 	def sort_blastlines_by_contig(self):
 		return sorted(self.blastlinelist, key = lambda x: (x["contig"], -x["score"])) #sorts hits first increasingly by contig and query-name (not the same in case of rRNA genes), then decreasingly by score	
 			
-	def get_best_hits_per_gene(self, max_best_hit_fraction = 1, keep_min_hit_count = 2): #max_best_hitfraction and keep_min_hit_count are not supposed to be actually used. should already be taken care of by "filter_hits_by_gene". Just keeping option open to filter again using different cutoffs	
+	def get_best_hits_per_gene(self, max_best_hit_fraction = 1, keep_min_hit_count = 2): #max_best_hitfraction and keep_min_hit_count are not supposed to be actually used. should already be taken care of by "filter_hits_by_gene". Just keeping option open to filter again using different cutoffs	#todo: combine with below function. add keyword to return contig or gene
 		from collections import namedtuple
 		hit = collections.namedtuple('hit', 'accession taxid identity score')
 		assert 0< keep_max_hit_fraction <= 1, "score_cutoff_fraction must be larger than 0.0, and lower or equal to 1.0!"
@@ -161,11 +161,11 @@ class blastdata(object):
 				query_templist.append(currline)
 			else:
 				if len(query_templist) > 0:
-					yield previous_query, [ hit(accession=q["subject"], taxid=q["taxid"], identity=q["identity"], score=q["score"]) for q in query_templist[:max(int(len(query_templist)*keep_max_hit_fraction), keep_min_hit_count)]
+					yield previous_query, [ hit(accession=q["subject"], taxid=q["taxid"], identity=q["identity"], score=q["score"]) for q in query_templist[:max(int(len(query_templist)*keep_max_hit_fraction), keep_min_hit_count)]]
 				query_templist = [currline]
 				query_best_score = currline["score"]
 	
-	def get_best_hits_per_contig(self, max_best_hit_fraction = 1, keep_min_hit_count = 20):
+	def get_best_hits_per_contig(self, max_best_hit_fraction = 1, keep_min_hit_count = 20): #todo: combine with above funcktion. add keyword to return contig or gene
 		from collections import namedtuple
 		hit = collections.namedtuple('hit', 'accession taxid identity score')
 		assert 0< keep_max_hit_fraction <= 1, "score_cutoff_fraction must be larger than 0.0, and lower or equal to 1.0!"
@@ -181,7 +181,7 @@ class blastdata(object):
 				contig_templist.append(currline)
 			else:
 				if len(query_templist) > 0:
-					yield previous_contig, [ hit(accession=q["subject"], taxid=q["taxid"], identity=q["identity"], score=q["score"]) for q in query_templist[:max(int(len(query_templist)*keep_max_hit_fraction), keep_min_hit_count)]
+					yield previous_contig, [ hit(accession=q["subject"], taxid=q["taxid"], identity=q["identity"], score=q["score"]) for q in query_templist[:max(int(len(query_templist)*keep_max_hit_fraction), keep_min_hit_count)]]
 				query_templist = [currline]
 				query_best_score = currline["score"]		
 		
@@ -298,7 +298,7 @@ def __add_stype2blasthits_later(blastlinelist, markersetdict): #todo: probably o
 
 def __add_taxid2blasthits_later(blastlinelist, db_obj): #todo: probably obsolte...
 	for blindex in range(len(blastlinelist)):
-		blastlinelist[bl]["taxid"] = db_obj.acc2taxid(blastlinelist[bl]["taxid"]["subject"]
+		blastlinelist[bl]["taxid"] = db_obj.acc2taxid(blastlinelist[bl]["taxid"]["subject"])
 	return blastlinelist
 
 def run_single_blastp(query, db, blast, outname, threads = 1):
@@ -326,6 +326,8 @@ def run_single_blastn(query, db, blast, outname, threads = 1):
 							   "-outfmt", "6", "-num_threads", str(threads), "-out", outname + ".tmp"], \
 							   stdout = subprocess.PIPE, stderr = subprocess.PIPE, text = True)
 	try:
+		#print(blastcmd.cmd)
+		#print(" ".join(blastcmd.args))
 		blastcmd.check_returncode()
 	except Exception:
 		sys.stderr.write("\nAn error occured during blastn run with query '{}'\n".format(query))
@@ -347,9 +349,13 @@ def run_single_diamondblastp(query, db, diamond, outname, threads = 1): #TODO: c
 		raise RuntimeError
 	return outname
 	
-def _run_any_blast(query, db, path_appl, outname, threads):
+def _run_any_blast(query, db, path_appl, outname, threads, force = False):
 	#TODO: fix stupid problem that blast (unfortunately) cannot handle gzipped query files
 	appl = os.path.basename(path_appl)
+	print("\nblasting --> {}".format(outname))
+	if os.path.isfile(outname) and force == False:
+		sys.stderr.write("\nWARNING: blast result file '{}' already exists and 'force' not set to True --> skipping this blast\n".format(outname))
+		return outname
 	assert appl in ["blastp", "blastn", "diamond"], "\nError: unknown aligner '{}'\n".format(appl)
 	_command_available(command=path_appl)
 	if appl == "blastp":
@@ -363,7 +369,7 @@ def _run_any_blast(query, db, path_appl, outname, threads):
 
 def _distribute_threads_over_jobs(total_threads, num_jobs): # to distribute N threads over M groups as evenly as possible, put (N/M) +1 in (N mod M) groups, and (N/M) in the rest
 	##TODO: test using misc.run_multiple_functions_parallel() for this instead! DELETE THIS IF MISC VERSION WORKS!
-	if numjobs < total_threads:
+	if num_jobs < total_threads:
 		more_threads_list = [ (total_threads / num_jobs) + 1 ] * (total_threads % num_jobs) #these should go to the lower priority markers, as there will be more of them
 		fewer_threads_list = [ (total_threads / num_jobs) ] * (num_jobs - len(more_threads_list))
 		return fewer_threads_list + more_threads_list, num_jobs
@@ -371,20 +377,21 @@ def _distribute_threads_over_jobs(total_threads, num_jobs): # to distribute N th
 
 def run_multiple_blasts_parallel(basic_blastarg_list, outbasename, total_threads): #basic_blastarg_list = list of tuples such as [(query1, db1, blast1), (query2, db2, blast2),...])
 	#TODO: test using misc.run_multiple_functions_parallel() for this instead! DELETE THIS IF MISC VERSION WORKS!
-	if __name__ == '__main__':
-		from multiprocessing import Pool
-		thread_args, no_processes = _distribute_threads_over_jobs(total_threads, len(basic_blastarg_list))
-		arglist = []
-		for i in range(len(basic_blastarg_list)):
-			outname = "{prefix}_{counter:03d}{appl}_{query}_vs_{db}.tsv".format(prefix = outbasename, counter = i, \
-						appl = os.path.basename(basic_blastarg_list[i][2]), query = os.path.basename(basic_blastarg_list[i][0]), \
-						db = os.path.basename(basic_blastarg_list[i][1]))
-			arglist.append(tuple(bba for bba in basic_blastarg_list[i]) + (outname, thread_args[i]))
-		masterblaster = Pool(processes = no_processes)
-		outfile_list = masterblaster.starmap(_run_any_blast, arglist)
-		masterblaster.close()
-		masterblaster.join()
-		return outfile_list
+	from multiprocessing import Pool
+	thread_args, no_processes = _distribute_threads_over_jobs(total_threads, len(basic_blastarg_list))
+	arglist = []
+	for i in range(len(basic_blastarg_list)):
+		outname = "{prefix}_{counter:03d}{appl}_{query}_vs_{db}.tsv".format(prefix = outbasename, counter = i, \
+					appl = os.path.basename(basic_blastarg_list[i][2]), query = os.path.basename(basic_blastarg_list[i][0]), \
+					db = os.path.basename(basic_blastarg_list[i][1]))
+		arglist.append(tuple(bba for bba in basic_blastarg_list[i]) + (outname, thread_args[i]))
+	masterblaster = Pool(processes = no_processes)
+	outfile_list = masterblaster.starmap(_run_any_blast, arglist)
+	print("finished blasting all")
+	print(outfile_list)
+	masterblaster.close()
+	masterblaster.join()
+	return outfile_list
 
 def make_diamond_db(infasta, outfilename, diamond = "diamond", threads = 1):
 	import subprocess
