@@ -3,15 +3,29 @@ import sys
 from collections import namedtuple
 import misc
 from misc import openfile
+
+taxtuple = namedtuple("taxtuple", "taxid avident avscore")
 """
 functions for obtaining least common ancestor (lca) annotations for a list of tax-ids
 ALl these functions require an taxdb_object as input.
 taxdb-objects already incude a basic strict pairwise lca function. This module provides additional functions for achieving weighted lca annotations for sets of taxids > 2.
 """
 
-
-#todo: blastparser should return an dictionary of proteins, with protein-ids as keys and lists of hits as values.
-#       --> each hit should be represented as a named tuple  with the following fields: (Accession, taxid, identity, score)!
+def strict_lca(taxdb, blasthitlist):
+	"""
+	Returns strict lca of a list of blasthits or pre-lca-annotations.
+	Each blast hit should be represented as a named tuple with the following fields: (Accession, taxid, identity, score)
+	"""
+	assert len(blasthitlist) > 0, "\nError, but provide at least one blast hit!\n"
+	interim_tax = blasthitlist[0].taxid
+	#if len(blasthitlist) == 1: #probably already covered by looping over "range(1, len(blasthitlist))"
+	#	return blasthitlist[0].taxid
+	for i in range(1,len(blasthitlist):
+		interim_tax = taxdb.get_strict_pairwise_lca(interim_tax, blasthitlist[i].taxid)
+	interim_score = sum([bh.score for bh in blasthitlist])/len(blasthitlist)
+	interim_id = sum([bh.identity for bh in blasthitlist])/len(blasthitlist)
+	return taxtuple(taxid = interim_taxid, avident = interim_id, avscore = interim_score)  
+	
 def weighted_lca(taxdb, blasthitlist, cutoff = 0.95):
 	#todo: maybe allow option to use identity as criterium, instead of score?
 	"""
@@ -22,7 +36,7 @@ def weighted_lca(taxdb, blasthitlist, cutoff = 0.95):
 	"""
 	assert cutoff >= 0.5 and cutoff <=1, "\nError: cutoff {} not within allowed range (0.5-1.0)!\n"
 	if cutoff == 1:
-		sys.stderr.write
+		sys.stderr.write("\nWARNING: it is NOT recommended to use 'weighted_lca' with a cutoff of 1! Try using 'strict_lca' instead!\n")
 	#create tempdict
 	#todo: dicitonary is NOT the best data structure for this (because deleting keys later on create whole new directories). consider creating a new class for this...
 	#todo: is too convoluted! Simplify!
@@ -36,7 +50,7 @@ def weighted_lca(taxdb, blasthitlist, cutoff = 0.95):
 		##  if two or more contradicting assignments remain --> DO not iterate further. return shared parent-assignment (current level) as LCA
 	tempdict = {}
 	for hit in blasthitlist:
-		taxpath = [ x[1] for x in taxdb.taxid2path(hit.taxid) ] #todo: add a taxdb-function "simplepath", that only returns the taxids as list. Should speed things up a little?
+		taxpath = [ x[1] for x in taxdb.taxid2taxpath(hit.taxid) ] #todo: add a taxdb-function "simplepath", that only returns the taxids as list. Should speed things up a little?
 		parent = None
 		for i in range(len(taxpath)):
 			if not tempdict[i]:

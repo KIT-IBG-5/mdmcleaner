@@ -89,19 +89,138 @@ def read_lookup_table(lookup_table, table_format = None): #should be able to rea
 	if table_format("csv"):
 		return _parse_simpletable(",")
 
-def read_blast_tsv(infilename, max_evalue = None, min_ident = None):
+
+class blastdata(object):
+	_blasttsv_columnnames = {"query" : 0, "subject" : 1, "ident" : 2, "alignlen" : 3, "qstart": 6, "qend" : 7, "sstart" : 8, "ssend" : 9, "evalue" : 10, "score" : 11, "contig" : None, "stype" : None, "taxid": None} #reading in all fields, in case functionality is added later that also uses the sstat send etc fields
+	def __init__(self, max_evalue = None, min_ident = None, score_cutoff_fraction = 0.5, keep_max_hit_fraction = 0.5, keep_min_hit_count = 2, *blastfiles):
+		#methods:
+		#	method 1: filter by query-genes. For each gene remove all hits with score below <score_cutoff_fraction> (default = 0.5) of maximum score for that gene
+		#			  from these keep the <keep_max_hit_fraction> of hits (default = 0.5), but keep at least <keep_min_fraction> (default = 2) in every case if possible
+		#			  later classify each gene by simple lca
+		self.min_ident = min_ident
+		self.max_evalue = max_evalue
+		self.blastlinelist = []
+		for bf in blastfiles:
+			read_blast_tsv(bf, max_evalue = max_evalue, min_ident = min_ident) #TODO: Note: not passing bindata-object right here. if it needs to be looped through later anyway (after condensing the list) it makes more sense to do all further assignments later at that point
+		self.blastlinelist = self.sort_blastlines_by_gene()
+		filter_hits_per_gene(score_cutoff_fraction, keep_max_hit_fraction, keep_min_hit_count)
+		
+		
+	def filter_hits_per_gene(self, score_cutoff_fraction = 0.5, keep_max_hit_fraction = 0.5, keep_min_hit_count = 2):
+		"""
+		assumes the blastlinelist is already sorted by decreasind score!
+		"""
+		assert 0<= score_cutoff_fraction <= 1, "score_cutoff_fraction must lie in the range 0.0 - 1.0 !"
+		assert 0< keep_max_hit_fraction <= 1, "score_cutoff_fraction must be larger than 0.0, and lower or equal to 1.0!"
+		previous_query = None
+		query_best_score = 0
+		blindex = 0
+		query_templist = []
+		filtered_blastlinelist = []
+		for currline in self.blastlinelist: 
+			#steps: store all hits for a specific query in a seperate templist (if above cutoff_fraction). 
+			#when the next query is reached check howmany entries are in templist. write obly the top <keep_max_fraction> to new_blastlinelist (but at least <keep_minhit_count>, if possible)
+			currline = self.blastlinelist[blindex]
+			if currline["query"] == previous_query:
+				if currline["score"] < (query_best_score * xcore_cutoff_fraction):
+					continue
+				query_templist.append(currline)
+			else:
+				if len(query_templist) > 0:
+					filtered_blastlinelist.extend(query_templist[:max(int(len(query_templist)*keep_max_hit_fraction), keep_min_hit_count)])
+				query_templist = [currline]
+				query_best_score = currline["score"]
+		self.blastlinelist = filtered_blastlinelist
+	
+	 def add_info_to_blastlines(self, bindata_obj, taxdb_obj = None):
+		 for i in range(len(self.blastlinelist)):
+			 self.blastlinelist[i]["contig"] = bindata_obj.marker2contig(self.blastlinelist[i]["query"])
+			 self.blastlinelist[i]["stype"] = bindataobj.markerdict[self.blastlinelist[i]["query"]]
+			 if taxdb_obj != None:
+				self.blastlinelist[i]["taxid"] = taxdb_obj.acc2taxid(self.blastlinelist[i]["subject"])
+	
+	def sort_blastlines_by_gene(self):
+		return sorted(self.blastlinelist.sort, key = lambda x: (x["contig"], x["query"], -x["score"])) #sorts hits first increasingly by contig and query-name (not the same in case of rRNA genes), then decreasingly by score	
+
+	def sort_blastlines_by_contig(self):
+		return sorted(self.blastlinelist, key = lambda x: (x["contig"], -x["score"])) #sorts hits first increasingly by contig and query-name (not the same in case of rRNA genes), then decreasingly by score	
+			
+	def get_best_hits_per_gene(self, max_best_hit_fraction = 1, keep_min_hit_count = 2): #max_best_hitfraction and keep_min_hit_count are not supposed to be actually used. should already be taken care of by "filter_hits_by_gene". Just keeping option open to filter again using different cutoffs	
+		from collections import namedtuple
+		hit = collections.namedtuple('hit', 'accession taxid identity score')
+		assert 0< keep_max_hit_fraction <= 1, "score_cutoff_fraction must be larger than 0.0, and lower or equal to 1.0!"
+		previous_query = None
+		blindex = 0
+		query_templist = []
+		filtered_blastlinelist = []
+		for currline in self.blastlinelist: #todo: maybe ensure that hits are sorted by gene
+			#steps: store all hits for a specific query in a seperate templist (if above cutoff_fraction). 
+			#when the next query is reached check howmany entries are in templist. write obly the top <keep_max_fraction> to new_blastlinelist (but at least <keep_minhit_count>, if possible)
+			currline = self.blastlinelist[blindex]
+			if currline["query"] == previous_query:
+				query_templist.append(currline)
+			else:
+				if len(query_templist) > 0:
+					yield previous_query, [ hit(accession=q["subject"], taxid=q["taxid"], identity=q["identity"], score=q["score"]) for q in query_templist[:max(int(len(query_templist)*keep_max_hit_fraction), keep_min_hit_count)]
+				query_templist = [currline]
+				query_best_score = currline["score"]
+	
+	def get_best_hits_per_contig(self, max_best_hit_fraction = 1, keep_min_hit_count = 20):
+		from collections import namedtuple
+		hit = collections.namedtuple('hit', 'accession taxid identity score')
+		assert 0< keep_max_hit_fraction <= 1, "score_cutoff_fraction must be larger than 0.0, and lower or equal to 1.0!"
+		previous_contig = None
+		blindex = 0
+		contig_templist = []
+		filtered_blastlinelist = []
+		for currline in self.sort_blastlines_by_contig: 
+			#steps: store all hits for a specific query in a seperate templist (if above cutoff_fraction). 
+			#when the next query is reached check howmany entries are in templist. write obly the top <keep_max_fraction> to new_blastlinelist (but at least <keep_minhit_count>, if possible)
+			currline = self.blastlinelist[blindex]
+			if currline["contig"] == previous_contig:
+				contig_templist.append(currline)
+			else:
+				if len(query_templist) > 0:
+					yield previous_contig, [ hit(accession=q["subject"], taxid=q["taxid"], identity=q["identity"], score=q["score"]) for q in query_templist[:max(int(len(query_templist)*keep_max_hit_fraction), keep_min_hit_count)]
+				query_templist = [currline]
+				query_best_score = currline["score"]		
+		
+	def read_blast_tsv(self, infilename, max_evalue = None, min_ident = None, bindata_obj = None): #todo: test performace/memory-usage difference when using dataclasses or namedtuples instead of dictionaries for blast entries
+		"""
+		reads in each line from input blast files as dictionary. Stored all lines in a common list "blastlinelist".
+		already roughly filters by maximal evalue or minimum identity if correpsonding arguments are set.
+		already associated query contig and markertype to each query marker if a bindata-object is passed
+		will not assign taxids at this point yet, because this list is likely to be greatly reduced in later steps and assigning taxids is a relatively slow process  
+		"""
+		infile = openfile(infilename)
+		for line in infile:
+			tokens = line.strip().split("\t")
+			bl = { x : tokens[self._blasttsv_columnnames[x]] if type(self._blasttsv_columnnames[x]) == int else None for x in columninfos}
+			if max_evalue and bl["evalue"] > max_evalue: #bl.evalue > max_evalue:
+				continue
+			if min_ident and bl["ident"] < min_ident: #bl.ident < min_ident:
+				continue
+			if bindata_obj != None:
+				bl["contig"] = bindata.marker2contig(bl["query"])
+				bl["stype"] = bindata.markerdict[bl["query"]]
+			self.blastlinelist.append(bl)
+		
+					
+def read_blast_tsv(infilename, max_evalue = None, min_ident = None, dbobj = None, bindata_obj = None):
 	""" 
 	returns a a list of dictionaries, each representing the data in a blast line
 	if max_evalue or min_ident are set, lines above or below these cutoffs are ignored
 	each blast will later be assigned to a contig and to a "subject-type" (=stype), which can be either of ["16S", "23S", "univ_marker", "proc_marker", "bact_marker", "arch_marker", "other"]
 	"""
-	#note to self: wanted to use namedtuples here, but namedtuples won't work well here, because i need them to be mutable.
+	#note to self: wanted to use namedtuples here, but namedtuples won't work well here, because i may need them to be mutable.
 	columninfos = {"query" : 0, "subject" : 1, "ident" : 2, "alignlen" : 3, "qstart": 6, "qend" : 7, "sstart" : 8, "ssend" : 9, "evalue" : 10, "score" : 11, "contig" : None, "stype" : None, "taxid": None} #Since python 3.7 all dicts are now ordered by default (YAY!). So the order of keys is maintained, without having to keep a seperate "orderlist". --> THEREFORE:  Ensure/Enforce python 3.7+ !!!
 	infile = openfile(infilename)
 	blastlinelist = []
 	for line in infile:
 		tokens = line.strip().split("\t")
 		bl = { x : tokens[columninfos[x]] if type(columninfos[x]) == int else None for x in columninfos}
+		if bindata_obj != None:
+			bl[contig] = bindata.marker2contig(bl["query"])
 		if max_evalue and bl["evalue"] > max_evalue: #bl.evalue > max_evalue:
 			continue
 		if min_ident and bl["ident"] < min_ident: #bl.ident < min_ident:
@@ -110,7 +229,7 @@ def read_blast_tsv(infilename, max_evalue = None, min_ident = None):
 	infile.close()
 	return blastlinelist
 
-def add_contigs2blasthits_later(blastlinelist, parsetype = "prodigal", lookup_table = None):
+def __add_contigs2blasthits_later(blastlinelist, parsetype = "prodigal", lookup_table = None): #todo: probably obsolete...
 	"""
 	assigns contigs to blast hits
 	parsetype must be one of ["prodigal", "rnammer", "barrnap", "lookup"]
@@ -168,7 +287,7 @@ def add_contigs2blasthits_later(blastlinelist, parsetype = "prodigal", lookup_ta
 	if parsetype == "barrnap":
 		return _parse_barrnap(blastlinelist)
 	
-def _add_stype2blasthits_later(blastlinelist, markersetdict): #markersetdict should be derived from a different module "fastahandler.py" that reads the markerfastas and returns either the sequences, or just the locus_tags/fasta_headers.
+def __add_stype2blasthits_later(blastlinelist, markersetdict): #todo: probably obsolte... #markersetdict should be derived from a different module "fastahandler.py" that reads the markerfastas and returns either the sequences, or just the locus_tags/fasta_headers.
 	#"markersetlist" should be a list of sets. sets should be ordered in decreasing hierarchy (16S first, then 23S then markerprots then totalprots)
 	#each set contains the locus_tags of the markers used in the blast
 	for blindex in range(len(blastlinelist)):
@@ -177,7 +296,7 @@ def _add_stype2blasthits_later(blastlinelist, markersetdict): #markersetdict sho
 				blastlinelist[bl]["stype"] = ms
 	return blastlinelist
 
-def _add_taxid2blasthits_later(blastlinelist, db_obj):
+def __add_taxid2blasthits_later(blastlinelist, db_obj): #todo: probably obsolte...
 	for blindex in range(len(blastlinelist)):
 		blastlinelist[bl]["taxid"] = db_obj.acc2taxid(blastlinelist[bl]["taxid"]["subject"]
 	return blastlinelist

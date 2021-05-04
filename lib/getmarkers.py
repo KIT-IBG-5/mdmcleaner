@@ -492,7 +492,7 @@ def add_rrnamarker_to_contigdict_and_markerdict(rrnamarkerdict, contigdict, mark
 		contigdict[contig].update(rrnamarkerdict[contig])
 		for rRNA_type in rrnamarkerdict[contig]:
 			for rRNA_instance in rrnamarkerdict[contig][rRNA_type]:
-				markerdict[rRNA_instance["seqid"] = rRNA_instance["marker"]
+				markerdict[rRNA_instance["seqid"]] = rRNA_instance["marker"]
 	return contigdict, markerdict
 
 class bindata(object): #meant for gathering all contig/protein/marker info
@@ -563,7 +563,7 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 			return list(SeqIO.parse(openfile, "fasta"))
 	
 	def marker2contig(self, seqid):
-		
+		pass
 		#try to determine if rnammer or barrnap rRNA or protein based on regex
 		#if protein: use prot2contig
 		#if barrnapRNA use barrnap2contig
@@ -585,8 +585,8 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 	def get_prot2contig_dict(self): #todo: check if actually needed usful in any case... seems uneccessary as long as proteins can be assigned to contigs based on prodigal naming scheme. But MAY be useful in the futire, if planned to allow including ready made (e.g. Prokka) annotations?
 		prot2contigdict = {}
 		for contig in self.contigdict:
-			for protein in self.contigdict[contig]["totalprots"]
-			prot2contigdict[protein] = contig
+			for protein in self.contigdict[contig]["totalprots"]:
+				prot2contigdict[protein] = contig
 		return prot2contigdict
 	
 	def get_prot2marker_dict(self):
