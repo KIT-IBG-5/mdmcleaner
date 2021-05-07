@@ -103,7 +103,11 @@ def _create_sorted_acc2taxid_lookup(acc2taxidfilelist, acc2taxid_outfilename):
 	import time #todo: for debugging
 	start = time.time() #todo: for debugging
 	#import shlex #allow string splitting accoring to Shell -like syntax
-	presortcmd = "zcat {infile} | cut -f 2,3| grep -v accession | sed 's#\.[0-9]*##'| sort > {outfile}" #using shell commands probably way faster than anything i can do in pure python
+	#presortcmd = "zcat {infile} | cut -f 2,3| grep -v accession | sed 's#\.[0-9]*##'| sort > {outfile}" #using shell commands probably way faster than anything i can do in pure python
+	#NOTE: the presortcmd partielly renames the accession (remoes version number). This may have been necessary for ncbi, but does not work for gtdb data. 
+	#      so am removing this for now (will find a way later to flexibly deal with it for ncbi data)
+	#TODO: find out if removing verison numbers from accessions actually necessary for ncbi data. Find a flexible workaround that works for ncbi AND gtdb data
+	presortcmd = "zcat {infile} | cut -f 2,3| grep -v accession | sort > {outfile}" #IMPORTANT! removes a sed substitution in accession field. check  if still works for nucleotide basts. additional note: using shell commands probably way faster than anything i can do in pure python
 	finalsortcmd = "sort -m {filelist} > {finaldb}"
 	tempfilelist = []
 	for f in acc2taxidfilelist:
@@ -175,17 +179,24 @@ class taxdb(object):
 	
 	def acc2taxid(self, queryacc,start = 0):
 		#for using binary search on a simple sorted textfile #reminer to self: do NOT use compressed acc2taxid_lookupfile. It increases time for binary search ca 200x!
-		start = 0
+		print("\n----------\nQUERY= {}".format(queryacc))
+		#start = 0
 		stop = self.acc_lookup_handle_filesize
+		print("MAXFILESIZE= {}".format(stop))
 		subjectacc = None
+		1259970326
+		138028056
+		138028057
 		
 		while start < stop: 
 			currentpos = int((start + stop) / 2)
+			print("  start={}; stop={}; currentpos={}".format(start, stop, currentpos))
 			self.acc_lookup_handle.seek(currentpos, 0)
 
 			if currentpos != start:
 				self.acc_lookup_handle.readline()
 			tokens =  self.acc_lookup_handle.readline().strip().split("\t")
+			print(tokens)
 			subjectacc = tokens[0]
 			subjecttaxid = tokens[1]
 			if subjectacc == queryacc:
