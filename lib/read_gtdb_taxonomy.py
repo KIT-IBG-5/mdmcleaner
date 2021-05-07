@@ -374,7 +374,6 @@ def _empty_taxdicts(): #creating basic "pro-forma" enries for Eukaryotes
 			   "eukcat__vertebrate_mammalian": {"parent": "eukcat__vertebrate", "rank" : -1, "taxname" : "Mammalian"}, \
 			   "eukcat__vertebrate_other": {"parent": "eukcat__vertebrate", "rank" : -1, "taxname" : "Non-mammalian_vertebrates"}}
 
-
 	LCA_walktree = {"root": { "level" : 1, "children" : ["r__Cellular_organisms", "r__Viruses"]}, \
 					"r__Cellular_organisms": {"level" : 2, "children" : ["d__Bacteria", "d__Archaea", "d__Eukaryota"]}, \
 					"r__Viruses": {"level" : 2, "children" : ["eukcat__viral"]}, \
@@ -411,7 +410,8 @@ def read_gtdb_taxonomy_from_tsv(infilename, taxdict=None, LCA_walktree=None):#to
 		#tdomain = taxlist[0] #tphylum = taxlist[1] #tclass = taxlist[2] #torder = taxlist[3] #tfamily = taxlist[4] #tgenus = taxlist[5] #tspecies = taxlist[6]
 		for i in range(len(taxlist)):
 			taxid = taxlist[i]
-			level = i + 2
+			level = i + 3 # TODO: !!!!! this was originnaly wrongly set at "i+2" leading to problems with the "level" values: "d__Bacteria" and "d__Archaea" were being assigned same level as r_Cellular_organisms == 2, and all subsequent levels also being shifted one too low!!! should be 3! test if correction now works! (lca of eukaryotes and bacteria should yield "r__cellular_organisms" instead of "d__Bacteria"!)
+
 			rank = (i + 1) * 10
 			if taxid not in taxdict:
 				if i == 0:
@@ -422,7 +422,7 @@ def read_gtdb_taxonomy_from_tsv(infilename, taxdict=None, LCA_walktree=None):#to
 			elif i != 0:
 				#print(tokens)
 				#print("=========")
-				assert taxdict[taxid]["parent"] == taxlist[i-1], "ERROR, found contradicting 'parent' entries for taxon {}! \n full taxon line: '{}'\n".format(taxid, tokens[1cd ..])
+				assert taxdict[taxid]["parent"] == taxlist[i-1], "ERROR, found contradicting 'parent' entries for taxon {}! \n full taxon line: '{}'\n".format(taxid, tokens[1])
 			if taxid not in LCA_walktree:
 				if i < len(taxlist) -1:
 					children = [taxlist[i+1]]
@@ -432,7 +432,13 @@ def read_gtdb_taxonomy_from_tsv(infilename, taxdict=None, LCA_walktree=None):#to
 			elif i < len(taxlist) -1 and taxlist[i+1] not in LCA_walktree[taxid]["children"]:
 				LCA_walktree[taxid]["children"].append(taxlist[i+1])
 				#LCA_walktree[taxid]["children"] = list(set(LCA_walktree[taxid]["children"].append(taxlist[i+1]))) #todo: possible alternative solution if still problem with duplicate "children" entries, delete if not necessary anymore
-
+		# ~ if "UBA1103" in line:
+			# ~ print("-------")
+			# ~ print(line)
+			# ~ print(tokens)
+			# ~ print(taxlist)
+			# ~ print(taxid)
+			# ~ print("------")
 		acc2taxidfile.write("0\t{}\t{}\t0\n".format(acc, taxlist[-1])) #"dummy" fields with value 0 in columns 1 and 4, to make it look like the original acc2taxid files expected by "_create_sorted_acc2taxid_lookup()" in getdb.py (interesting infos in columns 2&3)
 		linecount += 1
 		if linecount % 500 == 0:
@@ -593,7 +599,7 @@ def gtdb_contignames2taxids(contig_fastalist, acc2taxidinfilelist, acc2taxidoutf
 		inaccfile = openfile(acc2taxidinfilename)
 		for line in inaccfile:
 			linecounter += 1
-			tokens = line.split()
+			tokens = line.split("\t") #note: split on tab if complete taxname should be used. split on any whitespace, if only "first part" should be used
 			seqid = re.search(assemblyIDpattern,tokens[1]).group(0)
 			taxid = tokens[2]
 			if seqid not in headerdict:
@@ -677,7 +683,7 @@ creates files for storing taxdict, LCA_walktree and acc2taxid files and returns 
 		progressdump["step"] = step
 		progressdump["refseq_files"] = download_refseq_eukaryote_prots(refseq_dbsource_dict, targetdir)
 		getdb.dict2jsonfile(progressdump, os.path.join(targetdir, currentprogressmarker))
-		os.remove(os.path.join(targetdir, lastprogressmarker)) #todo: uncomment this
+		#os.remove(os.path.join(targetdir, lastprogressmarker)) #todo: uncomment this
 	else:
 		sys.stderr.write("-->already done this earlier. skipping this step\n")
 		sys.stderr.flush()
@@ -692,7 +698,7 @@ creates files for storing taxdict, LCA_walktree and acc2taxid files and returns 
 		progressdump["step"] = step
 		progressdump["silva_download_dict"] = download_silva_stuff(silva_source_dict, targetdir)
 		getdb.dict2jsonfile(progressdump, os.path.join(targetdir, currentprogressmarker))
-		os.remove(os.path.join(targetdir, lastprogressmarker)) #todo: uncomment this
+		#os.remove(os.path.join(targetdir, lastprogressmarker)) #todo: uncomment this
 	else:
 		sys.stderr.write("-->already done this earlier. skipping this step\n")
 		sys.stderr.flush()
@@ -805,7 +811,7 @@ def _prepare_dbdata_nonncbi(targetdir, progressdump): #Todo:add continueflag arg
 		progressdump["step"] = step
 		step4a() ##step 4a: read gtdb_taxonomy files (which use the assembly/genome_accessions as identifiers). NOTE: preliminary refseq taxonomy (knows only domain-level for Eujaryota and Viruses) autmatically added to taxodnomy_dict at this point
 		getdb.dict2jsonfile(progressdump, os.path.join(targetdir, currentprogressmarker))
-		os.remove(os.path.join(targetdir, lastprogressmarker)) #todo: uncomment this
+		#os.remove(os.path.join(targetdir, lastprogressmarker)) #todo: uncomment this
 	else:
 		sys.stderr.write("-->already done this earlier. skipping this step\n")
 		sys.stderr.flush()
@@ -821,7 +827,7 @@ def _prepare_dbdata_nonncbi(targetdir, progressdump): #Todo:add continueflag arg
 		progressdump["step"] = step
 		concatgenomefastahandle, concatprotfastahandle = step4b() ##step 4b: uncompress gtdb-tar-files and read contig names for each genome-file --> assign contigs to taxids and write to acc2taxidfile	
 		getdb.dict2jsonfile(progressdump, os.path.join(targetdir, currentprogressmarker))
-		os.remove(os.path.join(targetdir, lastprogressmarker)) #todo: uncomment this
+		#os.remove(os.path.join(targetdir, lastprogressmarker)) #todo: uncomment this
 	else:
 		#concatgenomefastahandle =  openfile(progressdump["concatgenomefasta"], "at")
 		concatprotfastahandle = openfile(progressdump["concatprotfasta"], "at")
@@ -854,7 +860,7 @@ def _prepare_dbdata_nonncbi(targetdir, progressdump): #Todo:add continueflag arg
 		progressdump["lcawalkdb_file"] = getdb.build_lca_db(progressdump["lca_walktree"], os.path.join(targetdir, lcawalkdb_outfilebasename), "root")
 		progressdump["lca_walktree"] = progressdump["taxdict"] = "" #saving memory
 		getdb.dict2jsonfile(progressdump, os.path.join(targetdir, currentprogressmarker))
-		os.remove(os.path.join(targetdir, lastprogressmarker)) #todo: uncomment this
+		#os.remove(os.path.join(targetdir, lastprogressmarker)) #todo: uncomment this
 	else:
 		#concatgenomefastahandle =  openfile(progressdump["concatgenomefasta"], "at")
 		concatprotfastahandle = openfile(progressdump["concatprotfasta"], "at")
@@ -872,7 +878,7 @@ def _prepare_dbdata_nonncbi(targetdir, progressdump): #Todo:add continueflag arg
 		step6a(concatprotfastahandle) ##step6a: concatenate all refseq protein reference-fasta files (to outhandle concatfasta), keep outhandle (concatfasta) and return acc2taxidfile(name)
 		concatprotfastahandle.close()
 		getdb.dict2jsonfile(progressdump, os.path.join(targetdir, currentprogressmarker))
-		os.remove(os.path.join(targetdir, lastprogressmarker)) #todo: uncomment this
+		#os.remove(os.path.join(targetdir, lastprogressmarker)) #todo: uncomment this
 	else:
 		#concatgenomefastahandle =  openfile(progressdump["concatgenomefasta"], "at")
 		sys.stderr.write("-->already done this earlier. skipping this step\n")

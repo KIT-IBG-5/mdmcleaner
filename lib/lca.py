@@ -17,11 +17,11 @@ def strict_lca(taxdb, blasthitlist):
 	Each blast hit should be represented as a named tuple with the following fields: (Accession, taxid, identity, score)
 	"""
 	assert len(blasthitlist) > 0, "\nError, but provide at least one blast hit!\n"
-	interim_tax = blasthitlist[0].taxid
+	interim_taxid = blasthitlist[0].taxid
 	#if len(blasthitlist) == 1: #probably already covered by looping over "range(1, len(blasthitlist))"
 	#	return blasthitlist[0].taxid
-	for i in range(1,len(blasthitlist):
-		interim_tax = taxdb.get_strict_pairwise_lca(interim_tax, blasthitlist[i].taxid)
+	for i in range(1,len(blasthitlist)):
+		interim_taxid = taxdb.get_strict_pairwise_lca(interim_taxid, blasthitlist[i].taxid)
 	interim_score = sum([bh.score for bh in blasthitlist])/len(blasthitlist)
 	interim_id = sum([bh.identity for bh in blasthitlist])/len(blasthitlist)
 	return taxtuple(taxid = interim_taxid, avident = interim_id, avscore = interim_score)  
@@ -61,7 +61,7 @@ def weighted_lca(taxdb, blasthitlist, cutoff = 0.95):
 			else:
 				assert parent == tempdict[i][taxid]["parent"], "\nError: conflicting parents for taxid '{}' : '{}' & '{}'. This means your taxonomy-system does not use unique TaxIDs!\n".format(taxid, parent, tempdict[i][taxid]["parent"])
 				tempdict[i][taxpath]["scores"].append(hit.score)
-				tempdict[i][identities].append[hit.identity)
+				tempdict[i][identities].append[hit.identity]
 			parent = taxid
 	#evaluate tempdict
 	outtaxpath = []
@@ -70,7 +70,7 @@ def weighted_lca(taxdb, blasthitlist, cutoff = 0.95):
 	ambigeous = False
 	for i in tempdict:#todo: consider using a dedicated object,rather than dictionary?
 		found_major_tax = False
-		for tax in tempdict[i]
+		for tax in tempdict[i]:
 			if tempdict[i][tax]["parent"] in parentblacklist:
 				parentblacklist.append(tax)
 				del(tempdict[i][tax])
@@ -81,7 +81,7 @@ def weighted_lca(taxdb, blasthitlist, cutoff = 0.95):
 		ambigeous = True
 		totalscoresum = sum( [ sum(tempdict[i][x]["scores"]) for x in tempdict[i] ] )
 		for tax in tempdict[i]:
-			if found_major_tax or sum(tempdict[i][tax]["scores"])/totalscoresum < cutoff::
+			if found_major_tax or sum(tempdict[i][tax]["scores"])/totalscoresum < cutoff:
 				parentblacklist.append(tax)
 			elif sum(tempdict[i][tax]["scores"])/totalscoresum >= cutoff:
 				outtaxpath.append(tax)

@@ -72,6 +72,7 @@ def check_progressdump(outfolder, infastas):
 	return { os.path.basename(i) : None for i in infastas} 
 
 def main():
+	import time
 	#todo: consider using "fromfile_prefix_chars" from ArgumentParser to optionally read arguments from file
 	myparser = argparse.ArgumentParser(prog=os.path.basename(sys.argv[0]), description= "identifies and removes potential contamination in draft genomes and metagenomic bins, based on a hierarchically ranked contig classification pipeline")
 	myparser.add_argument("-i", "--input_fastas", action = "store", dest = "input_fastas", nargs = "+", required = True, help = "input fastas of genomes and/or bins")  #todo: also allow genbanks
@@ -89,10 +90,11 @@ def main():
 	sys.stderr.write("\n\nSTETTINGS:\n" + pprint.pformat(configs)+ "\n\n")
 	progressdump = check_progressdump(args.output_folder, args.input_fastas) #todo: this is meant to implement a "major-progressdump", consisting of multiple "mini-progressdumps" (one for each input-fasta). for each input-fasta, it should list the current progress-state [None = not started yet, stepxx = currently unfinished, "Finished" = finished]
 	
-	db = getdatabase(*[os.path.join(configs["db_basedir"][0], dbfile) for dbfile in dbfiles[configs["db_type"][0]]["mdmdbs"]]) #todo: instead have getdb() accept the congifs.dict as input?
+	db = getdatabase(*[os.path.join(configs["db_basedir"][0], configs["db_type"][0], dbfile) for dbfile in dbfiles[configs["db_type"][0]]["mdmdbs"]]) #todo: instead have getdb() accept the congifs.dict as input?
 	for infasta in args.input_fastas:
 		#get markers
 		bindata = getmarkers.bindata(contigfile=infasta, threads=configs["threads"])
+		#import pdb; pdb.set_trace()
 		test_1(bindata)
 		#blast markers
 		protblastfiles = []
@@ -103,14 +105,23 @@ def main():
 			print(pbdb)
 			print("-"*20)
 			blastdb = os.path.join(configs["db_basedir"][0], configs["db_type"][0], pbdb)
+			starttime = time.time()
 			protblastfiles.append(blasthandler._run_any_blast(bindata.totalprotfile, blastdb, "diamond", os.path.join(bindata.bin_resultfolder, "{}_totalprots_vs_{}.blast.tsv".format(bindata.bin_tempname, pbdb)), configs["threads"]))  #todo make choce of blast tool flexible. perhaps dependent on db (add tool/db tuple pairs to configs-dict)
+			endtime = time.time()
+			print("\nthis blast took {} seconds\n".format(endtime - starttime))
 		rnablastfiles = []
-		nucblastdblist = [os.path.join(configs["db_basedir"], configs["db_type"], nbdb) for nbdb in dbfiles[configs["db_type"][0]]["nucblastdbs"]] #todo: set nucblastdblist during initialization!
-		nucblastquerylist = list(data.rRNA_fasta_dict.values())
-		import itertools #todo move up
-		all_blast_combinations = [ blasttuple + ("blastn") for blasttuple in list(itertools.chain(*list(zip(permu, nucblastdblist) for permu in itertools.permutations(nucblastquerylist, len(nucblastdblist)))))] #Todo see if this works correctly
+		starttime = time.time()
+		nucblastdblist = [os.path.join(configs["db_basedir"][0], configs["db_type"][0], nbdb) for nbdb in dbfiles[configs["db_type"][0]]["nucblastdbs"]] #todo: set nucblastdblist during initialization!
+		nucblastquerylist = list(bindata.rRNA_fasta_dict.values())
+		import itertools #todo move up	
+		all_blast_combinations = [ blasttuple + ("blastn",) for blasttuple in list(itertools.chain(*list(zip(permu, nucblastdblist) for permu in itertools.permutations(nucblastquerylist, len(nucblastdblist)))))] #Todo see if this works correctly
 		rnablastfiles = blasthandler.run_multiple_blasts_parallel(all_blast_combinations, os.path.join(bindata.bin_resultfolder, "blastn"), configs["threads"])
-		#lca contigs
+		endtime = time.time()
+		print("\nthis blast took {} seconds\n".format(endtime - starttime))
+		#import pdb; pdb.set_trace()
+		protblasts = blasthandler.blastdata(*protblastfiles)
+		protblasts.add_info_to_blastlines(bindata, db)
+		#import pdb; pdb.set_trace()
 	print("finished")
 
 def test_1(bindata):

@@ -118,11 +118,11 @@ def _create_sorted_acc2taxid_lookup(acc2taxidfilelist, acc2taxid_outfilename):
 		sout, serr = subprocess.Popen(["bash", "-c", presortcmd.format(infile=f, outfile=tempfile)], stdout=subprocess.PIPE).communicate()
 		if serr != None:
 			raise RuntimeError("...extraction exited with Error:\n{}\n".format(serr))
-		os.remove(f)
+		#os.remove(f) #todo: uncomment this! commented out only for debugging purposes! 
 		if os.path.exists(f + ".md5"):
 			os.remove(f + ".md5")
 		tempfilelist.append(tempfile)
-	sys.stderr.write("combining sorted tempfiles\n")
+	sys.stderr.write("combining sorted tempfiles: {}\n".format(", ".join(tempfilelist)))
 	sout,serr = subprocess.Popen(["bash", "-c", finalsortcmd.format(filelist=" ".join(tempfilelist), finaldb=acc2taxid_outfilename)], stdout=subprocess.PIPE).communicate()
 	if serr != None:
 			raise RuntimeError("...extraction exited with Error:\n{}\n".format(serr))
@@ -165,13 +165,17 @@ class taxdb(object):
 	def get_strict_pairwise_lca(self, taxA, taxB):
 		indexA = self.walk_list.index(taxA)
 		indexB = self.walk_list.index(taxB)
-		walk_slice = self.walk_list[min([indexA, indexB]):max([indexA, indexB])]
-		depth_slice = self.depth_list[min([indexA, indexB]):max([indexA, indexB])]
-		#print("Walk slice:")
-		#print(walk_slice)
+		walk_slice = self.walk_list[min([indexA, indexB]):max([indexA, indexB])+1]
+		depth_slice = self.depth_list[min([indexA, indexB]):max([indexA, indexB])+1]
+		# ~ print("taxA : {}, taxB : {}".format(taxA, taxB))
+		# ~ print("Walk slice:")
+		# ~ print(walk_slice)
+		# ~ print("Depth_slice")
+		# ~ print(depth_slice)
+		# ~ print("--------------")
 		slice_tuples = sorted([ (w,d) for w,d in zip(walk_slice, depth_slice) ], key = lambda x:x[1])
 		lca = slice_tuples[0][0]
-		print("LCA of '{}' & '{}' is '{}'".format(taxA, taxB, lca))
+		#print("LCA of '{}' & '{}' is '{}'".format(taxA, taxB, lca))
 		return lca
 			
 	def read_taxdb(self, taxdbfile):#needs to be json format. Krona taxdbs need to be converted to this format first, using the kronadb2json function above
@@ -179,24 +183,24 @@ class taxdb(object):
 	
 	def acc2taxid(self, queryacc,start = 0):
 		#for using binary search on a simple sorted textfile #reminer to self: do NOT use compressed acc2taxid_lookupfile. It increases time for binary search ca 200x!
-		print("\n----------\nQUERY= {}".format(queryacc))
+		#print("\n----------\nQUERY= {}".format(queryacc))
 		#start = 0
 		stop = self.acc_lookup_handle_filesize
-		print("MAXFILESIZE= {}".format(stop))
+		#print("MAXFILESIZE= {}".format(stop))
 		subjectacc = None
-		1259970326
-		138028056
-		138028057
+		#1259970326 #todo: wtf are these numbers doing here? delete?!
+		#138028056
+		#138028057
 		
 		while start < stop: 
 			currentpos = int((start + stop) / 2)
-			print("  start={}; stop={}; currentpos={}".format(start, stop, currentpos))
+			#print("  start={}; stop={}; currentpos={}".format(start, stop, currentpos))
 			self.acc_lookup_handle.seek(currentpos, 0)
 
 			if currentpos != start:
 				self.acc_lookup_handle.readline()
 			tokens =  self.acc_lookup_handle.readline().strip().split("\t")
-			print(tokens)
+			#print(tokens)
 			subjectacc = tokens[0]
 			subjecttaxid = tokens[1]
 			if subjectacc == queryacc:
