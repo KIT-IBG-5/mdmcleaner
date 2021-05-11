@@ -142,7 +142,7 @@ class blastdata(object): #todo: define differently for protein or nucleotide bla
 	def add_info_to_blastlines(self, bindata_obj, taxdb_obj = None):
 		for i in range(len(self.blastlinelist)):
 			self.blastlinelist[i]["contig"] = bindata_obj.marker2contig(self.blastlinelist[i]["query"])
-			self.blastlinelist[i]["stype"] = bindata_obj.markerdict[self.blastlinelist[i]["query"]]
+			self.blastlinelist[i]["stype"] = bindata_obj.markerdict[self.blastlinelist[i]["query"]]["stype"]
 			if taxdb_obj != None:
 				self.blastlinelist[i]["taxid"] = taxdb_obj.acc2taxid(self.blastlinelist[i]["subject"])[0]
 	
@@ -231,7 +231,7 @@ class blastdata(object): #todo: define differently for protein or nucleotide bla
 				continue
 			if bindata_obj != None:
 				bl["contig"] = bindata.marker2contig(bl["query"])
-				bl["stype"] = bindata.markerdict[bl["query"]]
+				bl["stype"] = bindata.markerdict[bl["query"]]["stype"]
 			self.blastlinelist.append(bl)
 		
 					

@@ -64,7 +64,7 @@ def split_fasta_for_parallelruns(infasta, minlength = 0, number_of_fractions = 2
 		if len(record) < minlength:
 			continue
 		contigcounter += 1
-		contigdict[record.id] = {"contiglen": [len(record)], "totalprotcount" : [0], "ssu_rRNA" : [], "lsu_rRNA" : [], "prok_marker" : [], "bac_marker" : [], "arc_marker" : [], "totalprots" : []}
+		contigdict[record.id] = {"contiglen": [len(record)], "totalprotcount" : [0], "ssu_rRNA" : [], "ssu_rRNA_tax" : None, "lsu_rRNA" : [], "lsu_rRNA_tax":None, "prok_marker" : [], "prok_marker_tax" :None,  "bac_marker" : [], "bac_marker_tax":None, "arc_marker" : [], "arc_marker_tax": None, "totalprots" : [], "total_prots_tax": None}
 		if index > len(outlist)-1:
 			direction = -1
 			index = len(outlist) -1
@@ -412,7 +412,7 @@ def get_markerprots(proteinfastafile, cutoff_dict = cutofftablefile, cmode = "mo
 		outfilelist.append(outfilename)
 	return outfilelist
 	
-def write_markerdict(markerdict, outfilename):# todo: improve markerdict
+def write_markerdict(markerdict, outfilename):# todo: improve markerdict #todo: confusingly names multiple unrelated dicts "markerdict" sort this out!!
 	"""
 	writes the marker dictionary, obtained by get_markerprotnames(), to an overview file in tab-seperated text-table format
 	return value is simply the name of the outfile
@@ -444,7 +444,7 @@ def combine_multiple_fastas(infastalist, outfilename = None, delete_original = T
 		if outfilename!= None:
 			for record in SeqIO.parse(f, "fasta"):
 				recordcount += 1
-				markerdict[record.id] = "total" #all proteins are by default set to type "total" at first. will be ssigned to markes after hmm-analyses later. possible markertypes=["total", "prok", "bac", "arc", "lsu", "ssu"] 
+				markerdict[record.id] = {"stype": "total", "tax": None } #all proteins are by default set to type "total" at first. will be ssigned to markes after hmm-analyses later. possible markertypes=["total", "prok", "bac", "arc", "lsu", "ssu"] 
 				SeqIO.write([record], outfile, "fasta")
 				if contigdict:
 					contigname = re.sub(pattern, "", record.id)
@@ -475,8 +475,8 @@ def seqid2contig(seqid):
 	for pattern in [ _barrnappattern, _rnammerpattern, _prodigalpattern ]:
 		pmatch = re.search(pattern, seqid)
 		if pmatch != None:
-			print("used this pattern: '{}' for this seqid: '{}'".format(pattern, seqid))
-			print("--> matching string subgroup 1: '{}'".format(pmatch.group(1)))
+			#print("used this pattern: '{}' for this seqid: '{}'".format(pattern, seqid))
+			#print("--> matching string subgroup 1: '{}'".format(pmatch.group(1)))
 			return pmatch.group(1)
 			
 def prodigalprot2contig(protid): #todo: probably obsolete. replace with above?
@@ -492,10 +492,10 @@ def parse_protmarkerdict(protmarkerdict, contigdict, protmarkerlevel, markerdict
 	for protid in protmarkerdict:
 		contigname = prodigalprot2contig(protid)
 		markername = protmarkerdict[protid]["marker"]
-		contigdict[contigname][marker].append({"seqid" : protid, "marker" : markername})
+		contigdict[contigname][marker].append( protid)
 		if markerdict != None:  #todo: if i understand python scopes correctly, te dictionary should be changed globally, even if not explicitely returned... check this!				
 			#print("\n{} is a marker of type '{}' with name '{}'\n".format(protid, marker,markername))
-			markerdict[protid] = "{} {}".format(marker, markername) #stored as space seperated string with "<marker type> <marker_hmm>". should be split later to get only markertype# TODO: in case someone insists on using spaces in contignames/proteinIDS, maybe change delimintor to tab (\t)?
+			markerdict[protid]["stype"] = "{} {}".format(marker, markername) #stored as space seperated string with "<marker type> <marker_hmm>". should be split later to get only markertype# TODO: in case someone insists on using spaces in contignames/proteinIDS, maybe change delimintor to tab (\t)?
 	return contigdict
 
 def add_rrnamarker_to_contigdict_and_markerdict(rrnamarkerdict, contigdict, markerdict): #todo make this a hidden object-function of bindata objects. check if contigdict actually needed
@@ -506,7 +506,7 @@ def add_rrnamarker_to_contigdict_and_markerdict(rrnamarkerdict, contigdict, mark
 		contigdict[contig].update(rrnamarkerdict[contig])
 		for rRNA_type in rrnamarkerdict[contig]:
 			for rRNA_instance in rrnamarkerdict[contig][rRNA_type]:
-				markerdict[rRNA_instance["seqid"]] = rRNA_instance["marker"]
+				markerdict[rRNA_instance["seqid"]]={"stype" : rRNA_instance["marker"], "tax" : None}
 	return contigdict, markerdict
 
 class bindata(object): #meant for gathering all contig/protein/marker info
@@ -540,8 +540,9 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 		tempprotfiles = misc.run_multiple_functions_parallel(commandlist, threads)
 		self.totalprotfile, self.markerdict = combine_multiple_fastas(tempprotfiles, outfilename = os.path.join(self.bin_resultfolder, self.bin_tempname + "_totalprots.faa"), delete_original = True, contigdict = self.contigdict, return_markerdict = True) #todo: check if conticdict is actually neccessary/helpful in this form
 		self.protmarkerdictlist = get_markerprotnames(self.totalprotfile, cutofftable, hmmsearch = "hmmsearch", outdir = self.bin_resultfolder, cmode = "moderate", level = "all", threads = threads) #todo: delete hmm_intermediate_results
+		#todo: protmarkerdictlists probably not needed in that form. just save a general markerdict and a contigdict
 		print("i am here now")
-		for pml in range(len(self.protmarkerdictlist)): #todo: contigdict is probably not needed in this form. choose simpler dicts ?
+		for pml in range(len(self.protmarkerdictlist)): #todo: contigdict is maybe not needed in this form. choose simpler dicts ?
 			print("   pml = {}".format(pml))
 			self.contigdict = parse_protmarkerdict(self.protmarkerdictlist[pml], self.contigdict, pml, self.markerdict)
 		self.rRNA_fasta_dict, self.rrnamarkerdict = runbarrnap_all(infasta=self.binfastafile, outfilebasename=os.path.join(self.bin_resultfolder, self.bin_tempname + "_rRNA"), barrnap="barrnap", threads=threads) #todo add option for rnammer (using the subdivided fastafiles)?
