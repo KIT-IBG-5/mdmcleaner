@@ -8,6 +8,7 @@ import getdb
 import getmarkers
 import blasthandler
 import pprint
+import lca
 
 from _version import __version__
 
@@ -119,9 +120,38 @@ def main():
 		endtime = time.time()
 		print("\nthis blast took {} seconds\n".format(endtime - starttime))
 		#import pdb; pdb.set_trace()
-		protblasts = blasthandler.blastdata(*protblastfiles)
+		sys.stderr.write("\nreading in blast files...\n")
+		protblasts = blasthandler.blastdata(*protblastfiles, score_cutoff_fraction = 0.75)
+		# ~ print("="*50)
+		# ~ print("NUCBLASTS")
+		nucblasts = blasthandler.blastdata(*rnablastfiles, score_cutoff_fraction = 0.75)
+		# ~ import pdb; pdb.set_trace()
+		sys.stderr.write("looking up taxids of protein blast hits...\n")
 		protblasts.add_info_to_blastlines(bindata, db)
-		#import pdb; pdb.set_trace()
+		sys.stderr.write("looking up taxids of nucleotide blast hits...\n")
+		nucblasts.add_info_to_blastlines(bindata, db)
+		sys.stderr.write("classifying protein sequences...\n")
+		bindata.add_lca2markerdict(protblasts, db)
+		sys.stderr.write("classifying rRNA sequences...\n")
+		bindata.add_lca2markerdict(nucblasts, db)
+		bindata.verify_arcNbac_marker(db) #todo: maybe skip that step and assume bac/arch-markers as more conserved even if assignable to the other domain? (after all, these archaeal and bacterial marker sets correspond to SINGLE-COPY markers and we don't care if they are single copy, only if they are conserved)
+		#todo: combine prok with corresponding bac or arc markers for each contig
+		testlca_dict_total = {}
+		testlca_dict_prok = {}
+		testlca_dict_23s = {}
+		testlca_dict_16s = {}
+		print("looping though contigs")
+		for contig in bindata.contigdict: #todo: create an own class in lca.py for this. that class should have options to filter, evaluate etc...
+			print(contig)
+			ctotalprottax = [bindata.markerdict[x]["tax"] for x in bindata.contigdict[contig]["totalprots"] if bindata.markerdict[x]["tax"] != None]
+			testlca_dict_total[contig] = lca.weighted_lca(db, contig, ctotalprottax)
+			cprokprottax = [bindata.markerdict[x]["tax"] for x in bindata.contigdict[contig]["prok_marker"] + bindata.contigdict[contig]["bac_marker"] + bindata.contigdict[contig]["arc_marker"] if bindata.markerdict[x]["tax"] != None]
+			testlca_dict_prok[contig] = lca.weighted_lca(db, contig, cprokprottax)
+			c23srrnatax = [bindata.markerdict[x]["tax"] for x in bindata.contigdict[contig]["lsu_rRNA"] if bindata.markerdict[x]["tax"] != None]
+			testlca_dict_23s[contig] = lca.weighted_lca(db, contig, c23srrnatax)
+			c16srrnatax =[bindata.markerdict[x]["tax"] for x in bindata.contigdict[contig]["ssu_rRNA"] if bindata.markerdict[x]["tax"] != None]
+			testlca_dict_16s[contig] = lca.weighted_lca(db, contig, c16srrnatax)	
+		import pdb; pdb.set_trace()
 	print("finished")
 
 def test_1(bindata):
@@ -133,7 +163,7 @@ def test_1(bindata):
 		#print("")
 		#print(bindata.contigdict[contig]["totalprots"])
 		#print("="*20)
-		line = "{}\t{}\n".format(contig, "\t".join([";".join([y["seqid"] if type(y) == dict else str(y) for y in bindata.contigdict[contig][x] ]) for x in bindata.contigdict[contig]])) #todo: in protmarkerdicts change "protid" to "seqid". Add "seqid" and "marker" keys to ssu and lsu entries
+		line = "{}\t{}\n".format(contig, "\t".join([";".join([str(y) for y in bindata.contigdict[contig][x]]) if type(bindata.contigdict[contig][x]) == list else str(bindata.contigdict[contig][x]) for x in bindata.contigdict[contig] ])) #todo: in protmarkerdicts change "protid" to "seqid". Add "seqid" and "marker" keys to ssu and lsu entries
 		outfile.write(line)	
 
 main()

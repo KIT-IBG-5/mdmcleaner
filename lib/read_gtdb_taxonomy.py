@@ -370,7 +370,7 @@ def _empty_taxdicts(): #creating basic "pro-forma" enries for Eukaryotes
 			   "eukcat__invertebrate": {"parent": "d__Eukaryota", "rank" : -1, "taxname" : "Invertebrates"}, \
 			   "eukcat__plant": {"parent": "d__Eukaryota", "rank" : -1, "taxname" : "Plants"}, \
 			   "eukcat__protozoa": {"parent": "d__Eukaryota", "rank" : -1, "taxname" : "Protozoa"}, \
-			   "eukcat__viral": {"parent": "d__Viruses", "rank" : -1, "taxname" : "Viruses"}, \
+			   "eukcat__viral": {"parent": "r__Viruses", "rank" : -1, "taxname" : "Viruses"}, \
 			   "eukcat__vertebrate_mammalian": {"parent": "eukcat__vertebrate", "rank" : -1, "taxname" : "Mammalian"}, \
 			   "eukcat__vertebrate_other": {"parent": "eukcat__vertebrate", "rank" : -1, "taxname" : "Non-mammalian_vertebrates"}}
 

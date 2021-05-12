@@ -4,19 +4,19 @@ from collections import namedtuple
 import misc
 from misc import openfile
 
-taxtuple = namedtuple("taxtuple", "taxid avident avscore")
+taxtuple = namedtuple("taxtuple", "seqid taxid identity score") #use exact same syntax as for input, to enable lca of lca annotations
 """
 functions for obtaining least common ancestor (lca) annotations for a list of tax-ids
 ALl these functions require an taxdb_object as input.
 taxdb-objects already incude a basic strict pairwise lca function. This module provides additional functions for achieving weighted lca annotations for sets of taxids > 2.
 """
 
-def strict_lca(taxdb, blasthitlist):
+def strict_lca(taxdb, seqid = None, blasthitlist=None):
 	"""
 	Returns strict lca of a list of blasthits or pre-lca-annotations.
 	Each blast hit should be represented as a named tuple with the following fields: (Accession, taxid, identity, score)
 	"""
-	assert len(blasthitlist) > 0, "\nError, but provide at least one blast hit!\n"
+	assert blasthitlist != None and len(blasthitlist) > 0, "\nError, but provide at least one blast hit!\n"
 	interim_taxid = blasthitlist[0].taxid
 	#if len(blasthitlist) == 1: #probably already covered by looping over "range(1, len(blasthitlist))"
 	#	return blasthitlist[0].taxid
@@ -24,9 +24,9 @@ def strict_lca(taxdb, blasthitlist):
 		interim_taxid = taxdb.get_strict_pairwise_lca(interim_taxid, blasthitlist[i].taxid)
 	interim_score = sum([bh.score for bh in blasthitlist])/len(blasthitlist)
 	interim_id = sum([bh.identity for bh in blasthitlist])/len(blasthitlist)
-	return taxtuple(taxid = interim_taxid, avident = interim_id, avscore = interim_score)  
+	return taxtuple(seqid = seqid, taxid = interim_taxid, identity = interim_id, score = interim_score)  
 	
-def weighted_lca(taxdb, blasthitlist, cutoff = 0.95):
+def weighted_lca(taxdb, seqid = None, blasthitlist=None, cutoff = 0.95):
 	#todo: maybe allow option to use identity as criterium, instead of score?
 	"""
 	Returns weighted lca of a list of blasthits or pre-lca-annotations.
@@ -38,7 +38,7 @@ def weighted_lca(taxdb, blasthitlist, cutoff = 0.95):
 	if cutoff == 1:
 		sys.stderr.write("\nWARNING: it is NOT recommended to use 'weighted_lca' with a cutoff of 1! Try using 'strict_lca' instead!\n")
 	#create tempdict
-	#todo: dicitonary is NOT the best data structure for this (because deleting keys later on create whole new directories). consider creating a new class for this...
+	#todo: dicitonary is probably NOT the best data structure for this (because deleting keys later on will create whole new dictionaries). consider creating a new class for this...
 	#todo: is too convoluted! Simplify!
 		## current method:
 		## get taxonomy path for each hit
@@ -47,36 +47,55 @@ def weighted_lca(taxdb, blasthitlist, cutoff = 0.95):
 		## check if one category represents more that cutoff-fraction (default 95%) of total score, delete all others
 		##  if there is only one to sart with -->that is unambigeous --> go a rank furher to determine taxid for next level
 		##  if only one remains after filtering --> that is ambigeous but acceptable --> go a rank furher to determine taxid for next level but mark as "ambigeous == True"
-		##  if two or more contradicting assignments remain --> DO not iterate further. return shared parent-assignment (current level) as LCA
+		##  if two or more contradicting assignments remain --> DO NOT iterate further. return shared parent-assignment (current level) as LCA
 	tempdict = {}
 	for hit in blasthitlist:
+		# ~ print("+"*30)
+		# ~ print(hit)
+		# ~ print("+"*30)
 		taxpath = [ x[1] for x in taxdb.taxid2taxpath(hit.taxid) ] #todo: add a taxdb-function "simplepath", that only returns the taxids as list. Should speed things up a little?
 		parent = None
+		#print("*"*20)
+		#print(tempdict)
+		#print(taxpath)
 		for i in range(len(taxpath)):
-			if not tempdict[i]:
+			if not i in tempdict:
 				tempdict[i] = {}
+			#print("  i={}".format(i))
+			#print("  tempdict[i]={}\n*********".format(tempdict[i])) 
 			taxid = taxpath[i]
 			if not taxid in tempdict[i]:
 				tempdict[i][taxid] = {"scores" : [hit.score], "identities" : [hit.identity], "parent" : parent}
 			else:
 				assert parent == tempdict[i][taxid]["parent"], "\nError: conflicting parents for taxid '{}' : '{}' & '{}'. This means your taxonomy-system does not use unique TaxIDs!\n".format(taxid, parent, tempdict[i][taxid]["parent"])
-				tempdict[i][taxpath]["scores"].append(hit.score)
-				tempdict[i][identities].append[hit.identity]
+				tempdict[i][taxid]["scores"].append(hit.score)
+				tempdict[i][taxid]["identities"].append(hit.identity)
 			parent = taxid
 	#evaluate tempdict
 	outtaxpath = []
 	parentblacklist = []
-	taxassignemt = namedtuple("taxassignment", ["taxid", "average_score", "average_ident", "ambigeous"])
+	taxassignment = namedtuple("taxassignment", ["taxid", "average_score", "average_ident", "ambigeous"]) #todo: replace this with something that is more similar to a "hit tuple". mayble add ambifeous field to those?
 	ambigeous = False
 	for i in tempdict:#todo: consider using a dedicated object,rather than dictionary?
+		# ~ print("*"*60)
+		# ~ print("i = {}".format(i))
 		found_major_tax = False
-		for tax in tempdict[i]:
+		currentlevel_taxa = list(tempdict[i].keys())
+		for tax in currentlevel_taxa:
 			if tempdict[i][tax]["parent"] in parentblacklist:
 				parentblacklist.append(tax)
 				del(tempdict[i][tax])
 		if len(tempdict[i]) == 1:
-			taxid = tempdict[i].keys()[0]
-			outtaxpath = taxassignment(taxid, sum(tempdict[i][taxid]["scores"])/len(tempdict[i][taxid]["scores"]), sum(tempdict[i][taxid]["identities"])/len(tempdict[i][taxid]["identities"]), ambigeous)
+			taxid = list(tempdict[i].keys())[0]
+			taxass=taxassignment(taxid, sum(tempdict[i][taxid]["scores"])/len(tempdict[i][taxid]["scores"]), sum(tempdict[i][taxid]["identities"])/len(tempdict[i][taxid]["identities"]), ambigeous)
+			# ~ print(list(tempdict[i].keys()))
+			# ~ print("loop1")
+			# ~ print("appending this to level {}: {}".format(i, taxid))
+			# ~ print("-"*20)
+			# ~ print(taxass)
+			# ~ print("-"*20)
+			outtaxpath.append(taxass)
+			# ~ print(outtaxpath)
 			continue			
 		ambigeous = True
 		totalscoresum = sum( [ sum(tempdict[i][x]["scores"]) for x in tempdict[i] ] )
@@ -84,9 +103,20 @@ def weighted_lca(taxdb, blasthitlist, cutoff = 0.95):
 			if found_major_tax or sum(tempdict[i][tax]["scores"])/totalscoresum < cutoff:
 				parentblacklist.append(tax)
 			elif sum(tempdict[i][tax]["scores"])/totalscoresum >= cutoff:
-				outtaxpath.append(tax)
+				taxass=taxassignment(tax, sum(tempdict[i][tax]["scores"])/len(tempdict[i][tax]["scores"]), sum(tempdict[i][tax]["identities"])/len(tempdict[i][tax]["identities"]), ambigeous)
+				# ~ print("loop2")
+				# ~ print("appending this to level {}: {}".format(i, tax))
+				# ~ print("+"*20)
+				# ~ print(taxass)
+				# ~ print("+"*20)		
+				outtaxpath.append(taxass)
+				# ~ print(outtaxpath)
 				found_major_tax = True
 		if not found_major_tax:
 			break #if there are multiple contradicting taxonomic assignments, and no weighted major taxon can be determined based on cutoff, then stop here and return current taxon-level as LCA
-	return tempdict #todo: only return last lca
+	return outtaxpath #, tempdict #todo: only return last lca
 		
+def lca_iterate_through_proteins():
+	pass
+	
+

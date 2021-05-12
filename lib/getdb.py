@@ -218,7 +218,30 @@ class taxdb(object):
 			outdict[queryacc], start = self.acc2taxid(queryacc, start)
 		return outdict
 	
+	def isnot_bacteria(self, taxid): #todo. double check if this also still works when using ncbi data!
+		tp = self.taxid2taxpath(taxid)
+		if len(tp) >= 2 and tp[1][0] == "Bacteria":
+			return False
+		return True
+	
+	def isnot_archaea(self, taxid): #todo. double check if this also still works when using ncbi data!
+		tp = self.taxid2taxpath(taxid)
+		if len(tp) >= 2 and tp[1][0] == "Archaea":
+			return False
+		return True		
+	
 	def taxid2taxpath(self, taxid, fullpath = True, unofficials = False): #may skip the outformat and return all levels as tuples (taxname, taxid, rank). MAy change fullpath default to False AFTER i checked how to best deal with "unofficial candidate phyla"
+		#print("Hi, taxid2taxpath here. I got this: '{}'".format(taxid))
+		def notroot(taxid):
+			if taxid == "root":
+				return False
+			else:
+				try:
+					if int(taxid) <= 1:
+						return False
+				except ValueError:
+					return True
+			return True
 		# todo: switch tuples to namedtuples
 		"""
 		Returns a list of tuples representing the taxonomic Path for a given Taxid.
@@ -247,13 +270,16 @@ class taxdb(object):
 		#print(type(taxid))
 		#sys.stderr.write("\n______\n{}\n".format(taxid))
 		#loopcounter = 0
-		while int(taxid) > 1: #assuming ALL taxpaths lead down to "root" (taxid=1); otherwise implement a maximum iteration counter
+		while notroot(taxid): #assuming ALL taxpaths lead down to "root" (taxid=1); otherwise implement a maximum iteration counter
+			#print("looping!")
+			#print(taxid)
 			#loopcounter += 1
+			#print("  --> now i have this: '{}'".format(taxid))
 			tax = self.taxdict[taxid]
 			taxname = tax["taxname"]
 			taxrank = tax["rank"]
-			sys.stderr.write("   --> taxname: {} --> rank: {} \n".format(taxname, taxrank)) # somehow all ranks turn out to be 0?? look into that!
-			sys.stderr.flush()
+			#sys.stderr.write("   --> taxname: {} --> rank: {} \n".format(taxname, taxrank))
+			#sys.stderr.flush()
 			taxparent = tax["parent"]
 			#workaround for candidate phyla unrecognized by ncbi taxonomy (when limiting filtering to major ranks such as phylum):
 			#will probably drop this here and integrate it in the LCA portion instead, because most candidate phyla actually have an official "phylum rank" and i just want to make sure the "candidate phyla" info is not lost, when the LCA ends up below that rank

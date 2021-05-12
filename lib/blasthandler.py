@@ -137,6 +137,8 @@ class blastdata(object): #todo: define differently for protein or nucleotide bla
 				query_templist = [currline]
 				query_best_score = currline["score"]
 			previous_query = currline["query"]
+		if len(query_templist) > 0: #after finished looping, append the final gene also...
+			filtered_blastlinelist.extend(query_templist[:max(int(len(query_templist)*keep_max_hit_fraction), keep_min_hit_count)])
 		self.blastlinelist = filtered_blastlinelist
 	
 	def add_info_to_blastlines(self, bindata_obj, taxdb_obj = None):
@@ -159,27 +161,17 @@ class blastdata(object): #todo: define differently for protein or nucleotide bla
 		#blindex = 0
 		query_templist = []
 		filtered_blastlinelist = []
-		for currline in self.blastlinelist: #todo: maybe ensure that hits are sorted by gene
-			#print(currline)
-			#steps: store all hits for a specific query in a seperate templist (if above cutoff_fraction). 
-			#when the next query is reached check howmany entries are in templist. write obly the top <keep_max_fraction> to new_blastlinelist (but at least <keep_minhit_count>, if possible)
-			#currline = self.blastlinelist[blindex]
-			#print(" ??? {} == {} ???".format(currline["query"], previous_query))
+		for currline in self.sort_blastlines_by_gene():
 			if currline["query"] == previous_query:
-				#print("YESYESYESYESYES")
 				query_templist.append(currline)
 			else:
-				#print("NONONONONONONO")
 				if len(query_templist) > 0:
-					# ~ for q in query_templist[:max(int(len(query_templist)*keep_max_best_hit_fraction), keep_min_hit_count)]:
-						# ~ print(q)
-						# ~ print(list(q.keys()))
-						# ~ print(q["ident"])
-					#print("RETURnING SOMETHING!!!!!!!!!")
 					yield previous_query, [ hit(accession=q["subject"], taxid=q["taxid"], identity=q["ident"], score=q["score"]) for q in query_templist[:max(int(len(query_templist)*keep_max_best_hit_fraction), keep_min_hit_count)]]
 				query_templist = [currline]
 				query_best_score = currline["score"]
 			previous_query = currline["query"]
+		if len(query_templist) > 0:
+			yield previous_query, [ hit(accession=q["subject"], taxid=q["taxid"], identity=q["ident"], score=q["score"]) for q in query_templist[:max(int(len(query_templist)*keep_max_best_hit_fraction), keep_min_hit_count)]]
 	
 	def get_best_hits_per_contig(self, keep_max_best_hit_fraction = 1.0, keep_min_hit_count = 20): #todo: combine with above function. add keyword to return contig or gene
 		#hit = namedtuple('hit', 'accession taxid identity score')
@@ -222,6 +214,7 @@ class blastdata(object): #todo: define differently for protein or nucleotide bla
 					return testint
 
 		infile = openfile(infilename)
+		print("NOWHANDLINGFILE: {}".format(infilename))
 		for line in infile:
 			tokens = line.strip().split("\t")
 			bl = { x : string_or_int_or_float(tokens[self._blasttsv_columnnames[x]]) if type(self._blasttsv_columnnames[x]) == int else None for x in self._blasttsv_columnnames}
@@ -232,6 +225,9 @@ class blastdata(object): #todo: define differently for protein or nucleotide bla
 			if bindata_obj != None:
 				bl["contig"] = bindata.marker2contig(bl["query"])
 				bl["stype"] = bindata.markerdict[bl["query"]]["stype"]
+			# ~ print("*"*20)
+			# ~ print(bl)
+			# ~ print("*"*20)
 			self.blastlinelist.append(bl)
 		
 					

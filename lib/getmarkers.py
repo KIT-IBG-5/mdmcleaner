@@ -205,7 +205,7 @@ def deduplicate_barrnap_results(tempfastas, gff_outputs):
 				finalfastadict[seqtype_dict[recordtype]].append(record)
 				if contig not in contig_rrna_dict:
 					contig_rrna_dict[contig] = {"ssu_rRNA" : [], "lsu_rRNA" : [] }
-				contig_rrna_dict[contig][seqtype_dict[recordtype]].append({"seqid": record.id, "marker" : recordtype})
+				contig_rrna_dict[contig][seqtype_dict[recordtype]].append(record.id)
 	for fasta in tempfastas: #currently doing this AFTER the previous loop, to make sure the files are only deleted when everything went well (debugging purposes)
 		os.remove(fasta)
 
@@ -506,7 +506,7 @@ def add_rrnamarker_to_contigdict_and_markerdict(rrnamarkerdict, contigdict, mark
 		contigdict[contig].update(rrnamarkerdict[contig])
 		for rRNA_type in rrnamarkerdict[contig]:
 			for rRNA_instance in rrnamarkerdict[contig][rRNA_type]:
-				markerdict[rRNA_instance["seqid"]]={"stype" : rRNA_instance["marker"], "tax" : None}
+				markerdict[rRNA_instance]={"stype" : rRNA_type, "tax" : None}
 	return contigdict, markerdict
 
 class bindata(object): #meant for gathering all contig/protein/marker info
@@ -607,8 +607,36 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 	
 	def get_prot2marker_dict(self):
 		pass #todo: make this
-		
+
+	def add_lca2markerdict(self, blastdata, db): #todo: add multithreading!!!
+		import lca
+		counter = 0
+		for gene, hittuples in blastdata.get_best_hits_per_gene():
+			counter += 1
+			if counter % 100 == 0:
+				sys.stderr.write("\r\tclassified {} records so far".format(counter))
+			self.markerdict[gene]["tax"] = lca.strict_lca(db, gene, hittuples)			
+		sys.stderr.write("\r\tfinished classifying {} records!\t\t\n".format(counter))
 	
+	def verify_arcNbac_marker(self, db):
+		"""
+		removes "bacterial" markers that are not bacterial and "archaeal" markers that are not archaeal from the list of specific markers
+		"""
+		for contig in self.contigdict:
+			wrongmarkerlist = []
+			for bacmarker in self.contigdict[contig]["bac_marker"]:
+				if self.markerdict[bacmarker]["tax"] == None or db.isnot_bacteria(self.markerdict[bacmarker]["tax"].taxid):
+					wrongmarkerlist.append(bacmarker)
+			if len(wrongmarkerlist) > 0:
+				print("removing the following 'bacterial' markers from contig {} : {}".format(contig, ", ".join(wrongmarkerlist)))
+			self.contigdict[contig]["bac_marker"] = [m for m in self.contigdict[contig]["bac_marker"] if m not in wrongmarkerlist ]
+			wrongmarkerlist = []
+			for arcmarker in self.contigdict[contig]["arc_marker"]:
+				if self.markerdict[arcmarker]["tax"] == None or db.isnot_archaea(self.markerdict[arcmarker]["tax"].taxid):
+					wrongmarkerlist.append(arcmarker)
+			if len(wrongmarkerlist) > 0:
+				print("removing the following 'archaeal' markers from contig {} : {}".format(contig, ", ".join(wrongmarkerlist)))
+			self.contigdict[contig]["arc_marker"] = [m for m in self.contigdict[contig]["arc_marker"] if m not in wrongmarkerlist ]	
 		
 ######################################################
 # test functions below (can be deleted)
