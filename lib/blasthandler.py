@@ -348,11 +348,11 @@ def run_single_blastn(query, db, blast, outname, threads = 1):
 								# ~ outfmt = 6, num_threads = threads)
 	import subprocess
 	blastcmd = subprocess.run([blast, "-query", query, "-db", db, "-evalue", "1e-10",\
-							   "-outfmt", "6", "-num_threads", str(threads), "-out", outname + ".tmp"], \
+							   "-outfmt", "6", "-num_threads", str(int(threads)), "-out", outname + ".tmp"], \
 							   stdout = subprocess.PIPE, stderr = subprocess.PIPE, text = True)
 	try:
 		#print(blastcmd.cmd)
-		#print(" ".join(blastcmd.args))
+		print(" ".join(blastcmd.args))
 		blastcmd.check_returncode()
 	except Exception:
 		sys.stderr.write("\nAn error occured during blastn run with query '{}'\n".format(query))
@@ -364,9 +364,10 @@ def run_single_diamondblastp(query, db, diamond, outname, threads = 1): #TODO: c
 	#TODO: add a maxmem arguemt that states how much memory can be used. use this to determine optimal blocksize and chunks for more efficient blasting. BLOCKSIZE=INT(MEMORY/6) CHUNKS=4/2/1 IF MEMORY >=12/24/48
 	import subprocess
 	blastcmd = subprocess.run([diamond, "blastp", "--query", query, "--db", db, "--evalue", "1e-10",\
-							   "--outfmt", "6", "--threads", str(threads), "--out", outname + ".tmp"], \
+							   "--outfmt", "6", "--threads", str(int(threads)), "--out", outname + ".tmp"], \
 							   stdout = subprocess.PIPE, stderr = subprocess.PIPE, text = True)
 	try:
+		print(" ".join(blastcmd.args))
 		blastcmd.check_returncode()
 	except Exception:
 		sys.stderr.write("\nAn error occured during diamond blastp run with query '{}'\n".format(query))

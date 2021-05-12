@@ -18,7 +18,7 @@ progressdump_filename = "mdmprogress.json"
 #todo: find commond names for gtdb and ncbi dbs to simplify things
 #todo: find actual names for ncbi dbs
 dbfiles = { "gtdb" : {	"protblastdbs" : ["gtdbplus_protdb.dmnd"], \
-						"nucblastdbs" : ["concat_refgenomes.fasta", "SILVA_138.1_LSURef_NR99_tax_silva"] ,\
+						"nucblastdbs" : ["concat_refgenomes", "SILVA_138.1_SSURef_NR99_tax_silva", "SILVA_138.1_LSURef_NR99_tax_silva"] ,\
 						"mdmdbs" : ["gtdb_all.accession2taxid.sorted", "gtdb_taxonomy_br.json.gz", "gtdb_lcawalkdb_br.db"] },\
 			"ncbi" : { "protblastdbs" : ["nr"], \
 						"nucblastdbs" : ["nt"], \
@@ -115,7 +115,10 @@ def main():
 		nucblastdblist = [os.path.join(configs["db_basedir"][0], configs["db_type"][0], nbdb) for nbdb in dbfiles[configs["db_type"][0]]["nucblastdbs"]] #todo: set nucblastdblist during initialization!
 		nucblastquerylist = list(bindata.rRNA_fasta_dict.values())
 		import itertools #todo move up	
-		all_blast_combinations = [ blasttuple + ("blastn",) for blasttuple in list(itertools.chain(*list(zip(permu, nucblastdblist) for permu in itertools.permutations(nucblastquerylist, len(nucblastdblist)))))] #Todo see if this works correctly
+		print("blasting rRNA data") 
+		#todo: the following blasts all against all (including 16S vs 23S database). But blasting 16S only makes sense against a 16S dabatase... --> ensure blasts are only against appropriate dbs![
+		all_blast_combinations = [ blasttuple + ("blastn",) for blasttuple in list(itertools.chain(*list(zip(nucblastquerylist, permu) for permu in itertools.permutations(nucblastdblist, len(nucblastquerylist)))))] #Todo see if this works correctly. Only works as long as nucblastdbist is longer or equal to nucblastquerylist...
+		print(all_blast_combinations)
 		rnablastfiles = blasthandler.run_multiple_blasts_parallel(all_blast_combinations, os.path.join(bindata.bin_resultfolder, "blastn"), configs["threads"])
 		endtime = time.time()
 		print("\nthis blast took {} seconds\n".format(endtime - starttime))
@@ -124,7 +127,7 @@ def main():
 		protblasts = blasthandler.blastdata(*protblastfiles, score_cutoff_fraction = 0.75)
 		# ~ print("="*50)
 		# ~ print("NUCBLASTS")
-		nucblasts = blasthandler.blastdata(*rnablastfiles, score_cutoff_fraction = 0.75)
+		nucblasts = blasthandler.blastdata(*rnablastfiles, score_cutoff_fraction = 0.8) #stricter cutoff for nucleotide blasts
 		# ~ import pdb; pdb.set_trace()
 		sys.stderr.write("looking up taxids of protein blast hits...\n")
 		protblasts.add_info_to_blastlines(bindata, db)
@@ -145,14 +148,76 @@ def main():
 			print(contig)
 			ctotalprottax = [bindata.markerdict[x]["tax"] for x in bindata.contigdict[contig]["totalprots"] if bindata.markerdict[x]["tax"] != None]
 			testlca_dict_total[contig] = lca.weighted_lca(db, contig, ctotalprottax)
+			if len(testlca_dict_total[contig]) != 0:
+				bindata.contigdict[contig]["total_prots_tax"] = testlca_dict_total[contig]
 			cprokprottax = [bindata.markerdict[x]["tax"] for x in bindata.contigdict[contig]["prok_marker"] + bindata.contigdict[contig]["bac_marker"] + bindata.contigdict[contig]["arc_marker"] if bindata.markerdict[x]["tax"] != None]
 			testlca_dict_prok[contig] = lca.weighted_lca(db, contig, cprokprottax)
+			if len(testlca_dict_prok[contig]) != 0:
+				bindata.contigdict[contig]["prok_marker_tax"] = testlca_dict_prok[contig]
 			c23srrnatax = [bindata.markerdict[x]["tax"] for x in bindata.contigdict[contig]["lsu_rRNA"] if bindata.markerdict[x]["tax"] != None]
 			testlca_dict_23s[contig] = lca.weighted_lca(db, contig, c23srrnatax)
+			if len(testlca_dict_23s[contig]) != 0:
+				bindata.contigdict[contig]["lsu_rRNA_tax"] = testlca_dict_23s[contig]
 			c16srrnatax =[bindata.markerdict[x]["tax"] for x in bindata.contigdict[contig]["ssu_rRNA"] if bindata.markerdict[x]["tax"] != None]
-			testlca_dict_16s[contig] = lca.weighted_lca(db, contig, c16srrnatax)	
+			testlca_dict_16s[contig] = lca.weighted_lca(db, contig, c16srrnatax) 
+			if len(testlca_dict_16s[contig]) != 0:
+				bindata.contigdict[contig]["ssu_rRNA_tax"] = testlca_dict_16s[contig]
 		import pdb; pdb.set_trace()
+		hu, he = get_major_taxon(db, bindata.contigdict)
 	print("finished")
+
+def get_major_taxon(db, contigdict):# todo: move this to lca or getmarkers or so
+	markerranking = [ "ssu_rRNA_tax", "lsu_rRNA_tax", "prok_marker_tax", "total_prots_tax" ]
+	taxlevels = ["root", "domain", "phylum", "class", "order", "family", "genus", "species"]
+	taxondict = { tl: {} for tl in taxlevels }
+	#todo: taxlevels shoule be keys. values should be subdicts tuples of taxas as keys showing the lineage to each taxlevel (e.g.: ("bacteria", "proteobacteria", "alphaproteobacteria")
+	for contig in contigdict:
+		major_taxon = None
+		contiglen = contigdict[contig]["contiglen"][0]
+		for m in markerranking:
+			if contigdict[contig][m] != None:
+				major_taxon = contigdict[contig][m]
+				#todo: add major taxon also to contiddict
+				break
+		if major_taxon  != None:
+			for x in range(len(major_taxon)):
+				taxlevel = taxlevels[x]
+				# ~ print("=====================")
+				# ~ print(major_taxon)
+				# ~ print(type(major_taxon))
+				# ~ print([mt for mt in major_taxon[:x]]) #aha i have to check what kind of datatype "majr_taxon" is...
+				# ~ print("=====================")
+				# ~ print([mt.taxid for mt in major_taxon[:x]])
+				# ~ print("000000000000000000000")
+				taxtuple = tuple(mt.taxid for mt in major_taxon[:x+1])
+				# ~ print(taxlevel)
+				# ~ print(taxtuple)
+				print("000000000000000000000000000000")		
+				print(contig)
+				print(contigdict[contig]["contiglen"])
+				print(type(contigdict[contig]["contiglen"]))
+				# ~ assert 	type(contigdict[contig]["contiglen"])==int, "unexpected type of contiglen"
+				if taxtuple not in taxondict[taxlevel]:
+					taxondict[taxlevel][taxtuple] = {"contiglengths": [contiglen], "sumofcontiglengths" : contiglen}
+				else:
+					taxondict[taxlevel][taxtuple]["contiglengths"].append(contiglen)
+					taxondict[taxlevel][taxtuple]["sumofcontiglengths"]+=contiglen
+	
+	#now sort the taxcountdict keys by sumofcontiglenghts
+	print("*"*20)
+	print(taxondict)
+	print("*"*20)
+	majortaxdict = {tl:None for tl in taxlevels}
+	for tl in taxlevels:
+			# ~ print("--------")
+			# ~ print(tl)
+			# ~ print(taxondict[tl])
+			majortaxdict[tl] = sorted([(t, taxondict[tl][t]["sumofcontiglengths"]) for t in taxondict[tl]], key = lambda x : x[1])[-1]
+			# ~ print()
+			# ~ print(majortaxdict[tl])
+	return taxondict, majortaxdict 
+				
+			
 
 def test_1(bindata):
 	outfile = openfile(os.path.join(bindata.bin_resultfolder, "testcontigmarkers.tsv"), "wt")

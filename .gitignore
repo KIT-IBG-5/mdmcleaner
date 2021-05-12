@@ -11,6 +11,24 @@ delme*
 *.tsv
 *.md5
 .*
+*.domtblout
+*.fasta
+*.faa
+*.fas
+*.log
+*.fai
+*.db
+*.dmp
+*.fa
+PF*.hmm
+TIGR*.HMM
+
+doublet_*
+testfiles/
+hmms/prok/cog/models/
+hmms/prok/cog/raw_prots/
+hmms/prok/cog/alignments/
 #pychache stuff
 __pycache__/
 *.py[cod]
+

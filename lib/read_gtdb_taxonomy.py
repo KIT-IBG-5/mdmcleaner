@@ -541,8 +541,8 @@ def _concat_fastas(contig_fastalist, outfastahandle, return_headerdict = False, 
 	"""
 	import re
 	assemblyIDpattern = re.compile("GC._\d+\.\d")
-	prodigalinpattern = re.compile("(^>\w+\.\d+)(_\d+)(.*)")
-	prodigalreplacement = r"\1 \3"
+	prodigalinpattern = re.compile("(^>\w+(\.\d+){0,1})(_\d+)(.*)")
+	prodigalreplacement = r"\1 \4"
 	headerdict = {}
 	filecounter = seqcounter = 0
 	for cf in contig_fastalist:
@@ -757,6 +757,7 @@ def _prepare_dbdata_nonncbi(targetdir, progressdump): #Todo:add continueflag arg
 		concatgenomefastahandle = openfile(progressdump["concatgenomefasta"], "wt")
 		concatprotfastahandle = openfile(progressdump["concatprotfasta"], "wt")
 		progressdump["acc2taxidfilelist"].append(gtdb_contignames2taxids(gtdb_genomefiles, progressdump["acc2taxidfilelist"], os.path.join(targetdir, "temp_acc2taxid_gtdb.acc2taxid.gz"), concatgenomefastahandle))
+		#todo: in the above line, the created gtdb_accession2taxid file contains a lot of emty lines! fix this!!!
 		concatgenomefastahandle.close()
 		_concat_fastas(gtdb_proteinfiles, concatprotfastahandle, return_headerdict = False, remove_prodigalIDs = True, remove_descriptions = False) #does not return an acc2taxidfile ,because that is already covered by the contig-accessions
 		send = time.time()
@@ -922,6 +923,7 @@ def _prepare_dbdata_nonncbi(targetdir, progressdump): #Todo:add continueflag arg
 			progressdump["outnucldblist"].append(blasthandler.make_blast_db_from_gz(dbfasta, outnucldbname, db_type = "nucl")) ##step6d: create nucleotide diamond or blastdb (test which one is faster, blast may be faster here, because there are not so many queries as in the protein-blasts)
 		getdb.dict2jsonfile(progressdump, os.path.join(targetdir, currentprogressmarker))
 		os.remove(os.path.join(targetdir, lastprogressmarker)) #todo: uncomment this
+		#TODO: make sure tehre are actually 3 databases created here! one for 16S , one for 23S and one for gtdbgenomes!
 	else:
 		sys.stderr.write("-->already done this earlier. skipping this step\n")
 		sys.stderr.flush()

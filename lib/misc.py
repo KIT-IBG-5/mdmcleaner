@@ -23,7 +23,7 @@ def unixzcat(infilelist, outfilename): #my guess is, that this is probably much 
 	#compress outfile
 	#return outfilename
 
-def untar(infilename, targetdir=".", filemode = None, removetar = False): #todo: add delete option to misc.unar(). make it delete tar file when finished
+def untar(infilename, targetdir=".", filemode = None, removetar = False):
 	""" a convenience function for unpacking compressed and ancompressed tar files.
 	accepts a filename(required) and an optional filemode (default = None) argument.
 	filemode may be any of ["r:", "r:gz", None ]. If filemode == None, it will try to determine filemode based on filename-extension
