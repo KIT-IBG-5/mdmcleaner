@@ -15,6 +15,11 @@ def openfile(infilename, filemode = "rt"):
 		filehandle = open(infilename, filemode)
 	return filehandle 
 
+def read_fasta(infilename):
+	from Bio import SeqIO
+	infile = openfile(infilename)
+	return list(SeqIO.parse(infile, "fasta"))
+	
 def unixzcat(infilelist, outfilename): #my guess is, that this is probably much faster than doing it natively with python...
 	pass
 	#call zcat to concatenate all files in infilelist to outfilename
@@ -96,6 +101,7 @@ def run_multiple_functions_parallel(jobtuple_list, total_threads): #jobtuple_lis
 		#print("{} + {}".format(tuple(job for job in jobtuple_list[i]), thread_args[i]))
 		arglist.append(tuple(job for job in jobtuple_list[i]) + tuple([thread_args[i]]))
 	jobpool = Pool(processes = no_processes)
+	# ~ print(arglist)
 	outfile_list = jobpool.starmap(_run_any_function, arglist)
 	jobpool.close()
 	jobpool.join()

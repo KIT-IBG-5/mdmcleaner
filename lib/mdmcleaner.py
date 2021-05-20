@@ -145,77 +145,37 @@ def main():
 		testlca_dict_16s = {}
 		print("looping though contigs")
 		for contig in bindata.contigdict: #todo: create an own class in lca.py for this. that class should have options to filter, evaluate etc...
+			# ~ print("*"*70)
 			print(contig)
+			# ~ print("totalprots")
 			ctotalprottax = [bindata.markerdict[x]["tax"] for x in bindata.contigdict[contig]["totalprots"] if bindata.markerdict[x]["tax"] != None]
 			testlca_dict_total[contig] = lca.weighted_lca(db, contig, ctotalprottax)
 			if len(testlca_dict_total[contig]) != 0:
 				bindata.contigdict[contig]["total_prots_tax"] = testlca_dict_total[contig]
+			# ~ print("------\nprokmarkers")
 			cprokprottax = [bindata.markerdict[x]["tax"] for x in bindata.contigdict[contig]["prok_marker"] + bindata.contigdict[contig]["bac_marker"] + bindata.contigdict[contig]["arc_marker"] if bindata.markerdict[x]["tax"] != None]
 			testlca_dict_prok[contig] = lca.weighted_lca(db, contig, cprokprottax)
 			if len(testlca_dict_prok[contig]) != 0:
 				bindata.contigdict[contig]["prok_marker_tax"] = testlca_dict_prok[contig]
+			# ~ print("------\n23S")
 			c23srrnatax = [bindata.markerdict[x]["tax"] for x in bindata.contigdict[contig]["lsu_rRNA"] if bindata.markerdict[x]["tax"] != None]
 			testlca_dict_23s[contig] = lca.weighted_lca(db, contig, c23srrnatax)
 			if len(testlca_dict_23s[contig]) != 0:
 				bindata.contigdict[contig]["lsu_rRNA_tax"] = testlca_dict_23s[contig]
+			# ~ print("------\n16S")
 			c16srrnatax =[bindata.markerdict[x]["tax"] for x in bindata.contigdict[contig]["ssu_rRNA"] if bindata.markerdict[x]["tax"] != None]
 			testlca_dict_16s[contig] = lca.weighted_lca(db, contig, c16srrnatax) 
 			if len(testlca_dict_16s[contig]) != 0:
 				bindata.contigdict[contig]["ssu_rRNA_tax"] = testlca_dict_16s[contig]
+			#todo: add another optional level, where all remaining contigs without protein hits are blasted via blastx 
+		# ~ import pdb; pdb.set_trace()
+		bindata.get_major_taxon(db)
 		import pdb; pdb.set_trace()
-		hu, he = get_major_taxon(db, bindata.contigdict)
+		bindata.calc_contig_scores()
+		import pdb; pdb.set_trace()
+		bindata.print_contigdict("contigdict.tsv")
 	print("finished")
 
-def get_major_taxon(db, contigdict):# todo: move this to lca or getmarkers or so
-	markerranking = [ "ssu_rRNA_tax", "lsu_rRNA_tax", "prok_marker_tax", "total_prots_tax" ]
-	taxlevels = ["root", "domain", "phylum", "class", "order", "family", "genus", "species"]
-	taxondict = { tl: {} for tl in taxlevels }
-	#todo: taxlevels shoule be keys. values should be subdicts tuples of taxas as keys showing the lineage to each taxlevel (e.g.: ("bacteria", "proteobacteria", "alphaproteobacteria")
-	for contig in contigdict:
-		major_taxon = None
-		contiglen = contigdict[contig]["contiglen"][0]
-		for m in markerranking:
-			if contigdict[contig][m] != None:
-				major_taxon = contigdict[contig][m]
-				#todo: add major taxon also to contiddict
-				break
-		if major_taxon  != None:
-			for x in range(len(major_taxon)):
-				taxlevel = taxlevels[x]
-				# ~ print("=====================")
-				# ~ print(major_taxon)
-				# ~ print(type(major_taxon))
-				# ~ print([mt for mt in major_taxon[:x]]) #aha i have to check what kind of datatype "majr_taxon" is...
-				# ~ print("=====================")
-				# ~ print([mt.taxid for mt in major_taxon[:x]])
-				# ~ print("000000000000000000000")
-				taxtuple = tuple(mt.taxid for mt in major_taxon[:x+1])
-				# ~ print(taxlevel)
-				# ~ print(taxtuple)
-				print("000000000000000000000000000000")		
-				print(contig)
-				print(contigdict[contig]["contiglen"])
-				print(type(contigdict[contig]["contiglen"]))
-				# ~ assert 	type(contigdict[contig]["contiglen"])==int, "unexpected type of contiglen"
-				if taxtuple not in taxondict[taxlevel]:
-					taxondict[taxlevel][taxtuple] = {"contiglengths": [contiglen], "sumofcontiglengths" : contiglen}
-				else:
-					taxondict[taxlevel][taxtuple]["contiglengths"].append(contiglen)
-					taxondict[taxlevel][taxtuple]["sumofcontiglengths"]+=contiglen
-	
-	#now sort the taxcountdict keys by sumofcontiglenghts
-	print("*"*20)
-	print(taxondict)
-	print("*"*20)
-	majortaxdict = {tl:None for tl in taxlevels}
-	for tl in taxlevels:
-			# ~ print("--------")
-			# ~ print(tl)
-			# ~ print(taxondict[tl])
-			majortaxdict[tl] = sorted([(t, taxondict[tl][t]["sumofcontiglengths"]) for t in taxondict[tl]], key = lambda x : x[1])[-1]
-			# ~ print()
-			# ~ print(majortaxdict[tl])
-	return taxondict, majortaxdict 
 				
 			
 

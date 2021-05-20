@@ -64,7 +64,7 @@ def split_fasta_for_parallelruns(infasta, minlength = 0, number_of_fractions = 2
 		if len(record) < minlength:
 			continue
 		contigcounter += 1
-		contigdict[record.id] = {"contiglen": [len(record)], "totalprotcount" : [0], "ssu_rRNA" : [], "ssu_rRNA_tax" : None, "lsu_rRNA" : [], "lsu_rRNA_tax":None, "prok_marker" : [], "prok_marker_tax" :None,  "bac_marker" : [], "bac_marker_tax":None, "arc_marker" : [], "arc_marker_tax": None, "totalprots" : [], "total_prots_tax": None}
+		contigdict[record.id] = {"contiglen": [len(record)], "totalprotcount" : [0], "ssu_rRNA" : [], "ssu_rRNA_tax" : None, "lsu_rRNA" : [], "lsu_rRNA_tax":None, "prok_marker" : [], "prok_marker_tax" :None,  "bac_marker" : [], "arc_marker" : [], "totalprots" : [], "total_prots_tax": None, "toplevel_marker" : None, "toplevel_tax" : None, "toplevel_ident": None, "ambigeous" : False, "consensus_level_diff": 0, "contradict_consensus": None, "contradict_consensus_evidence": None, "contradictions_interlevel": [], "viral" : None, "tax_score" : None, "trust_index" : None}
 		if index > len(outlist)-1:
 			direction = -1
 			index = len(outlist) -1
@@ -118,6 +118,7 @@ def runbarrnap_single(infasta, barrnap="barrnap", kingdom = "bac", threads=1): #
 	barrnap_cmd = [barrnap, "--kingdom", kingdom, "--outseq", tempfasta, "--threads", str(threads), "-q", infasta] #todo: enable piping via stdin 
 	assert os.path.isfile(infasta), "Error. can't find input file {}".format(infasta) # since barrnap can do multithreading, do not accet subdivided input_fasta for this
 	try:
+		print(" ".join(barrnap_cmd))
 		barrnap_proc = subprocess.run(barrnap_cmd, stdout = subprocess.PIPE, stderr = subprocess.PIPE, text = True)
 		barrnap_proc.check_returncode()
 	except Exception:
@@ -130,18 +131,27 @@ def runbarrnap_single(infasta, barrnap="barrnap", kingdom = "bac", threads=1): #
 def runbarrnap_all(infasta, outfilebasename, barrnap="barrnap", threads=3): #todo: split rRNA outputfiles by TYPE (16S & 23S)!. Also: return a contig2rRNA_dict in addition to the outfastaname!
 	from Bio import SeqIO
 	import misc
+	sys.stderr.write("\nscanning for rRNA genes...\n")
 	joblist = []
 	for kingdom in ["bac", "arc", "euk"]:
 		joblist.append(("getmarkers", "runbarrnap_single", {"infasta" : infasta, "barrnap" : barrnap, "kingdom" : kingdom }))
 	outputlist = misc.run_multiple_functions_parallel(joblist, threads)
 	tempfasta_list = [op[0] for op in outputlist]
+	# ~ print(tempfasta_list)
 	gff_outputlist = [ op[1] for op in outputlist]
+	# ~ print(gff_outputlist)
 	final_fastadict, contig_rrnadict = deduplicate_barrnap_results(tempfasta_list, gff_outputlist) #todo: also get a dictionary which which markers are on which contig
 	for ff in final_fastadict:
 		outfile = openfile("{}_{}.fasta".format(outfilebasename, ff), "wt")
 		SeqIO.write(final_fastadict[ff], outfile, "fasta")
 		outfile.close()
 		final_fastadict[ff] = outfile.name #todo: perhaps, instead of a dict, return fastafilenames as list?
+	os.remove(infasta + ".fai") #todo: find a way to do this safely! check if file existed beforehand. only delete it her if it didn't (barrnap creates this file, but does not clean up after itself)
+	# ~ print("after_deduplication:")
+	# ~ print(final_fastadict)
+	# ~ print("----")
+	# ~ print(contig_rrnadict)
+	# ~ print("??????????????????????")
 	return final_fastadict, contig_rrnadict
 
 def deduplicate_barrnap_results(tempfastas, gff_outputs):
@@ -165,9 +175,6 @@ def deduplicate_barrnap_results(tempfastas, gff_outputs):
 			if rrna == "5S_rRNA":
 				continue #ignoring 5S rRNA for now
 			if contig in contig_hit_dict:
-				#todo find out if overlaps by more than 50%
-				#if yes take only the one that has lower evalue
-				#otherwise take both
 				redundant = False
 				index = 0
 				while index < len(contig_hit_dict[contig]):
@@ -206,9 +213,9 @@ def deduplicate_barrnap_results(tempfastas, gff_outputs):
 				if contig not in contig_rrna_dict:
 					contig_rrna_dict[contig] = {"ssu_rRNA" : [], "lsu_rRNA" : [] }
 				contig_rrna_dict[contig][seqtype_dict[recordtype]].append(record.id)
-	for fasta in tempfastas: #currently doing this AFTER the previous loop, to make sure the files are only deleted when everything went well (debugging purposes)
-		os.remove(fasta)
-
+	#for fasta in tempfastas: #currently doing this AFTER the previous loop, to make sure the files are only deleted when everything went well (debugging purposes)
+		#os.remove(fasta)
+	print("\nfound {} rna sequences\n".format(sum([ len(finalfastadict[ghj]) for ghj in finalfastadict]))) #todo: delete this line (debugging only)
 	return finalfastadict, contig_rrna_dict		#todo: also return a dictionary with contignames as keys and type of marker as values?
 					
 def parse_barrnap_headers(header):
@@ -348,25 +355,30 @@ def get_markerprotnames(proteinfastafile, cutoff_dict = cutofftablefile, hmmsear
 	return deduplicate_markerprots(list_of_markerdicts) #list_of_markerdicts will be in this order: [prok[, bact[, arch]]]
 
 def deduplicate_markerprots(list_of_markerdicts): # For proteins with hits to different models, just keep the hit with the highest score. This function is a highly convoluted way to do this, but it is late and my brain is tired
-	#todo: turn list of markerdicts into dict of markerdits
-	print("deduplicating")
-	print("{}".format(", ".join([str(len(x)) for x in list_of_markerdicts])))
+	#todo: turn list of markerdicts into dict of markerdicts or an own class
+	print("before deduplicating: {}".format(", ".join([str(len(x)) for x in list_of_markerdicts])))
 	keys = set([ key for md in list_of_markerdicts for key in md ])
 	for key in keys:
 		a, b = 0, 1
 		while a < len(list_of_markerdicts) and b < len(list_of_markerdicts):
 			if key in list_of_markerdicts[a]:		
-				while b < len(list_of_markerdicts[a:]):
+				while b < len(list_of_markerdicts):
+					# ~ print("checking if '{}' is in markerdict {} and {}".format(key, a, b))
 					if key in list_of_markerdicts[b]:
+						# ~ print("   ---> it IS!")
 						if list_of_markerdicts[a][key]["fscore"] >= list_of_markerdicts[b][key]["fscore"]:
+							# ~ print("        deleting this key in {}".format(b))
 							list_of_markerdicts[b].pop(key)
 						else:
+							# ~ print("        deleting this key in {}".format(a))
 							list_of_markerdicts[a].pop(key)
+							a += 1
 					b += 1
+					print("------------------")
 			a += 1
 			b += 1
-	print("whats left:")
-	print("{}".format(", ".join([str(len(x)) for x in list_of_markerdicts])))
+	print("after deduplicating {}".format(", ".join([str(len(x)) for x in list_of_markerdicts])))
+	import pdb; pdb.set_trace()
 	return list_of_markerdicts
 			
 	
@@ -526,6 +538,8 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 			if not os.path.exists(d):
 				print("creating {}".format(d))
 				os.mkdir(d)
+		self.taxondict = None
+		self.majortaxdict = None 
 		self._get_all_markers(threads, mincontiglength, cutofftable)
 		#todo:finish this
 	    #todo: simplify all those dicts
@@ -568,7 +582,7 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 		infile = openfile(self.binfastafile)
 		self.contigdict = {}
 		for record in SeqIO.parse(infile, "fasta"):
-			self.contigdict[record.id] = {"contiglen": [len(record)], "totalprotcount" : [0], "ssu_rRNA" : [], "lsu_rRNA" : [], "prok_marker" : [], "bac_marker" : [], "arc_marker" : [], "totalprots" : []}
+			self.contigdict[record.id] = {"contiglen": [len(record)], "totalprotcount" : [0], "ssu_rRNA" : [], "ssu_rRNA_tax" : None, "lsu_rRNA" : [], "lsu_rRNA_tax":None, "prok_marker" : [], "prok_marker_tax" :None,  "bac_marker" : [], "arc_marker" : [], "totalprots" : [], "total_prots_tax": None, "toplevel_marker" : None, "toplevel_tax" : None, "toplevel_ident": None, "ambigeous" : None, "consensus_level_diff": None, "contradict_consensus": None, "contradict_consensus_evidence": None, "contradictions_interlevel": [], "viral" : None}
 		pass #todo: this is meant to intitiate contig_dct just from contig_fasta. For use in cases where ORF-calling was done on the complete metagenome 
 	
 	def get_contig_fastas(self):
@@ -637,7 +651,151 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 			if len(wrongmarkerlist) > 0:
 				print("removing the following 'archaeal' markers from contig {} : {}".format(contig, ", ".join(wrongmarkerlist)))
 			self.contigdict[contig]["arc_marker"] = [m for m in self.contigdict[contig]["arc_marker"] if m not in wrongmarkerlist ]	
+	
+	def get_major_taxon(self, db):
+		def levels_difference(querytax, majortax): #querytax and majortax can be either taxtuplelists or majortaxdicts, doesnt matter
+			if majortax != None:
+				if querytax == None:
+					return len(majortax)
+				if len(majortax) > len(querytax):
+					return len(majortax) - len(querytax)
+			return 0 
+			
+		import lca
+		markerranking = [ "ssu_rRNA_tax", "lsu_rRNA_tax", "prok_marker_tax", "total_prots_tax" ]
+		#taxlevels = ["root", "domain", "phylum", "class", "order", "family", "genus", "species"] # todo: change to lca.taxlevels
+		self.taxondict = { tl: {} for tl in lca.taxlevels }
+		#todo: taxlevels shoule be keys. values should be subdicts tuples of taxas as keys showing the lineage to each taxlevel (e.g.: ("bacteria", "proteobacteria", "alphaproteobacteria")
+		for contig in self.contigdict:
+			major_taxon = None
+			contiglen = self.contigdict[contig]["contiglen"][0]
+			for m in markerranking:
+				if self.contigdict[contig][m] != None:
+					if major_taxon == None:
+						major_taxon = self.contigdict[contig][m]
+						self.contigdict[contig]["toplevel_tax"] = major_taxon
+						self.contigdict[contig]["toplevel_marker"] = m
+						self.contigdict[contig]["toplevel_ident"] = major_taxon[-1].average_ident
+					else:
+						contradiction, contradiction_evidence = lca.contradicting_taxtuples(self.contigdict[contig][m], major_taxon, return_idents = True)
+						if contradiction != None:
+							self.contigdict[contig]["contradictions_interlevel"].append(contradiction_evidence[0])
+			if major_taxon != None: #mark viral contigs, in case theys should be considered specially later (cases were value remains at default "None" are not classified, therfore not sure if viral or not)
+				# ~ print("!"*40)
+				# ~ print(major_taxon)
+				# ~ print("--")
+				# ~ print(major_taxon[0])
+				# ~ print("--")
+				# ~ print(major_taxon[0].taxid)
+				# ~ print("!"*40)
+				if db.is_viral(major_taxon[0].taxid):
+					self.contigdict[contig]["viral"] = True
+				else:
+					self.contigdict[contig]["viral"] = False		
+					#todo: change all namings of "major_taxon" to "toplevel_taxon" or so.
+					
+			if major_taxon  != None:
+				for x in range(len(major_taxon)):
+					taxlevel = lca.taxlevels[x]
+					taxtuple = tuple(mt.taxid for mt in major_taxon[:x+1])
+					if taxtuple not in self.taxondict[taxlevel]:
+						self.taxondict[taxlevel][taxtuple] = {"contiglengths": [contiglen], "sumofcontiglengths" : contiglen}
+					else:
+						self.taxondict[taxlevel][taxtuple]["contiglengths"].append(contiglen)
+						self.taxondict[taxlevel][taxtuple]["sumofcontiglengths"]+=contiglen
 		
+		#now sort the taxcountdict keys by sumofcontiglenghts
+		self.majortaxdict = {tl:None for tl in lca.taxlevels}
+		for tl in lca.taxlevels:
+				self.majortaxdict[tl] = sorted([(t, self.taxondict[tl][t]["sumofcontiglengths"]) for t in self.taxondict[tl]], key = lambda x : x[1])[-1]
+		
+		for contig in self.contigdict:
+			contradiction, contradiction_evidence = lca.contradict_taxtuble_taxpath(self.contigdict[contig]["toplevel_tax"], self.majortaxdict, return_idents = True) #check each contigs if contradicts majortax
+			if contradiction:
+				self.contigdict[contig]["contradict_consensus"] = contradiction
+				self.contigdict[contig]["contradict_consensus_evidence"] = contradiction_evidence 
+			else: #if it DOEN'T contradict, check up to how many levels actually match end report the difference
+				self.contigdict[contig]["consensus_level_diff"] = levels_difference(self.contigdict[contig]["toplevel_tax"], self.majortaxdict)
+		#return taxondict, majortaxdict 
+
+	def calc_contig_scores(self, ignore_viral = True): #ignore_viral --> no penalty for contigs that differ from consensus but are marked "viral". Those might simply be prophages
+		#todo: this is convoluted. find a more elegant way when time
+		basescore = 6 #scores start out at 6
+		maxscore = 12 #todo: this can change based on the scoring system. find a way to calculate this automatically, no matter how much the coring system may change...
+		markerboni = {	'ssu_rRNA_tax' : 5, \
+						'lsu_rRNA_tax' : 5, \
+						'prok_marker_tax' : 2, \
+						'total_prots_tax' : 1, \
+							None : 0 }
+		
+		marker_basepenalty = {	"su_rRNA_tax" : -2, \
+								'lsu_rRNA_tax' : -2, \
+								'prok_marker_tax' : -1, \
+								'total_prots_tax' : 0.5, \
+								None : 0 }		
+		
+		taxlevelpenalty = {	"species" : -0.5, \
+							"genus" : -1, \
+							"family" : -2, \
+							"class" : -3,\
+							"order" : -5, \
+							"phylum" : -6,
+							"root": -7 }
+		
+		for contig in self.contigdict:
+			print("{} -->{} ==> {}".format(contig, self.contigdict[contig]["toplevel_marker"], self.contigdict[contig]["contradict_consensus"]))
+			print(self.contigdict[contig]["toplevel_marker"]!= None)
+			print(not self.contigdict[contig]["contradict_consensus"])
+			print((self.contigdict[contig]["toplevel_marker"]!= None and not self.contigdict[contig]["contradict_consensus"]))
+			modificator = 0
+			if self.contigdict[contig]["toplevel_marker"]!= None and not self.contigdict[contig]["contradict_consensus"]: #if matches consensus-tax, +bonus based on which marker level was used, what the identity was and whether the lca was ambigeous or not
+				print("({} * ({}/100)) - (0.25 * {}) + {}".format(markerboni[self.contigdict[contig]["toplevel_marker"]], self.contigdict[contig]["toplevel_ident"], self.contigdict[contig]["consensus_level_diff"], (not self.contigdict[contig]["ambigeous"])))
+				modificator = (markerboni[self.contigdict[contig]["toplevel_marker"]] * (self.contigdict[contig]["toplevel_ident"]/100)) - (0.2 * self.contigdict[contig]["consensus_level_diff"]) + (not self.contigdict[contig]["ambigeous"])
+				print("modificator = {}".format(modificator))
+				for interlevel_penalty in self.contigdict[contig]['contradictions_interlevel']:
+					modificator -= 1 * (interlevel_penalty/100)
+					print("\t -{} --> modificator = {}".format(1 * (interlevel_penalty/100), modificator))
+			elif ignore_viral == False and self.contigdict[contig]["viral"] == True:
+				modificator = (marker_basepenalty[self.contigdict[contig]["toplevel_marker"]] * (self.contigdict[contig]["contradict_consensus_evidence"]/100) * taxlevelpenalty(self.contigdict[contig]["contradict_consensus"])) - (not self.contigdict[contig]["ambigeous"])
+			else:
+				modificator = -1 #viral are set to score = 5 --< trust_index 4
+			score = basescore + modificator
+			self.contigdict[contig]["tax_score"] = score
+			self.contigdict[contig]["trust_index"] = round((score/maxscore) *10) #0 untrusted, 1-3 highly suspicious, 4-5 unknown, 6-10: trusted
+		 
+		
+	def print_contigdict(self, filename = None):
+		if filename:
+			outfile = openfile(filename, "wt")
+		headerline = "contig\tcontiglen\tprotcount\trRNAcount\tmarkerprotcount\ttoplevel_tax\ttopmarker\ttoptaxevidence\ttoptaxambigeous\tcontradict_consensus\tcontradict_consensus_evidence\tcontradictions_interlevel_evidence\tviral\trustindexn"
+		if filename:
+			outfile.write(headerline)
+		else:
+			sys.stdout.write(headerline)
+		for contig in self.contigdict:
+			contiglen = self.contigdict[contig]["contiglen"]
+			totalprotcount = self.contigdict[contig]["totalprotcount"]
+			rRNAcount = len(self.contigdict[contig]["ssu_rRNA"]) + len(self.contigdict[contig]["lsu_rRNA"])
+			markerprotcount = len(self.contigdict[contig]["prok_marker"]) + len(self.contigdict[contig]["bac_marker"]) + len(self.contigdict[contig]["arc_marker"]) 
+			if self.contigdict[contig]["toplevel_tax"] != None:
+				toptaxid = self.contigdict[contig]["toplevel_tax"][-1].taxid
+				toptaxevidence = self.contigdict[contig]["toplevel_tax"][-1].average_ident #todo: the name of that field should change when i use uniform taxassignment named-tuples
+				toptaxambigeous = self.contigdict[contig]["toplevel_tax"][-1].ambigeous#todo: the name of that field should change when i use uniform taxassignment named-tuples
+			else:
+				toptaxid = None
+				toptaxevidence = None
+				toptaxambigeous = None
+			topmarker = self.contigdict[contig]["toplevel_marker"]
+			contradict_consensus = self.contigdict[contig]["contradict_consensus"]
+			contradict_consensus_evidence = self.contigdict[contig]["contradict_consensus_evidence"]
+			contradictions_interlevel = self.contigdict[contig]["contradictions_interlevel"]
+			viral = self.contigdict[contig]["viral"]
+			trustindex = self.contigdict[contig]["trust_index"]
+			line = "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n".format(contig, contiglen, totalprotcount,rRNAcount,markerprotcount,toptaxid,topmarker,toptaxevidence, toptaxambigeous, contradict_consensus, contradict_consensus_evidence,contradictions_interlevel,viral, trustindex)	
+			if filename:
+				outfile.write(line)
+			else:
+				sys.stdout.write(line)
 ######################################################
 # test functions below (can be deleted)
 def _test_markernames():

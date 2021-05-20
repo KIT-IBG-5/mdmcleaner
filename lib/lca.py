@@ -4,12 +4,56 @@ from collections import namedtuple
 import misc
 from misc import openfile
 
+taxlevels = ["root", "domain", "phylum", "class", "order", "family", "genus", "species"]
 taxtuple = namedtuple("taxtuple", "seqid taxid identity score") #use exact same syntax as for input, to enable lca of lca annotations
 """
 functions for obtaining least common ancestor (lca) annotations for a list of tax-ids
 ALl these functions require an taxdb_object as input.
 taxdb-objects already incude a basic strict pairwise lca function. This module provides additional functions for achieving weighted lca annotations for sets of taxids > 2.
 """
+
+def contradicting_taxtuples(taxtuplelistA, taxtuplelistB, return_idents = False):
+	"""
+	checks if a path matches or not
+	inputs are lists of taxtuples, as returned by weighted_lca
+	if it does not: it returns the lowest level of mismatch ("e.g. "phylum")
+	levels without taxassignment (None) in one of the taxtuplelists are ignored
+	returns None if now contradiction is found
+	optionally also returns a tuple of the respective average identitied of each assignment on that level (or None, None if no contradiction is found) 
+	"""
+	#todo: either alloe different kinds of inputs, or normalize lca/taxpath results (e.g. an lca-object)
+	#todo: IMPORTANT: for now this assumes only the 7 major taxlevels! make this more flexible for input that doe snot fit this criteria e.g. contains "subfamily")
+	if not None in [taxtuplelistA, taxtuplelistB]:
+		maxlevel = min(len(taxtuplelistA), len(taxtuplelistB))
+		for i in range(maxlevel):
+			levelname = taxlevels[i]
+			if taxtuplelistA[i].taxid != taxtuplelistB[i].taxid:
+				# ~ print("contradiction! {} != {}".format(taxtuplelistA[i].taxid, taxtuplelistB[i].taxid))
+				if return_idents:
+					return levelname, (taxtuplelistA[i].average_ident, taxtuplelistB[i].average_ident)
+				return levelname
+	if return_idents:
+		return None, None
+	return None	
+
+def contradict_taxtuble_taxpath(taxtuplelist, majortaxdict, return_idents = False): #todo: this is very convoluted. standardize taxpath, lca and majrtaxdict data types (create a taxobject or so...)
+	if not None in [taxtuplelist, majortaxdict]:
+		maxlevel = min(len(taxtuplelist), len(majortaxdict))
+		for i in range(maxlevel):
+			levelname = taxlevels[i]
+			if taxtuplelist[i].taxid != majortaxdict[levelname][0][i]:
+				# ~ print(taxtuplelist)
+				# ~ print(len(taxtuplelist)
+				# ~ print(majortaxdict[0])
+				# ~ print(len(majortaxdict[0]))
+				# ~ print("contradiction! {} != {}".format(taxtuplelist[i].taxid, majortaxdict[levelname][0][i]))
+				if return_idents:
+					return levelname, taxtuplelist[i].average_ident
+				return levelname
+	if return_idents:
+		return None, None
+	return None
+
 
 def strict_lca(taxdb, seqid = None, blasthitlist=None):
 	"""
@@ -87,6 +131,7 @@ def weighted_lca(taxdb, seqid = None, blasthitlist=None, cutoff = 0.95):
 				del(tempdict[i][tax])
 		if len(tempdict[i]) == 1:
 			taxid = list(tempdict[i].keys())[0]
+			#print("only ONE lineage on level {} --> {}  --> {}".format(i, list(tempdict[i].keys()), taxid))
 			taxass=taxassignment(taxid, sum(tempdict[i][taxid]["scores"])/len(tempdict[i][taxid]["scores"]), sum(tempdict[i][taxid]["identities"])/len(tempdict[i][taxid]["identities"]), ambigeous)
 			# ~ print(list(tempdict[i].keys()))
 			# ~ print("loop1")
@@ -98,6 +143,8 @@ def weighted_lca(taxdb, seqid = None, blasthitlist=None, cutoff = 0.95):
 			# ~ print(outtaxpath)
 			continue			
 		ambigeous = True
+		# ~ print("MULTIPLE LINEAGES FOUND on level {}!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!".format(i))
+		# ~ print(list(tempdict[i].keys()))
 		totalscoresum = sum( [ sum(tempdict[i][x]["scores"]) for x in tempdict[i] ] )
 		for tax in tempdict[i]:
 			if found_major_tax or sum(tempdict[i][tax]["scores"])/totalscoresum < cutoff:
@@ -115,8 +162,5 @@ def weighted_lca(taxdb, seqid = None, blasthitlist=None, cutoff = 0.95):
 		if not found_major_tax:
 			break #if there are multiple contradicting taxonomic assignments, and no weighted major taxon can be determined based on cutoff, then stop here and return current taxon-level as LCA
 	return outtaxpath #, tempdict #todo: only return last lca
-		
-def lca_iterate_through_proteins():
-	pass
-	
+
 

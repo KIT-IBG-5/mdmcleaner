@@ -107,7 +107,8 @@ def _create_sorted_acc2taxid_lookup(acc2taxidfilelist, acc2taxid_outfilename):
 	#NOTE: the presortcmd partielly renames the accession (remoes version number). This may have been necessary for ncbi, but does not work for gtdb data. 
 	#      so am removing this for now (will find a way later to flexibly deal with it for ncbi data)
 	#TODO: find out if removing verison numbers from accessions actually necessary for ncbi data. Find a flexible workaround that works for ncbi AND gtdb data
-	presortcmd = "zcat {infile} | cut -f 2,3| grep -v accession | sort > {outfile}" #IMPORTANT! removes a sed substitution in accession field. check  if still works for nucleotide basts. additional note: using shell commands probably way faster than anything i can do in pure python
+	presortcmd = "zcat {infile} | cut -f 2,3| grep -v accession | grep -v -P '^$'| sort > {outfile}" #IMPORTANT! removes a sed substitution in accession field. check  if still works for nucleotide basts.  additional note: using shell commands probably way faster than anything i can do in pure python
+	#ALSO IMPORTANT: added removal of empty lines in the above command. This is because some input files contain mepty lines. This resulted in emptylines in the sorted lookupfile, resulting in broken lookups. Check if that is fixed now.
 	finalsortcmd = "sort -m {filelist} > {finaldb}"
 	tempfilelist = []
 	for f in acc2taxidfilelist:
@@ -183,24 +184,19 @@ class taxdb(object):
 	
 	def acc2taxid(self, queryacc,start = 0):
 		#for using binary search on a simple sorted textfile #reminer to self: do NOT use compressed acc2taxid_lookupfile. It increases time for binary search ca 200x!
-		#print("\n----------\nQUERY= {}".format(queryacc))
-		#start = 0
 		stop = self.acc_lookup_handle_filesize
-		#print("MAXFILESIZE= {}".format(stop))
 		subjectacc = None
-		#1259970326 #todo: wtf are these numbers doing here? delete?!
-		#138028056
-		#138028057
 		
 		while start < stop: 
 			currentpos = int((start + stop) / 2)
-			#print("  start={}; stop={}; currentpos={}".format(start, stop, currentpos))
 			self.acc_lookup_handle.seek(currentpos, 0)
 
 			if currentpos != start:
 				self.acc_lookup_handle.readline()
 			tokens =  self.acc_lookup_handle.readline().strip().split("\t")
-			#print(tokens)
+			# ~ print(tokens)
+			# ~ print(queryacc)
+			# ~ print("---")
 			subjectacc = tokens[0]
 			subjecttaxid = tokens[1]
 			if subjectacc == queryacc:
@@ -228,7 +224,13 @@ class taxdb(object):
 		tp = self.taxid2taxpath(taxid)
 		if len(tp) >= 2 and tp[1][0] == "Archaea":
 			return False
-		return True		
+		return True	
+		
+	def is_viral(self, taxid): #todo. double check if this also still works when using ncbi data!
+		tp = self.taxid2taxpath(taxid)
+		if len(tp) >= 1 and tp[0][0] in ["Viruses", "Virus"]:
+			return True
+		return False			
 	
 	def taxid2taxpath(self, taxid, fullpath = True, unofficials = False): #may skip the outformat and return all levels as tuples (taxname, taxid, rank). MAy change fullpath default to False AFTER i checked how to best deal with "unofficial candidate phyla"
 		#print("Hi, taxid2taxpath here. I got this: '{}'".format(taxid))
@@ -265,21 +267,10 @@ class taxdb(object):
 		official_phylum_level_set = False
 		placeholder_phylum = None
 		placeholder_phylum_listindex = None
-		#print("0000000000000")
-		#print(taxid)
-		#print(type(taxid))
-		#sys.stderr.write("\n______\n{}\n".format(taxid))
-		#loopcounter = 0
 		while notroot(taxid): #assuming ALL taxpaths lead down to "root" (taxid=1); otherwise implement a maximum iteration counter
-			#print("looping!")
-			#print(taxid)
-			#loopcounter += 1
-			#print("  --> now i have this: '{}'".format(taxid))
 			tax = self.taxdict[taxid]
 			taxname = tax["taxname"]
 			taxrank = tax["rank"]
-			#sys.stderr.write("   --> taxname: {} --> rank: {} \n".format(taxname, taxrank))
-			#sys.stderr.flush()
 			taxparent = tax["parent"]
 			#workaround for candidate phyla unrecognized by ncbi taxonomy (when limiting filtering to major ranks such as phylum):
 			#will probably drop this here and integrate it in the LCA portion instead, because most candidate phyla actually have an official "phylum rank" and i just want to make sure the "candidate phyla" info is not lost, when the LCA ends up below that rank
@@ -303,9 +294,7 @@ class taxdb(object):
 				if placeholder_phylum_listindex != None: #if an placeholder-phylum was set BUT now we find an official ncbi-taxonomy-recognized phylum, delete the placeholder
 					taxpath.pop(placeholder_phylum_listindex)
 			#end of workaround for candidate phyla. may likely drop the above portion here, and instead adapt it for the LCA portion later? ALthough this is probably mostly used for filtering anyay. so would fit better here...?
-			taxpath.append((taxname, taxid, taxrank)) 	
-			#if taxparent == 620:
-			#	sys.stderr.write("\n\nWTF: ({}, {}, {})".format(taxname, taxid, taxrank)) 		
+			taxpath.append((taxname, taxid, taxrank)) 		
 			taxid = taxparent
 
 			
@@ -314,7 +303,13 @@ class taxdb(object):
 		else:
 			return list(reversed([ t for t in taxpath if t[2] > 0 ])) #only ranks with indices larger than zero == the 7 official ranks
 			
-
+	def taxid2taxlevel(self, taxid):
+		"""
+		supposed to return the taxlevel (domain, phylum, etc) of a given taxid, if possible
+		"""
+		rankindex = self.taxdict[taxid]["rank"]
+		return index2rank[rankindex]
+		
 ################################################################		
 
 def _test_download3():
