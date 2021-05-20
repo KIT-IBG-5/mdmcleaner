@@ -93,7 +93,7 @@ def read_lookup_table(lookup_table, table_format = None): #should be able to rea
 
 class blastdata(object): #todo: define differently for protein or nucleotide blasts (need different score/identity cutoffs)
 	_blasttsv_columnnames = {"query" : 0, "subject" : 1, "ident" : 2, "alignlen" : 3, "qstart": 6, "qend" : 7, "sstart" : 8, "ssend" : 9, "evalue" : 10, "score" : 11, "contig" : None, "stype" : None, "taxid": None} #reading in all fields, in case functionality is added later that also uses the sstat send etc fields
-	def __init__(self, *blastfiles, max_evalue = None, min_ident = None, score_cutoff_fraction = 0.5, keep_max_hit_fraction = 0.5, keep_min_hit_count = 2): #todo: add a min_score #todo: change score_cutoff_fraction to 0.75?
+	def __init__(self, *blastfiles, max_evalue = None, min_ident = None, score_cutoff_fraction = 0.75, keep_max_hit_fraction = 0.5, keep_min_hit_count = 2): #todo: add a min_score #todo: change score_cutoff_fraction to 0.75?
 		#methods:
 		#	method 1: filter by query-genes. For each gene remove all hits with score below <score_cutoff_fraction> (default = 0.5) of maximum score for that gene
 		#			  from these keep the <keep_max_hit_fraction> of hits (default = 0.5), but keep at least <keep_min_fraction> (default = 2) in every case if possible
@@ -107,10 +107,11 @@ class blastdata(object): #todo: define differently for protein or nucleotide bla
 		self.blastlinelist = []
 		for bf in blastfiles:
 			self.read_blast_tsv(bf, max_evalue = max_evalue, min_ident = min_ident) #TODO: Note: not passing bindata-object right here. if it needs to be looped through later anyway (after condensing the list) it makes more sense to do all further assignments later at that point
+		self.blastlinelist = [ dict(t) for t in {tuple(bl.items()) for bl in self.blastlinelist} ] #remove duplicate blast hits that apparently turn up in gtdb and silva dbs ... alternatively i could simply only blast vs silva, but that could miss some potentially incorrectly called rna genes...
 		self.blastlinelist = self.sort_blastlines_by_gene()
 		self.filter_hits_per_gene(score_cutoff_fraction, keep_max_hit_fraction, keep_min_hit_count)
 			
-	def filter_hits_per_gene(self, score_cutoff_fraction = 0.5, keep_max_hit_fraction = 0.5, keep_min_hit_count = 2): #todo: allow additional filter settings for rRNA data (e.g. filter by identity not score)
+	def filter_hits_per_gene(self, score_cutoff_fraction = 0.75, keep_max_hit_fraction = 0.5, keep_min_hit_count = 2): #todo: allow additional filter settings for rRNA data (e.g. filter by identity not score)
 		"""
 		assumes the blastlinelist is already sorted by decreasind score!
 		"""
@@ -141,12 +142,32 @@ class blastdata(object): #todo: define differently for protein or nucleotide bla
 			filtered_blastlinelist.extend(query_templist[:max(int(len(query_templist)*keep_max_hit_fraction), keep_min_hit_count)])
 		self.blastlinelist = filtered_blastlinelist
 	
+	# ~ def add_info_to_blastlines_old(self, bindata_obj, taxdb_obj = None):
+		# ~ import time #todo: remove this later
+		# ~ print("add_info_to_blastlines old version")
+		# ~ starttime = time.time()
+		# ~ for i in range(len(self.blastlinelist)):
+			# ~ self.blastlinelist[i]["contig"] = bindata_obj.marker2contig(self.blastlinelist[i]["query"])
+			# ~ self.blastlinelist[i]["stype"] = bindata_obj.markerdict[self.blastlinelist[i]["query"]]["stype"]
+			# ~ if taxdb_obj != None:
+				# ~ #print("--{}--".format(self.blastlinelist[i]))
+				# ~ self.blastlinelist[i]["taxid"] = taxdb_obj.acc2taxid(self.blastlinelist[i]["subject"])[0]
+		# ~ endtime = time.time()
+		# ~ print("\nthis took {} seconds\n".format(endtime - starttime))
+
 	def add_info_to_blastlines(self, bindata_obj, taxdb_obj = None):
+		import time #todo: remove this later
+		print("add_info_to_blastlines NEW version")
+		starttime = time.time()
+		if taxdb_obj != None:
+			acc2taxiddict = taxdb_obj.acclist2taxiddict(list({bl["subject"] for bl in self.blastlinelist})) 
 		for i in range(len(self.blastlinelist)):
 			self.blastlinelist[i]["contig"] = bindata_obj.marker2contig(self.blastlinelist[i]["query"])
 			self.blastlinelist[i]["stype"] = bindata_obj.markerdict[self.blastlinelist[i]["query"]]["stype"]
 			if taxdb_obj != None:
-				self.blastlinelist[i]["taxid"] = taxdb_obj.acc2taxid(self.blastlinelist[i]["subject"])[0]
+				self.blastlinelist[i]["taxid"] = acc2taxiddict.get(self.blastlinelist[i]["subject"])
+		endtime = time.time()
+		print("\nthis took {} seconds\n".format(endtime - starttime))
 	
 	def sort_blastlines_by_gene(self):
 		return sorted(self.blastlinelist, key = lambda x: (x["contig"], x["query"], -x["score"])) #sorts hits first increasingly by contig and query-name (not the same in case of rRNA genes), then decreasingly by score	
@@ -395,6 +416,9 @@ def _run_any_blast(query, db, path_appl, outname, threads, force = False):
 
 def _distribute_threads_over_jobs(total_threads, num_jobs): # to distribute N threads over M groups as evenly as possible, put (N/M) +1 in (N mod M) groups, and (N/M) in the rest
 	##TODO: test using misc.run_multiple_functions_parallel() for this instead! DELETE THIS IF MISC VERSION WORKS!
+	if num_jobs == 0:
+		sys.stderr.write("nothing to do...\n")
+		return [], total_threads
 	if num_jobs < total_threads:
 		more_threads_list = [ (total_threads / num_jobs) + 1 ] * (total_threads % num_jobs) #these should go to the lower priority markers, as there will be more of them
 		fewer_threads_list = [ (total_threads / num_jobs) ] * (num_jobs - len(more_threads_list))
@@ -403,6 +427,8 @@ def _distribute_threads_over_jobs(total_threads, num_jobs): # to distribute N th
 
 def run_multiple_blasts_parallel(basic_blastarg_list, outbasename, total_threads): #basic_blastarg_list = list of tuples such as [(query1, db1, blast1), (query2, db2, blast2),...])
 	#TODO: test using misc.run_multiple_functions_parallel() for this instead! DELETE THIS IF MISC VERSION WORKS!
+	if len(basic_blastarg_list) == 0:
+		sys.stderr.write("nothing to blast...")
 	from multiprocessing import Pool
 	thread_args, no_processes = _distribute_threads_over_jobs(total_threads, len(basic_blastarg_list))
 	arglist = []
