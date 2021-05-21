@@ -142,32 +142,32 @@ class blastdata(object): #todo: define differently for protein or nucleotide bla
 			filtered_blastlinelist.extend(query_templist[:max(int(len(query_templist)*keep_max_hit_fraction), keep_min_hit_count)])
 		self.blastlinelist = filtered_blastlinelist
 	
-	# ~ def add_info_to_blastlines_old(self, bindata_obj, taxdb_obj = None):
-		# ~ import time #todo: remove this later
-		# ~ print("add_info_to_blastlines old version")
-		# ~ starttime = time.time()
-		# ~ for i in range(len(self.blastlinelist)):
-			# ~ self.blastlinelist[i]["contig"] = bindata_obj.marker2contig(self.blastlinelist[i]["query"])
-			# ~ self.blastlinelist[i]["stype"] = bindata_obj.markerdict[self.blastlinelist[i]["query"]]["stype"]
-			# ~ if taxdb_obj != None:
-				# ~ #print("--{}--".format(self.blastlinelist[i]))
-				# ~ self.blastlinelist[i]["taxid"] = taxdb_obj.acc2taxid(self.blastlinelist[i]["subject"])[0]
-		# ~ endtime = time.time()
-		# ~ print("\nthis took {} seconds\n".format(endtime - starttime))
-
 	def add_info_to_blastlines(self, bindata_obj, taxdb_obj = None):
 		import time #todo: remove this later
-		print("add_info_to_blastlines NEW version")
+		print("add_info_to_blastlines old version")
 		starttime = time.time()
-		if taxdb_obj != None:
-			acc2taxiddict = taxdb_obj.acclist2taxiddict(list({bl["subject"] for bl in self.blastlinelist})) 
 		for i in range(len(self.blastlinelist)):
 			self.blastlinelist[i]["contig"] = bindata_obj.marker2contig(self.blastlinelist[i]["query"])
 			self.blastlinelist[i]["stype"] = bindata_obj.markerdict[self.blastlinelist[i]["query"]]["stype"]
 			if taxdb_obj != None:
-				self.blastlinelist[i]["taxid"] = acc2taxiddict.get(self.blastlinelist[i]["subject"])
+				#print("--{}--".format(self.blastlinelist[i]))
+				self.blastlinelist[i]["taxid"] = taxdb_obj.acc2taxid(self.blastlinelist[i]["subject"])[0]
 		endtime = time.time()
 		print("\nthis took {} seconds\n".format(endtime - starttime))
+
+	# ~ def add_info_to_blastlines(self, bindata_obj, taxdb_obj = None):
+		# ~ import time #todo: remove this later
+		# ~ print("add_info_to_blastlines NEW version")
+		# ~ starttime = time.time()
+		# ~ if taxdb_obj != None:
+			# ~ acc2taxiddict = taxdb_obj.acclist2taxiddict(list({bl["subject"] for bl in self.blastlinelist})) 
+		# ~ for i in range(len(self.blastlinelist)):
+			# ~ self.blastlinelist[i]["contig"] = bindata_obj.marker2contig(self.blastlinelist[i]["query"])
+			# ~ self.blastlinelist[i]["stype"] = bindata_obj.markerdict[self.blastlinelist[i]["query"]]["stype"]
+			# ~ if taxdb_obj != None:
+				# ~ self.blastlinelist[i]["taxid"] = acc2taxiddict.get(self.blastlinelist[i]["subject"])
+		# ~ endtime = time.time()
+		# ~ print("\nthis took {} seconds\n".format(endtime - starttime))
 	
 	def sort_blastlines_by_gene(self):
 		return sorted(self.blastlinelist, key = lambda x: (x["contig"], x["query"], -x["score"])) #sorts hits first increasingly by contig and query-name (not the same in case of rRNA genes), then decreasingly by score	

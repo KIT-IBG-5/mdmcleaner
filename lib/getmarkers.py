@@ -86,7 +86,9 @@ def split_fasta_for_parallelruns(infasta, minlength = 0, number_of_fractions = 2
 				SeqIO.write(outlist[i], outfile, "fasta")
 		return outfilenamelist, contigdict
 
-	return outlist, contigdict 
+	return outlist, contigdict
+	
+	
 
 def runprodigal(infasta, outfilename, prodigal="prodigal", threads = 1): #todo: allow piping via stdin (if input is a list: simply expect it to be a list of seqrecords)
 	"""
@@ -111,15 +113,26 @@ def runprodigal(infasta, outfilename, prodigal="prodigal", threads = 1): #todo: 
 		raise Exception("\nERROR: Something went wrong while trying to call prodigal...\n")
 	return outfilename
 	
-def runbarrnap_single(infasta, barrnap="barrnap", kingdom = "bac", threads=1): #todo: allow piping via stdin #todo instead of  the function doing a call for all kindoms at the same time, take a "kingdom" argument and do a seperate run for each kingdom --> allows better parallel multiprocessing!
+def runbarrnap_single(infasta, barrnap="barrnap", kingdom = "bac", threads=1): 
 	#tempfastalist, gffoutputs = [], []
 	#for kingdom in ["bac", "arc", "euk"]:
+	#todo: the following hack is to circumvent the problem of barrnap not handling compressed files. A better way to do this would to just assume files are sent via pipe?
 	tempfasta = "temp_barrnap_{}.fasta".format(kingdom)
-	barrnap_cmd = [barrnap, "--kingdom", kingdom, "--outseq", tempfasta, "--threads", str(threads), "-q", infasta] #todo: enable piping via stdin 
+	barrnap_cmd = [barrnap, "--kingdom", kingdom, "--outseq", tempfasta, "--threads", str(threads), "--quiet"] #todo: enable piping via stdin 
+	if type(infasta) == str and os.path.isfile(infasta): #todo: this is convoluted. maybe just always read the fasta if provided as file and pass it as fasta-string?
+		if infasta.endswith(".gz"):
+			inputarg = "\n".join([record.format("fasta") for record in misc.read_fasta(infasta)])
+		else:
+			barrnap_cmd += [infasta]
+			inputarg = None
+	elif type(infasta) == list: #allows piping data that was already read in in fasta format
+		inputarg =  "\n".join([record.format("fasta") for record in infasta])
+	else:
+		raise IOError("\nERROR: don't recognize query argument\n")
 	assert os.path.isfile(infasta), "Error. can't find input file {}".format(infasta) # since barrnap can do multithreading, do not accet subdivided input_fasta for this
 	try:
 		print(" ".join(barrnap_cmd))
-		barrnap_proc = subprocess.run(barrnap_cmd, stdout = subprocess.PIPE, stderr = subprocess.PIPE, text = True)
+		barrnap_proc = subprocess.run(barrnap_cmd, input = inputarg, stdout = subprocess.PIPE, stderr = subprocess.PIPE, text = True)
 		barrnap_proc.check_returncode()
 	except Exception:
 		sys.stderr.write(barrnap_proc.stderr)
@@ -146,7 +159,8 @@ def runbarrnap_all(infasta, outfilebasename, barrnap="barrnap", threads=3): #tod
 		SeqIO.write(final_fastadict[ff], outfile, "fasta")
 		outfile.close()
 		final_fastadict[ff] = outfile.name #todo: perhaps, instead of a dict, return fastafilenames as list?
-	os.remove(infasta + ".fai") #todo: find a way to do this safely! check if file existed beforehand. only delete it her if it didn't (barrnap creates this file, but does not clean up after itself)
+	if type(infasta) == str and os.path.isfile(infasta + ".fai"):
+		os.remove(infasta + ".fai") #todo: find a way to do this safely! check if file existed beforehand. only delete it her if it didn't (barrnap creates this file, but does not clean up after itself)
 	# ~ print("after_deduplication:")
 	# ~ print(final_fastadict)
 	# ~ print("----")
@@ -344,8 +358,12 @@ def get_markerprotnames(proteinfastafile, cutoff_dict = cutofftablefile, hmmsear
 		hmmfiles = [ os.path.join(hmmpath, hmmfile) for hmmfile in os.listdir(hmmpath) if hmmfile.endswith(".hmm") ]
 		markerdict = {}
 		for hmmfile in hmmfiles:
-			sys.stderr.write("\nsearching {} ...".format(hmmfile))
-			outfile = hmmersearch(hmmsearch, hmmfile, proteinfastafile, os.path.join(outdir, os.path.basename(hmmfile) + ".domtblout"), "sensitive", None, threads)
+			outfile = os.path.join(outdir, os.path.basename(hmmfile) + ".domtblout")
+			if os.path.exists(outfile):
+				sys.stderr.write("\nHmmer-resultfile '{}' already exists. --> skipping this HMM-search!\n")
+			else:
+				sys.stderr.write("\nsearching {} ...".format(hmmfile))
+				outfile = hmmersearch(hmmsearch, hmmfile, proteinfastafile, outfile, "sensitive", None, threads)
 			markerdict = parse_hmmer(outfile, cutoff_dict, cmode, markerdict)
 			#print(hmmfile)
 			#print(len(markerdict))
@@ -374,11 +392,11 @@ def deduplicate_markerprots(list_of_markerdicts): # For proteins with hits to di
 							list_of_markerdicts[a].pop(key)
 							a += 1
 					b += 1
-					print("------------------")
+					# ~ print("------------------")
 			a += 1
 			b += 1
 	print("after deduplicating {}".format(", ".join([str(len(x)) for x in list_of_markerdicts])))
-	import pdb; pdb.set_trace()
+	# ~ import pdb; pdb.set_trace()
 	return list_of_markerdicts
 			
 	
@@ -443,6 +461,7 @@ def combine_multiple_fastas(infastalist, outfilename = None, delete_original = T
 	"""
 	#todo: create an alternative version that writes to the outfile on the fly, for parsing huge assemblies
 	#todo: check if contigdict is needed in this form at all
+	print("HEEEEEELLLOOOOO!!!")
 	import re
 	from Bio import SeqIO
 	markerdict = {}
@@ -452,9 +471,11 @@ def combine_multiple_fastas(infastalist, outfilename = None, delete_original = T
 	if outfilename != None:
 		outfile = openfile(outfilename, "wt")
 	for f in infastalist:
+		print(f)
 		infile=openfile(f)
 		if outfilename!= None:
-			for record in SeqIO.parse(f, "fasta"):
+			for record in SeqIO.parse(infile, "fasta"):
+				# ~ print(record.id)
 				recordcount += 1
 				markerdict[record.id] = {"stype": "total", "tax": None } #all proteins are by default set to type "total" at first. will be ssigned to markes after hmm-analyses later. possible markertypes=["total", "prok", "bac", "arc", "lsu", "ssu"] 
 				SeqIO.write([record], outfile, "fasta")
@@ -462,13 +483,19 @@ def combine_multiple_fastas(infastalist, outfilename = None, delete_original = T
 					contigname = re.sub(pattern, "", record.id)
 					#print(contigdict[contigname].keys())
 					contigdict[contigname]["totalprots"].append(record.id) #todo: if i understand python scopes correctly, te dictionary should be changed globally, even if not explicitely returned... check this!				
+					# ~ print(record.id)
+					# ~ print(contigdict[contigname]["totalprots"])
 					contigdict[contigname]["totalprotcount"][0] += 1
 					#print(contigdict[contigname]["totalprots"])
 		else:
-			outrecordlist.extend(list(SeqIO.parse(f, "fasta")))
+			outrecordlist.extend(list(SeqIO.parse(infile, "fasta")))
+			# ~ print("NO OUTFILE")
+			#print(outrecordlist)
 			for record in outrecordlist:
+				# ~ print(record.id)
+				markerdict[record.id] = {"stype": "total", "tax": None } #todo: duplicae command. may be error prone. streamline this
 				contigname = re.sub(pattern, "", record.id)
-				contigdict[contigname]["totalprots"] += record.id #todo: if i understand python scopes correctly, te dictionary should be changed globally, even if not explicitely returned... check this!
+				contigdict[contigname]["totalprots"] += [record.id] #todo: if i understand python scopes correctly, te dictionary should be changed globally, even if not explicitely returned... check this!
 		infile.close()
 	if outfilename != None:
 		outfile.close()
@@ -506,7 +533,9 @@ def parse_protmarkerdict(protmarkerdict, contigdict, protmarkerlevel, markerdict
 		markername = protmarkerdict[protid]["marker"]
 		contigdict[contigname][marker].append( protid)
 		if markerdict != None:  #todo: if i understand python scopes correctly, te dictionary should be changed globally, even if not explicitely returned... check this!				
+			# ~ print(protid)
 			#print("\n{} is a marker of type '{}' with name '{}'\n".format(protid, marker,markername))
+			# ~ import pdb; pdb.set_trace()
 			markerdict[protid]["stype"] = "{} {}".format(marker, markername) #stored as space seperated string with "<marker type> <marker_hmm>". should be split later to get only markertype# TODO: in case someone insists on using spaces in contignames/proteinIDS, maybe change delimintor to tab (\t)?
 	return contigdict
 
@@ -540,7 +569,10 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 				os.mkdir(d)
 		self.taxondict = None
 		self.majortaxdict = None 
+		self.totalprotsfile = os.path.join(self.bin_resultfolder, self.bin_tempname + "_totalprots.faa")
 		self._get_all_markers(threads, mincontiglength, cutofftable)
+
+		
 		#todo:finish this
 	    #todo: simplify all those dicts
 	    # todo the contigdict is probably not necessary in that form...
@@ -549,42 +581,48 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 	    # todo: inititate all dicts/variables set in _get_all_markers as None here, so that an overview remains possible
 	     
 	def _get_all_markers(self, threads, mincontiglength, cutofftable): #todo: split into a.) get totalprots b.) get_markerprots c.) get rRNA genes!
-		subfastas, self.contigdict = split_fasta_for_parallelruns(self.binfastafile, minlength = mincontiglength, number_of_fractions = threads)
-		commandlist = [("getmarkers", "runprodigal", {"infasta" : subfastas[i], "outfilename" : os.path.join(self.bin_resultfolder, "tempfile_{}_prodigal_{}.faa".format(self.bin_tempname, i)) }) for i in range(len(subfastas))]
-		tempprotfiles = misc.run_multiple_functions_parallel(commandlist, threads)
-		self.totalprotfile, self.markerdict = combine_multiple_fastas(tempprotfiles, outfilename = os.path.join(self.bin_resultfolder, self.bin_tempname + "_totalprots.faa"), delete_original = True, contigdict = self.contigdict, return_markerdict = True) #todo: check if conticdict is actually neccessary/helpful in this form
-		self.protmarkerdictlist = get_markerprotnames(self.totalprotfile, cutofftable, hmmsearch = "hmmsearch", outdir = self.bin_resultfolder, cmode = "moderate", level = "all", threads = threads) #todo: delete hmm_intermediate_results
+		#todo: make a more elegant checkpoint system. This convoluted stuff here may only be temporary because of shortage of time 
+		if os.path.exists(self.totalprotsfile):
+			sys.stderr.write("\n{} already exists. --> skipping ORF-calling!\n".format(self.totalprotsfile))
+			self._prep_onlycontigs(mincontiglength, threads)
+		else:
+			self._prep_contigsANDtotalprots(mincontiglength, threads)
+		self.protmarkerdictlist = get_markerprotnames(self.totalprotsfile, cutofftable, hmmsearch = "hmmsearch", outdir = self.bin_resultfolder, cmode = "moderate", level = "all", threads = threads) #todo: delete hmm_intermediate_results
 		#todo: protmarkerdictlists probably not needed in that form. just save a general markerdict and a contigdict
-		print("i am here now")
+		# ~ print("i am here now")
 		for pml in range(len(self.protmarkerdictlist)): #todo: contigdict is maybe not needed in this form. choose simpler dicts ?
-			print("   pml = {}".format(pml))
+			# ~ print("   pml = {}".format(pml))
 			self.contigdict = parse_protmarkerdict(self.protmarkerdictlist[pml], self.contigdict, pml, self.markerdict)
 		self.rRNA_fasta_dict, self.rrnamarkerdict = runbarrnap_all(infasta=self.binfastafile, outfilebasename=os.path.join(self.bin_resultfolder, self.bin_tempname + "_rRNA"), barrnap="barrnap", threads=threads) #todo add option for rnammer (using the subdivided fastafiles)?
 		self.contigdict, self.markerdict = add_rrnamarker_to_contigdict_and_markerdict(self.rrnamarkerdict, self.contigdict, self.markerdict) #todo: contigdict is probably not needed in this form. choose simpler dicts?
+		print("created self.contigdict: {}".format(len(self.contigdict)))
 		#todo: save progress as pickle of this the currenc instance of this class-object
 	
-	def _prep_contigsANDtotalprots():
+	def _prep_contigsANDtotalprots(self, mincontiglength, threads):
 		subfastas, self.contigdict = split_fasta_for_parallelruns(self.binfastafile, minlength = mincontiglength, number_of_fractions = threads)
 		commandlist = [("getmarkers", "runprodigal", {"infasta" : subfastas[i], "outfilename" : os.path.join(self.bin_resultfolder, "tempfile_{}_prodigal_{}.faa".format(self.bin_tempname, i)) }) for i in range(len(subfastas))]
 		tempprotfiles = misc.run_multiple_functions_parallel(commandlist, threads)
-		self.totalprotfile = combine_multiple_fastas(tempprotfiles, outfilename = os.path.join(self.bin_resultfolder, self.bin_tempname + "_totalprots.faa"), delete_original = True, contigdict = self.contigdict)
+		self.totalprotsfile, self.markerdict = combine_multiple_fastas(tempprotfiles, outfilename = self.totalprotsfile, delete_original = True, contigdict = self.contigdict,return_markerdict = True)
+		print("created self.contigdict: {}".format(len(self.contigdict)))
 	
-	def _prep_protmarker():
+	def _prep_protmarker(self):
 		self.protmarkerdictlist = get_markerprotnames(self.totalprotfile, cutofftable, hmmsearch = "hmmsearch", outdir = self.bin_resultfolder, cmode = "moderate", level = "all", threads = "4") #todo: delete hmm_intermediate_results
 		for pml in range(len(self.protmarkerdictlist)):
 			self.contigdict = parse_protmarkerdict(self.protmarkerdictlist[pml], self.contigdict, pml)	
 
-	def _prep_rRNAmarker():
+	def _prep_rRNAmarker(self):
 		self.rRNA_fasta_dict, self.rrnamarkerdict = runbarrnap_all(infasta=self.binfastafile, outfilebasename=os.path.join(self.bin_resultfolder, self.bin_tempname + "_rRNA"), barrnap="barrnap", threads=threads) #todo add option for rnammer (using the subdivided fastafiles)?
 		self.contigdict = add_rrnamarker_to_contigdict(self.rrnamarkerdict, self.contigdict)
 				
-	def _prep_onlycontigs(self):
+	def _prep_onlycontigs(self, mincontiglength, threads):
 		infile = openfile(self.binfastafile)
 		self.contigdict = {}
 		for record in SeqIO.parse(infile, "fasta"):
-			self.contigdict[record.id] = {"contiglen": [len(record)], "totalprotcount" : [0], "ssu_rRNA" : [], "ssu_rRNA_tax" : None, "lsu_rRNA" : [], "lsu_rRNA_tax":None, "prok_marker" : [], "prok_marker_tax" :None,  "bac_marker" : [], "arc_marker" : [], "totalprots" : [], "total_prots_tax": None, "toplevel_marker" : None, "toplevel_tax" : None, "toplevel_ident": None, "ambigeous" : None, "consensus_level_diff": None, "contradict_consensus": None, "contradict_consensus_evidence": None, "contradictions_interlevel": [], "viral" : None}
-		pass #todo: this is meant to intitiate contig_dct just from contig_fasta. For use in cases where ORF-calling was done on the complete metagenome 
-	
+			if len(record) >= mincontiglength:
+				self.contigdict[record.id] = {"contiglen": [len(record)], "totalprotcount" : [0], "ssu_rRNA" : [], "ssu_rRNA_tax" : None, "lsu_rRNA" : [], "lsu_rRNA_tax":None, "prok_marker" : [], "prok_marker_tax" :None,  "bac_marker" : [], "arc_marker" : [], "totalprots" : [], "total_prots_tax": None, "toplevel_marker" : None, "toplevel_tax" : None, "toplevel_ident": None, "ambigeous" : False, "consensus_level_diff": 0, "contradict_consensus": None, "contradict_consensus_evidence": None, "contradictions_interlevel": [], "viral" : None, "tax_score" : None, "trust_index" : None}
+		_, self.markerdict = combine_multiple_fastas([self.totalprotsfile], outfilename = None, delete_original = False, contigdict = self.contigdict, return_markerdict = True)
+		print("created self.contigdict: {}".format(len(self.contigdict)))
+		
 	def get_contig_fastas(self):
 		"""
 		returns the bin contig-/scaffold-records in fasta format as a list
@@ -662,6 +700,7 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 			return 0 
 			
 		import lca
+		print("determining major taxon")
 		markerranking = [ "ssu_rRNA_tax", "lsu_rRNA_tax", "prok_marker_tax", "total_prots_tax" ]
 		#taxlevels = ["root", "domain", "phylum", "class", "order", "family", "genus", "species"] # todo: change to lca.taxlevels
 		self.taxondict = { tl: {} for tl in lca.taxlevels }
@@ -706,8 +745,11 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 		
 		#now sort the taxcountdict keys by sumofcontiglenghts
 		self.majortaxdict = {tl:None for tl in lca.taxlevels}
+		# ~ import pdb; pdb.set_trace()
 		for tl in lca.taxlevels:
-				self.majortaxdict[tl] = sorted([(t, self.taxondict[tl][t]["sumofcontiglengths"]) for t in self.taxondict[tl]], key = lambda x : x[1])[-1]
+				tempsorted = sorted([(t, self.taxondict[tl][t]["sumofcontiglengths"]) for t in self.taxondict[tl]], key = lambda x : x[1])
+				if len(tempsorted) > 0:
+					self.majortaxdict[tl] = tempsorted[-1]
 		
 		for contig in self.contigdict:
 			contradiction, contradiction_evidence = lca.contradict_taxtuble_taxpath(self.contigdict[contig]["toplevel_tax"], self.majortaxdict, return_idents = True) #check each contigs if contradicts majortax
@@ -719,6 +761,7 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 		#return taxondict, majortaxdict 
 
 	def calc_contig_scores(self, ignore_viral = True): #ignore_viral --> no penalty for contigs that differ from consensus but are marked "viral". Those might simply be prophages
+		print("calculating contig scores...")
 		#todo: this is convoluted. find a more elegant way when time
 		basescore = 6 #scores start out at 6
 		maxscore = 12 #todo: this can change based on the scoring system. find a way to calculate this automatically, no matter how much the coring system may change...
@@ -767,7 +810,7 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 	def print_contigdict(self, filename = None):
 		if filename:
 			outfile = openfile(filename, "wt")
-		headerline = "contig\tcontiglen\tprotcount\trRNAcount\tmarkerprotcount\ttoplevel_tax\ttopmarker\ttoptaxevidence\ttoptaxambigeous\tcontradict_consensus\tcontradict_consensus_evidence\tcontradictions_interlevel_evidence\tviral\trustindexn"
+		headerline = "contig\tcontiglen\tprotcount\trRNAcount\tmarkerprotcount\ttoplevel_tax\ttopmarker\ttoptaxevidence\ttoptaxambigeous\tcontradict_consensus\tcontradict_consensus_evidence\tcontradictions_interlevel_evidence\tviral\ttrustindex\n"
 		if filename:
 			outfile.write(headerline)
 		else:
