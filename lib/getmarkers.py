@@ -64,7 +64,7 @@ def split_fasta_for_parallelruns(infasta, minlength = 0, number_of_fractions = 2
 		if len(record) < minlength:
 			continue
 		contigcounter += 1
-		contigdict[record.id] = {"contiglen": [len(record)], "totalprotcount" : [0], "ssu_rRNA" : [], "ssu_rRNA_tax" : None, "lsu_rRNA" : [], "lsu_rRNA_tax":None, "prok_marker" : [], "prok_marker_tax" :None,  "bac_marker" : [], "arc_marker" : [], "totalprots" : [], "total_prots_tax": None, "toplevel_marker" : None, "toplevel_tax" : None, "toplevel_ident": None, "ambigeous" : False, "consensus_level_diff": 0, "contradict_consensus": None, "contradict_consensus_evidence": None, "contradictions_interlevel": [], "viral" : None, "tax_score" : None, "trust_index" : None}
+		contigdict[record.id] = {"contiglen": [len(record)], "totalprotcount" : [0], "ssu_rRNA" : [], "ssu_rRNA_tax" : None, "lsu_rRNA" : [], "lsu_rRNA_tax":None, "prok_marker" : [], "prok_marker_tax" :None,  "bac_marker" : [], "arc_marker" : [], "totalprots" : [], "total_prots_tax": None, "toplevel_marker" : None, "toplevel_tax" : None, "toplevel_ident": None, "ambigeous" : False, "consensus_level_diff": 0, "contradict_consensus": None, "contradict_consensus_evidence": 0, "contradictions_interlevel": [], "viral" : None, "tax_score" : None, "trust_index" : None}
 		if index > len(outlist)-1:
 			direction = -1
 			index = len(outlist) -1
@@ -87,8 +87,6 @@ def split_fasta_for_parallelruns(infasta, minlength = 0, number_of_fractions = 2
 		return outfilenamelist, contigdict
 
 	return outlist, contigdict
-	
-	
 
 def runprodigal(infasta, outfilename, prodigal="prodigal", threads = 1): #todo: allow piping via stdin (if input is a list: simply expect it to be a list of seqrecords)
 	"""
@@ -360,7 +358,7 @@ def get_markerprotnames(proteinfastafile, cutoff_dict = cutofftablefile, hmmsear
 		for hmmfile in hmmfiles:
 			outfile = os.path.join(outdir, os.path.basename(hmmfile) + ".domtblout")
 			if os.path.exists(outfile):
-				sys.stderr.write("\nHmmer-resultfile '{}' already exists. --> skipping this HMM-search!\n")
+				sys.stderr.write("\nHmmer-resultfile '{}' already exists. --> skipping this HMM-search!\n".format(outfile))
 			else:
 				sys.stderr.write("\nsearching {} ...".format(hmmfile))
 				outfile = hmmersearch(hmmsearch, hmmfile, proteinfastafile, outfile, "sensitive", None, threads)
@@ -441,6 +439,7 @@ def get_markerprots(proteinfastafile, cutoff_dict = cutofftablefile, cmode = "mo
 		outfile.close()
 		outfilelist.append(outfilename)
 	return outfilelist
+
 	
 def write_markerdict(markerdict, outfilename):# todo: improve markerdict #todo: confusingly names multiple unrelated dicts "markerdict" sort this out!!
 	"""
@@ -491,11 +490,12 @@ def combine_multiple_fastas(infastalist, outfilename = None, delete_original = T
 			outrecordlist.extend(list(SeqIO.parse(infile, "fasta")))
 			# ~ print("NO OUTFILE")
 			#print(outrecordlist)
-			for record in outrecordlist:
+			for record in outrecordlist: #todo: this is redundant. Simplify!
 				# ~ print(record.id)
 				markerdict[record.id] = {"stype": "total", "tax": None } #todo: duplicae command. may be error prone. streamline this
 				contigname = re.sub(pattern, "", record.id)
 				contigdict[contigname]["totalprots"] += [record.id] #todo: if i understand python scopes correctly, te dictionary should be changed globally, even if not explicitely returned... check this!
+				contigdict[contigname]["totalprotcount"][0] += 1
 		infile.close()
 	if outfilename != None:
 		outfile.close()
@@ -619,7 +619,7 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 		self.contigdict = {}
 		for record in SeqIO.parse(infile, "fasta"):
 			if len(record) >= mincontiglength:
-				self.contigdict[record.id] = {"contiglen": [len(record)], "totalprotcount" : [0], "ssu_rRNA" : [], "ssu_rRNA_tax" : None, "lsu_rRNA" : [], "lsu_rRNA_tax":None, "prok_marker" : [], "prok_marker_tax" :None,  "bac_marker" : [], "arc_marker" : [], "totalprots" : [], "total_prots_tax": None, "toplevel_marker" : None, "toplevel_tax" : None, "toplevel_ident": None, "ambigeous" : False, "consensus_level_diff": 0, "contradict_consensus": None, "contradict_consensus_evidence": None, "contradictions_interlevel": [], "viral" : None, "tax_score" : None, "trust_index" : None}
+				self.contigdict[record.id] = {"contiglen": [len(record)], "totalprotcount" : [0], "ssu_rRNA" : [], "ssu_rRNA_tax" : None, "lsu_rRNA" : [], "lsu_rRNA_tax":None, "prok_marker" : [], "prok_marker_tax" :None,  "bac_marker" : [], "arc_marker" : [], "totalprots" : [], "total_prots_tax": None, "toplevel_marker" : None, "toplevel_tax" : None, "toplevel_ident": None, "ambigeous" : False, "consensus_level_diff": 0, "contradict_consensus": None, "contradict_consensus_evidence": 0, "contradictions_interlevel": [], "viral" : None, "tax_score" : None, "trust_index" : None}
 		_, self.markerdict = combine_multiple_fastas([self.totalprotsfile], outfilename = None, delete_original = False, contigdict = self.contigdict, return_markerdict = True)
 		print("created self.contigdict: {}".format(len(self.contigdict)))
 		
@@ -782,26 +782,29 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 							"family" : -2, \
 							"class" : -3,\
 							"order" : -5, \
-							"phylum" : -6,
-							"root": -7 }
+							"phylum" : -6, \
+							"domain" : -7, \
+							"root": -8 }
 		
 		for contig in self.contigdict:
-			print("{} -->{} ==> {}".format(contig, self.contigdict[contig]["toplevel_marker"], self.contigdict[contig]["contradict_consensus"]))
-			print(self.contigdict[contig]["toplevel_marker"]!= None)
-			print(not self.contigdict[contig]["contradict_consensus"])
-			print((self.contigdict[contig]["toplevel_marker"]!= None and not self.contigdict[contig]["contradict_consensus"]))
+			# ~ print("{} -->{} ==> {}".format(contig, self.contigdict[contig]["toplevel_marker"], self.contigdict[contig]["contradict_consensus"]))
+			# ~ print(self.contigdict[contig]["toplevel_marker"]!= None)
+			# ~ print(not self.contigdict[contig]["contradict_consensus"])
+			# ~ print((self.contigdict[contig]["toplevel_marker"]!= None and not self.contigdict[contig]["contradict_consensus"]))
 			modificator = 0
 			if self.contigdict[contig]["toplevel_marker"]!= None and not self.contigdict[contig]["contradict_consensus"]: #if matches consensus-tax, +bonus based on which marker level was used, what the identity was and whether the lca was ambigeous or not
-				print("({} * ({}/100)) - (0.25 * {}) + {}".format(markerboni[self.contigdict[contig]["toplevel_marker"]], self.contigdict[contig]["toplevel_ident"], self.contigdict[contig]["consensus_level_diff"], (not self.contigdict[contig]["ambigeous"])))
+				# ~ print("({} * ({}/100)) - (0.25 * {}) + {}".format(markerboni[self.contigdict[contig]["toplevel_marker"]], self.contigdict[contig]["toplevel_ident"], self.contigdict[contig]["consensus_level_diff"], (not self.contigdict[contig]["ambigeous"])))
 				modificator = (markerboni[self.contigdict[contig]["toplevel_marker"]] * (self.contigdict[contig]["toplevel_ident"]/100)) - (0.2 * self.contigdict[contig]["consensus_level_diff"]) + (not self.contigdict[contig]["ambigeous"])
-				print("modificator = {}".format(modificator))
+				# ~ print("modificator = {}".format(modificator))
 				for interlevel_penalty in self.contigdict[contig]['contradictions_interlevel']:
 					modificator -= 1 * (interlevel_penalty/100)
-					print("\t -{} --> modificator = {}".format(1 * (interlevel_penalty/100), modificator))
-			elif ignore_viral == False and self.contigdict[contig]["viral"] == True:
-				modificator = (marker_basepenalty[self.contigdict[contig]["toplevel_marker"]] * (self.contigdict[contig]["contradict_consensus_evidence"]/100) * taxlevelpenalty(self.contigdict[contig]["contradict_consensus"])) - (not self.contigdict[contig]["ambigeous"])
-			else:
+					# ~ print("\t -{} --> modificator = {}".format(1 * (interlevel_penalty/100), modificator))
+			elif ignore_viral == True and self.contigdict[contig]["viral"] == True:
 				modificator = -1 #viral are set to score = 5 --< trust_index 4
+			elif self.contigdict[contig]["toplevel_marker"]!= None and self.contigdict[contig]["contradict_consensus"] != None:
+				modificator = (marker_basepenalty[self.contigdict[contig]["toplevel_marker"]] * (self.contigdict[contig]["contradict_consensus_evidence"]/100) * taxlevelpenalty[self.contigdict[contig]["contradict_consensus"]]) - (not self.contigdict[contig]["ambigeous"])
+
+				
 			score = basescore + modificator
 			self.contigdict[contig]["tax_score"] = score
 			self.contigdict[contig]["trust_index"] = round((score/maxscore) *10) #0 untrusted, 1-3 highly suspicious, 4-5 unknown, 6-10: trusted
