@@ -6,7 +6,11 @@ import sys
 import time
 import traceback
 import misc
+import subprocess
 from misc import openfile
+import locale #hopefully this ensures that sorts and string comparisons behave like during lookuptable-generation
+locale.setlocale(locale.LC_ALL, "C") #hopefully this ensures that sorts and string comparisons behave like during lookuptable-generation
+
 '''
 module for downloading and parsing the ncbi taxonomy databases for bin refinerwork in progress
 things to consider:
@@ -91,7 +95,7 @@ def json_taxdb_from_kronadb(kronadb):
 	for line in infile:
 		pass #todo: finish this sometime
 
-def _create_sorted_acc2taxid_lookup(acc2taxidfilelist, acc2taxid_outfilename):
+def _create_sorted_acc2taxid_lookup(acc2taxidfilelist, acc2taxid_outfilename): #TODO: !!! THIS IS BROKEN! SORT BEHAVES DIFFERENTLY ON DIFFERENT MACHINES!! HAVE TO USE "env LC_ALL=C sort" instead of just sort to make sure it behaves identically across machines, or moreover identically between python and bash
 	'''
 	for creating an alphabetically sorted list of acessions and their corrsponding taxids
 	for use with binary search
@@ -100,15 +104,15 @@ def _create_sorted_acc2taxid_lookup(acc2taxidfilelist, acc2taxid_outfilename):
 	import subprocess
 	import time
 	sys.stderr.write("\ncreating {}...\n".format(acc2taxid_outfilename))
-	import time #todo: for debugging
 	start = time.time() #todo: for debugging
 	#import shlex #allow string splitting accoring to Shell -like syntax
 	#presortcmd = "zcat {infile} | cut -f 2,3| grep -v accession | sed 's#\.[0-9]*##'| sort > {outfile}" #using shell commands probably way faster than anything i can do in pure python
 	#NOTE: the presortcmd partielly renames the accession (remoes version number). This may have been necessary for ncbi, but does not work for gtdb data. 
 	#      so am removing this for now (will find a way later to flexibly deal with it for ncbi data)
 	#TODO: find out if removing verison numbers from accessions actually necessary for ncbi data. Find a flexible workaround that works for ncbi AND gtdb data
-	presortcmd = "zcat {infile} | cut -f 2,3| grep -v accession | grep -v -P '^$'| sort > {outfile}" #IMPORTANT! removes a sed substitution in accession field. check  if still works for nucleotide basts.  additional note: using shell commands probably way faster than anything i can do in pure python
+	presortcmd = "zcat {infile} | cut -f 2,3| grep -v accession | grep -v -P '^$'| env LC_ALL=C sort > {outfile}" #IMPORTANT! removes a sed substitution in accession field. check  if still works for nucleotide basts.  additional note: using shell commands probably way faster than anything i can do in pure python
 	#ALSO IMPORTANT: added removal of empty lines in the above command. This is because some input files contain mepty lines. This resulted in emptylines in the sorted lookupfile, resulting in broken lookups. Check if that is fixed now.
+	#ALSO IMPORTANT: added "env LC_ALL=C before the sort command, in a desperate attempt to ensure same localse seetings for creating and using the accession index. Sort behaves differently based on locale settings and that can acuse problems
 	finalsortcmd = "sort -m {filelist} > {finaldb}"
 	tempfilelist = []
 	for f in acc2taxidfilelist:
@@ -139,6 +143,7 @@ def _create_sorted_acc2taxid_lookup(acc2taxidfilelist, acc2taxid_outfilename):
 class taxdb(object):
 	def __init__(self, acc2taxid_lookupfile, taxdbfile = None, lca_pathsfile = None): #todo: create and read a "config file" to get file-locations from
 		#self.taxdict = self.read_taxddbfile(taxdbfile) #todo: write tis!
+		self.acc2taxid_lookupfile = acc2taxid_lookupfile
 		self.acc_lookup_handle = misc.openfile(acc2taxid_lookupfile)
 		self.acc_lookup_handle_filesize = self.acc_lookup_handle.seek(0,2) #jump to end of file and give bytesize (alternative to "os.path.getsize()")
 		if taxdbfile != None:
@@ -181,10 +186,18 @@ class taxdb(object):
 			
 	def read_taxdb(self, taxdbfile):#needs to be json format. Krona taxdbs need to be converted to this format first, using the kronadb2json function above
 		self.taxdict = jsonfile2dict(taxdbfile)
+
+	def _delmegetline(self, searchterm):# only for debugging
+		getlinecmd = ["grep", "-n", searchterm, self.acc2taxid_lookupfile]
+		myproc = subprocess.run(getlinecmd, stdout = subprocess.PIPE, stderr = subprocess.PIPE, text = True)
+		linenumber = myproc.stdout.split(":")[0]
+		return linenumber
 	
-	def acc2taxid(self, queryacc,start = 0):
+	def acc2taxid(self, queryacc,start = 0):			
 		#for using binary search on a simple sorted textfile #reminer to self: do NOT use compressed acc2taxid_lookupfile. It increases time for binary search ca 200x!
 		stop = self.acc_lookup_handle_filesize
+		finalstop = stop #todo: only for debugging
+		# ~ totallinecount = 35602626 #todo: only for debugging
 		subjectacc = None
 		
 		while start < stop: 
@@ -194,8 +207,15 @@ class taxdb(object):
 			if currentpos != start:
 				self.acc_lookup_handle.readline()
 			tokens =  self.acc_lookup_handle.readline().strip().split("\t")
+			# ~ print("{}  -  {}   /   {}".format(start, stop, finalstop))
+			# ~ startline=(start/finalstop) * totallinecount
+			# ~ stopline=(stop/finalstop) * totallinecount
+			# ~ currentline = (currentpos/finalstop) * totallinecount
+			# ~ print("--> currentpos: {}".format(currentpos))
+			# ~ print("---> currentline: {}".format(self._delmegetline(tokens[0])))
 			# ~ print(tokens)
-			# ~ print(queryacc)
+			# ~ print("queryacc: {}".format(queryacc))
+			# ~ print("startline={}, stopline={}, currline={}".format(startline, stopline, currentline))
 			# ~ print("---")
 			subjectacc = tokens[0]
 			subjecttaxid = tokens[1]
