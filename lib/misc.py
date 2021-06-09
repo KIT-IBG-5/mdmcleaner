@@ -121,6 +121,20 @@ def calculate_md5hash(infile):
 				break
 			filehash.update(data)
 	return filehash.hexdigest()	
+
+	def from_json(jsonfilename):
+		import json
+		infile = openfile(jsonfilename)
+		out_object = json.load(data_object, infile)
+		infile.close()
+		return out_object
+
+	def to_json(data_object, jsonfilename):
+		import json
+		outfile = openfile(jsonfilename, 'wt')
+		json.dump(data_object, outfile)
+		outfile.close()
+		return jsonfilename
 	
 if __name__ == '__main__':
 	pass

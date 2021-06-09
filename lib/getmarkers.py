@@ -40,6 +40,9 @@ _rnammerpattern = re.compile("^rRNA_(.+)_\d+-\d+_DIR[+-](\s.*)*$")
 _barrnappattern = re.compile("^\d{1,2}S_rRNA::(.+):\d+-\d+\([+-]\)(\s.*)*$")
 _prodigalpattern = re.compile("^(.+)_\d+(\s.*)*")
 
+def _get_new_contigdict_entry(record):
+	return {"contiglen": [len(record)], "totalprotcount" : [0], "ssu_rRNA" : [], "ssu_rRNA_tax" : None, "lsu_rRNA" : [], "lsu_rRNA_tax":None, "prok_marker" : [], "prok_marker_tax" :None,  "bac_marker" : [], "arc_marker" : [], "totalprots" : [], "total_prots_tax": None, "toplevel_marker" : None, "toplevel_tax" : None, "toplevel_ident": None, "ambigeous" : False, "consensus_level_diff": 0, "contradict_consensus": None, "contradict_consensus_evidence": 0, "contradictions_interlevel": [], "viral" : None, "tax_score" : None, "trust_index" : None}
+
 def split_fasta_for_parallelruns(infasta, minlength = 0, number_of_fractions = 2, outfilebasename = None):
 	"""
 	splits large multifastas into several portions, to enable parallel runs of single threaded processes, such as rnammer or prodigal
@@ -64,7 +67,7 @@ def split_fasta_for_parallelruns(infasta, minlength = 0, number_of_fractions = 2
 		if len(record) < minlength:
 			continue
 		contigcounter += 1
-		contigdict[record.id] = {"contiglen": [len(record)], "totalprotcount" : [0], "ssu_rRNA" : [], "ssu_rRNA_tax" : None, "lsu_rRNA" : [], "lsu_rRNA_tax":None, "prok_marker" : [], "prok_marker_tax" :None,  "bac_marker" : [], "arc_marker" : [], "totalprots" : [], "total_prots_tax": None, "toplevel_marker" : None, "toplevel_tax" : None, "toplevel_ident": None, "ambigeous" : False, "consensus_level_diff": 0, "contradict_consensus": None, "contradict_consensus_evidence": 0, "contradictions_interlevel": [], "viral" : None, "tax_score" : None, "trust_index" : None}
+		contigdict[record.id] = _get_new_contigdict_entry(record)
 		if index > len(outlist)-1:
 			direction = -1
 			index = len(outlist) -1
@@ -510,6 +513,12 @@ def combine_multiple_fastas(infastalist, outfilename = None, delete_original = T
 		return output, markerdict
 	return output
 
+def get_trnas():
+	'''
+	this function is still under construction. will call Aragorn or trnascan-se or similar to predict tRNA genes in input contigs
+	'''
+	pass
+
 def seqid2contig(seqid):
 	for pattern in [ _barrnappattern, _rnammerpattern, _prodigalpattern ]:
 		pmatch = re.search(pattern, seqid)
@@ -619,7 +628,7 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 		self.contigdict = {}
 		for record in SeqIO.parse(infile, "fasta"):
 			if len(record) >= mincontiglength:
-				self.contigdict[record.id] = {"contiglen": [len(record)], "totalprotcount" : [0], "ssu_rRNA" : [], "ssu_rRNA_tax" : None, "lsu_rRNA" : [], "lsu_rRNA_tax":None, "prok_marker" : [], "prok_marker_tax" :None,  "bac_marker" : [], "arc_marker" : [], "totalprots" : [], "total_prots_tax": None, "toplevel_marker" : None, "toplevel_tax" : None, "toplevel_ident": None, "ambigeous" : False, "consensus_level_diff": 0, "contradict_consensus": None, "contradict_consensus_evidence": 0, "contradictions_interlevel": [], "viral" : None, "tax_score" : None, "trust_index" : None}
+				self.contigdict[record.id] = _get_new_contigdict_entry(record)
 		_, self.markerdict = combine_multiple_fastas([self.totalprotsfile], outfilename = None, delete_original = False, contigdict = self.contigdict, return_markerdict = True)
 		print("created self.contigdict: {}".format(len(self.contigdict)))
 		
@@ -660,8 +669,23 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 	def get_prot2marker_dict(self):
 		pass #todo: make this
 
+	# ~ def add_lca2markerdict(self, blastdata,db, threads=1): #attempt to enable multithreading here. does not work, because starmap needs to pickle shared objects, and db is not pickable! todo: find a way to make db pickable!
+		# ~ import time
+		# ~ import lca
+		# ~ start=time.time()
+		# ~ counter = 0
+		# ~ lca_jobs = [ ("lca", "strict_lca", {"taxdb" : db, "seqid" : gene, "blasthitlist" : hittuples}) for gene, hittuples in blastdata.get_best_hits_per_gene() ]
+		# ~ lca_results = misc.run_multiple_functions_parallel(lca_jobs, threads)
+		# ~ for l in lca_results:
+			# ~ self.markerdict[l.seqid]["tax"] = l
+		# ~ stop = time.time()
+		# ~ print("total lca time was : {}".format(stop -start))
+		# ~ sys.stdout.flush()
+
 	def add_lca2markerdict(self, blastdata, db): #todo: add multithreading!!!
+		import time
 		import lca
+		start=time.time()
 		counter = 0
 		for gene, hittuples in blastdata.get_best_hits_per_gene():
 			counter += 1
@@ -669,6 +693,9 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 				sys.stderr.write("\r\tclassified {} records so far".format(counter))
 			self.markerdict[gene]["tax"] = lca.strict_lca(db, gene, hittuples)			
 		sys.stderr.write("\r\tfinished classifying {} records!\t\t\n".format(counter))
+		stop = time.time()
+		print("total lca time was : {}".format(stop -start))
+		sys.stdout.flush()
 	
 	def verify_arcNbac_marker(self, db):
 		"""
@@ -786,7 +813,10 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 							"domain" : -7, \
 							"root": -8 }
 		
+		# ~ import pdb; pdb.set_trace()
 		for contig in self.contigdict:
+			print(contig)
+			print(self.contigdict[contig])
 			# ~ print("{} -->{} ==> {}".format(contig, self.contigdict[contig]["toplevel_marker"], self.contigdict[contig]["contradict_consensus"]))
 			# ~ print(self.contigdict[contig]["toplevel_marker"]!= None)
 			# ~ print(not self.contigdict[contig]["contradict_consensus"])

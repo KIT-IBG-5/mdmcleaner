@@ -3,6 +3,7 @@ import sys
 import os
 import argparse
 import getdb
+import misc
 from misc import openfile
 import getdb
 import getmarkers
@@ -85,6 +86,7 @@ def main():
 	myparser.add_argument("-v", "--version", action = "version", version='%(prog)s {version}'.format(version=__version__))
 	myparser.add_argument("--config", action = "store", dest = "configfile", default = find_local_configfile(), help = "provide a local config file with basic settings (such as the location of database-files). default: looks for config files named 'mdmcleaner.config' in current working directory. settings in the local config file will override settings in the global config file '{}'".format(os.path.join(os.path.dirname(os.path.abspath(__file__)), "mdmcleaner.config")))
 	myparser.add_argument("-t", "--threads", action = "store", dest = "threads", type = int, default = None, help = "Number of threads to use. Can also be set in the  mdmcleaner.config file")
+	myparser.add_argument("-f", "--force", action = "store_true", dest = "force", default = False, help = "Force reclassification of pre-existing blast-results")
 	args = myparser.parse_args()
 	#print(args.configfile)
 	
@@ -105,57 +107,74 @@ def main():
 			print(infasta)
 			sys.stdout.flush()
 			sys.stderr.flush()
-			#get markers
+			
+			############### getting markers
 			bindata = getmarkers.bindata(contigfile=infasta, threads=configs["threads"])
+			nucblastjsonfilename = os.path.join(bindata.bin_resultfolder, "nucblasts.json.gz")
+			protblastjsonfilename = os.path.join(bindata.bin_resultfolder, "protblasts.json")
 			#import pdb; pdb.set_trace()
-			#blast markers
-			protblastfiles = []
-			for pbdb in dbfiles[configs["db_type"][0]]["protblastdbs"]: #for protmarkers, every db is blasted one after another with full threads #todo: set list of pbdb names during initialization!
-				print("-"*20)
-				print(configs["db_basedir"])
-				print(configs["db_type"])
-				print(pbdb)
-				print("-"*20)
-				blastdb = os.path.join(configs["db_basedir"][0], configs["db_type"][0], pbdb)
+
+			############### getting blast data for markers
+			##### first protein blasts
+			if os.path.isfile(protblastjsonfilename) and args.force != True: #for debugging. allows picking up AFTER blastlines were already classified when re-running
+				protblasts = blasthandler.blastdata(protblastjsonfilename, score_cutoff_fraction = 0.75, continue_from_json = True)
+			else:
+				protblastfiles = []
+				for pbdb in dbfiles[configs["db_type"][0]]["protblastdbs"]: #for protmarkers, every db is blasted one after another with full threads #todo: set list of pbdb names during initialization!
+					print("-"*20)
+					print(configs["db_basedir"])
+					print(configs["db_type"])
+					print(pbdb)
+					print("-"*20)
+					blastdb = os.path.join(configs["db_basedir"][0], configs["db_type"][0], pbdb)
+					starttime = time.time()
+					protblastfiles.append(blasthandler._run_any_blast(bindata.totalprotsfile, blastdb, "diamond", os.path.join(bindata.bin_resultfolder, "{}_totalprots_vs_{}.blast.tsv".format(bindata.bin_tempname, pbdb)), configs["threads"]))  #todo make choce of blast tool flexible. perhaps dependent on db (add tool/db tuple pairs to configs-dict)
+					endtime = time.time()
+					print("\nthis blast took {} seconds\n".format(endtime - starttime))
+				sys.stderr.write("\nreading in protblast files...\n")
+				protblasts = blasthandler.blastdata(*protblastfiles, score_cutoff_fraction = 0.75)
+				sys.stderr.write("looking up taxids of protein blast hits...\n")
+				protblasts.add_info_to_blastlines(bindata, db)
+			##### then rnablasts
+			if os.path.isfile(nucblastjsonfilename) and args.force != True: #for debugging. allows picking up AFTER blastlines were already classified when re-running
+				nucblasts = blasthandler.blastdata(nucblastjsonfilename, score_cutoff_fraction = 0.8, continue_from_json = True)
+			else:
+				rnablastfiles = []
 				starttime = time.time()
-				protblastfiles.append(blasthandler._run_any_blast(bindata.totalprotsfile, blastdb, "diamond", os.path.join(bindata.bin_resultfolder, "{}_totalprots_vs_{}.blast.tsv".format(bindata.bin_tempname, pbdb)), configs["threads"]))  #todo make choce of blast tool flexible. perhaps dependent on db (add tool/db tuple pairs to configs-dict)
+				nucblastdblist = [os.path.join(configs["db_basedir"][0], configs["db_type"][0], nbdb) for nbdb in dbfiles[configs["db_type"][0]]["nucblastdbs"]] #todo: set nucblastdblist during initialization!
+				nucblastquerylist = list(bindata.rRNA_fasta_dict.values())
+				import itertools #todo move up	
+				print("blasting rRNA data") 
+				#todo: the following blasts all against all (including 16S vs 23S database). But blasting 16S only makes sense against a 16S dabatase... --> ensure blasts are only against appropriate dbs![
+				all_blast_combinations = [ blasttuple + ("blastn",) for blasttuple in list(itertools.chain(*list(zip(nucblastquerylist, permu) for permu in itertools.permutations(nucblastdblist, len(nucblastquerylist)))))] #Todo see if this works correctly. Only works as long as nucblastdbist is longer or equal to nucblastquerylist...
+				print(all_blast_combinations)
+				rnablastfiles = blasthandler.run_multiple_blasts_parallel(all_blast_combinations, os.path.join(bindata.bin_resultfolder, "blastn"), configs["threads"])
 				endtime = time.time()
 				print("\nthis blast took {} seconds\n".format(endtime - starttime))
-			rnablastfiles = []
-			starttime = time.time()
-			nucblastdblist = [os.path.join(configs["db_basedir"][0], configs["db_type"][0], nbdb) for nbdb in dbfiles[configs["db_type"][0]]["nucblastdbs"]] #todo: set nucblastdblist during initialization!
-			nucblastquerylist = list(bindata.rRNA_fasta_dict.values())
-			import itertools #todo move up	
-			print("blasting rRNA data") 
-			#todo: the following blasts all against all (including 16S vs 23S database). But blasting 16S only makes sense against a 16S dabatase... --> ensure blasts are only against appropriate dbs![
-			all_blast_combinations = [ blasttuple + ("blastn",) for blasttuple in list(itertools.chain(*list(zip(nucblastquerylist, permu) for permu in itertools.permutations(nucblastdblist, len(nucblastquerylist)))))] #Todo see if this works correctly. Only works as long as nucblastdbist is longer or equal to nucblastquerylist...
-			print(all_blast_combinations)
-			rnablastfiles = blasthandler.run_multiple_blasts_parallel(all_blast_combinations, os.path.join(bindata.bin_resultfolder, "blastn"), configs["threads"])
-			endtime = time.time()
-			print("\nthis blast took {} seconds\n".format(endtime - starttime))
-			#import pdb; pdb.set_trace()
-			sys.stderr.write("\nreading in blast files...\n")
-			protblasts = blasthandler.blastdata(*protblastfiles, score_cutoff_fraction = 0.75)
-			# ~ print("="*50)
-			# ~ print("NUCBLASTS")
-			nucblasts = blasthandler.blastdata(*rnablastfiles, score_cutoff_fraction = 0.8) #stricter cutoff for nucleotide blasts
+				nucblasts = blasthandler.blastdata(*rnablastfiles, score_cutoff_fraction = 0.8) #stricter cutoff for nucleotide blasts
+				sys.stderr.write("looking up taxids of nucleotide blast hits...\n")
+				nucblasts.add_info_to_blastlines(bindata, db)			
 			# ~ import pdb; pdb.set_trace()
-			sys.stderr.write("looking up taxids of protein blast hits...\n")
-			protblasts.add_info_to_blastlines(bindata, db)
-			sys.stderr.write("looking up taxids of nucleotide blast hits...\n")
-			nucblasts.add_info_to_blastlines(bindata, db)
+
+			############## getting LCA classifications
 			sys.stderr.write("classifying protein sequences...\n")
 			bindata.add_lca2markerdict(protblasts, db)
 			sys.stderr.write("classifying rRNA sequences...\n")
 			bindata.add_lca2markerdict(nucblasts, db)
 			bindata.verify_arcNbac_marker(db) #todo: maybe skip that step and assume bac/arch-markers as more conserved even if assignable to the other domain? (after all, these archaeal and bacterial marker sets correspond to SINGLE-COPY markers and we don't care if they are single copy, only if they are conserved)
 			#todo: combine prok with corresponding bac or arc markers for each contig
+			print("saving protblasts for reuse") #todo: make this optional. is only for debugging now!
+			protblasts.to_json(protblastjsonfilename)
+			print("saving nuclasts for reuse") #todo: make this optional. is only for debugging now!
+			nucblasts.to_json(nucblastjsonfilename)
 			testlca_dict_total = {}
 			testlca_dict_prok = {}
 			testlca_dict_23s = {}
 			testlca_dict_16s = {}
 			print("looping though contigs")
 			# ~ import pdb; pdb.set_trace()
+
+			################## compiling infos
 			for contig in bindata.contigdict: #todo: create an own class in lca.py for this. that class should have options to filter, evaluate etc...
 				# ~ print("*"*70)
 				# ~ print(contig)

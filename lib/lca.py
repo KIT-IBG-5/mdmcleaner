@@ -55,7 +55,7 @@ def contradict_taxtuble_taxpath(taxtuplelist, majortaxdict, return_idents = Fals
 	return None
 
 
-def strict_lca(taxdb, seqid = None, blasthitlist=None):
+def strict_lca(taxdb, seqid = None, blasthitlist=None, threads=1):
 	"""
 	Returns strict lca of a list of blasthits or pre-lca-annotations.
 	Each blast hit should be represented as a named tuple with the following fields: (Accession, taxid, identity, score)
@@ -68,9 +68,10 @@ def strict_lca(taxdb, seqid = None, blasthitlist=None):
 		interim_taxid = taxdb.get_strict_pairwise_lca(interim_taxid, blasthitlist[i].taxid)
 	interim_score = sum([bh.score for bh in blasthitlist])/len(blasthitlist)
 	interim_id = sum([bh.identity for bh in blasthitlist])/len(blasthitlist)
-	return taxtuple(seqid = seqid, taxid = interim_taxid, identity = interim_id, score = interim_score)  
+	return taxtuple(seqid = seqid, taxid = interim_taxid, identity = interim_id, score = interim_score) 
+	# ~ return "fuck"
 	
-def weighted_lca(taxdb, seqid = None, blasthitlist=None, cutoff = 0.95):
+def weighted_lca(taxdb, seqid = None, blasthitlist=None, cutoff = 0.95, threads=1):
 	#todo: maybe allow option to use identity as criterium, instead of score?
 	"""
 	Returns weighted lca of a list of blasthits or pre-lca-annotations.

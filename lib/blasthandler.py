@@ -14,6 +14,7 @@ import sys
 import os
 assert sys.version_info >= (3, 7), "This module requires python 3.7+! You, however, are running '{}'".format(sys.version)
 from collections import namedtuple
+import misc
 hit = namedtuple('hit', 'accession taxid identity score')
 
 from misc import openfile, run_multiple_functions_parallel
@@ -93,23 +94,30 @@ def read_lookup_table(lookup_table, table_format = None): #should be able to rea
 
 class blastdata(object): #todo: define differently for protein or nucleotide blasts (need different score/identity cutoffs)
 	_blasttsv_columnnames = {"query" : 0, "subject" : 1, "ident" : 2, "alignlen" : 3, "qstart": 6, "qend" : 7, "sstart" : 8, "ssend" : 9, "evalue" : 10, "score" : 11, "contig" : None, "stype" : None, "taxid": None} #reading in all fields, in case functionality is added later that also uses the sstat send etc fields
-	def __init__(self, *blastfiles, max_evalue = None, min_ident = None, score_cutoff_fraction = 0.75, keep_max_hit_fraction = 0.5, keep_min_hit_count = 2): #todo: add a min_score #todo: change score_cutoff_fraction to 0.75?
+	def __init__(self, *blastfiles, max_evalue = None, min_ident = None, score_cutoff_fraction = 0.75, keep_max_hit_fraction = 0.5, keep_min_hit_count = 2, continue_from_json = False): #todo: add a min_score #todo: change score_cutoff_fraction to 0.75?
 		#methods:
 		#	method 1: filter by query-genes. For each gene remove all hits with score below <score_cutoff_fraction> (default = 0.5) of maximum score for that gene
 		#			  from these keep the <keep_max_hit_fraction> of hits (default = 0.5), but keep at least <keep_min_fraction> (default = 2) in every case if possible
 		#			  later classify each gene by simple lca
 		# note: for 16S/23S the score should be more than 1000 and the identity should be above 90??
+		# ~ if from_pickle and len(blastfiles) == 1: #if from_pickle is set, that means input shuld NOT be a list of blastfiles, but a single blastdata-object-pickle-file
+			# ~ print("blastdata object already exists! loading from pickle")
+			# ~ self.unpickleyourself(blastfiles[0])
 		self.min_ident = min_ident
 		self.max_evalue = max_evalue
 		self.score_cutoff_fraction = score_cutoff_fraction
 		self.keep_max_hit_fraction = keep_max_hit_fraction
 		self.keep_min_hit_count = keep_min_hit_count
-		self.blastlinelist = []
-		for bf in blastfiles:
-			self.read_blast_tsv(bf, max_evalue = max_evalue, min_ident = min_ident) #TODO: Note: not passing bindata-object right here. if it needs to be looped through later anyway (after condensing the list) it makes more sense to do all further assignments later at that point
-		self.blastlinelist = [ dict(t) for t in {tuple(bl.items()) for bl in self.blastlinelist} ] #remove duplicate blast hits that apparently turn up in gtdb and silva dbs ... alternatively i could simply only blast vs silva, but that could miss some potentially incorrectly called rna genes...
-		self.blastlinelist = self.sort_blastlines_by_gene()
-		self.filter_hits_per_gene(score_cutoff_fraction, keep_max_hit_fraction, keep_min_hit_count)
+		if continue_from_json:
+			assert len(blastfiles) == 1, "ERROR: if supposed to create blastdata-object from json, you can provide only one input file (the json)"
+			self.from_json(blastfiles[0])
+		else:
+			self.blastlinelist = []
+			for bf in blastfiles:
+				self.read_blast_tsv(bf, max_evalue = max_evalue, min_ident = min_ident) #TODO: Note: not passing bindata-object right here. if it needs to be looped through later anyway (after condensing the list) it makes more sense to do all further assignments later at that point
+			self.blastlinelist = [ dict(t) for t in {tuple(bl.items()) for bl in self.blastlinelist} ] #remove duplicate blast hits that apparently turn up in gtdb and silva dbs ... alternatively i could simply only blast vs silva, but that could miss some potentially incorrectly called rna genes...
+			self.blastlinelist = self.sort_blastlines_by_gene()
+			self.filter_hits_per_gene(score_cutoff_fraction, keep_max_hit_fraction, keep_min_hit_count)
 			
 	def filter_hits_per_gene(self, score_cutoff_fraction = 0.75, keep_max_hit_fraction = 0.5, keep_min_hit_count = 2): #todo: allow additional filter settings for rRNA data (e.g. filter by identity not score)
 		"""
@@ -150,11 +158,17 @@ class blastdata(object): #todo: define differently for protein or nucleotide bla
 			self.blastlinelist[i]["contig"] = bindata_obj.marker2contig(self.blastlinelist[i]["query"])
 			self.blastlinelist[i]["stype"] = bindata_obj.markerdict[self.blastlinelist[i]["query"]]["stype"]
 			if taxdb_obj != None:
-				#print("--{}--".format(self.blastlinelist[i]))
+				# ~ print("--{}--".format(self.blastlinelist[i]))
+				# ~ import pdb; pdb.set_trace()
 				self.blastlinelist[i]["taxid"] = taxdb_obj.acc2taxid(self.blastlinelist[i]["subject"])[0]
 		endtime = time.time()
 		print("\nthis took {} seconds\n".format(endtime - starttime))
 
+	def from_json(self, jsonfilename):
+		self.blastlinelist = misc.fromjson(jsonfilename)
+
+	def to_json(self, jsonfilename):
+		misc.to_json(self.blastlinelist, jsonfilename)
 	# ~ def add_info_to_blastlines(self, bindata_obj, taxdb_obj = None):
 		# ~ import time #todo: remove this later
 		# ~ print("add_info_to_blastlines NEW version")
@@ -250,8 +264,26 @@ class blastdata(object): #todo: define differently for protein or nucleotide bla
 			# ~ print(bl)
 			# ~ print("*"*20)
 			self.blastlinelist.append(bl)
-		
-					
+			
+	# ~ def pickleyourself(self, filename): #todo: does not work yet! figure out why!
+		# ~ try:
+			# ~ import cPickle as pickle #this way the faster cPickle gets used IF available, but the slower standard pickle gets used otherwise
+		# ~ except:
+			# ~ import pickle
+		# ~ f = open(filename, 'wb')
+		# ~ pickle.dump(self.__dict__, f, 2)
+		# ~ f.close()
+	
+	# ~ def unpickleyourself(self, filename):#todo: does not work yet! figure out why!
+		# ~ try:
+			# ~ import cPickle as pickle #this way the faster cPickle gets used IF available, but the slower standard pickle gets used otherwise
+		# ~ except:
+			# ~ import pickle
+		# ~ f = open(filename, 'rb')
+		# ~ tmp_dict = pickle.load(f)
+		# ~ f.close()          
+		# ~ self.__dict__.update(tmp_dict)
+				
 def read_blast_tsv(infilename, max_evalue = None, min_ident = None, dbobj = None, bindata_obj = None):
 	""" 
 	returns a a list of dictionaries, each representing the data in a blast line
