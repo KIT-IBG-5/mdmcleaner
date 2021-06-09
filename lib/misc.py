@@ -125,7 +125,7 @@ def calculate_md5hash(infile):
 def from_json(jsonfilename):
 	import json
 	infile = openfile(jsonfilename)
-	out_object = json.load(data_object, infile)
+	out_object = json.load(infile)
 	infile.close()
 	return out_object
 
@@ -135,6 +135,25 @@ def to_json(data_object, jsonfilename):
 	json.dump(data_object, outfile)
 	outfile.close()
 	return jsonfilename
+
+def to_pickle(data_object, picklefilename):
+	try:
+		import cPickle as pickle #this way the faster cPickle gets used IF available, but the slower standard pickle gets used otherwise
+	except:
+		import pickle
+	f = open(picklefilename, 'wb')
+	pickle.dump(data_object, f)
+	f.close()	
+
+def from_pickle(picklefilename):
+	try:
+		import cPickle as pickle #this way the faster cPickle gets used IF available, but the slower standard pickle gets used otherwise
+	except:
+		import pickle
+	f = open(picklefilename, 'rb')
+	tmp_dict = pickle.load(f)
+	f.close()          
+	return tmp_dict
 	
 if __name__ == '__main__':
 	pass

@@ -165,7 +165,7 @@ class blastdata(object): #todo: define differently for protein or nucleotide bla
 		print("\nthis took {} seconds\n".format(endtime - starttime))
 
 	def from_json(self, jsonfilename):
-		self.blastlinelist = misc.fromjson(jsonfilename)
+		self.blastlinelist = misc.from_json(jsonfilename)
 
 	def to_json(self, jsonfilename):
 		misc.to_json(self.blastlinelist, jsonfilename)
