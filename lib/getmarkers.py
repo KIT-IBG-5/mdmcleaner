@@ -791,18 +791,18 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 		print("calculating contig scores...")
 		#todo: this is convoluted. find a more elegant way when time
 		basescore = 6 #scores start out at 6
-		maxscore = 12 #todo: this can change based on the scoring system. find a way to calculate this automatically, no matter how much the coring system may change...
+		maxscore = 12 #todo: this can change based on the scoring system. find a way to calculate this automatically, no matter how much the scoring system may change...
 		markerboni = {	'ssu_rRNA_tax' : 5, \
 						'lsu_rRNA_tax' : 5, \
 						'prok_marker_tax' : 2, \
 						'total_prots_tax' : 1, \
 							None : 0 }
 		
-		marker_basepenalty = {	"su_rRNA_tax" : -2, \
-								'lsu_rRNA_tax' : -2, \
-								'prok_marker_tax' : -1, \
+		marker_basepenalty = {	"ssu_rRNA_tax" : 2, \
+								'lsu_rRNA_tax' : 2, \
+								'prok_marker_tax' : 1, \
 								'total_prots_tax' : 0.5, \
-								None : 0 }		
+								None : 0 }	#positive values, because negative value is already set by taxlevelpenalty	
 		
 		taxlevelpenalty = {	"species" : -0.5, \
 							"genus" : -1, \
@@ -815,15 +815,11 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 		
 		# ~ import pdb; pdb.set_trace()
 		for contig in self.contigdict:
-			print(contig)
-			print(self.contigdict[contig])
-			# ~ print("{} -->{} ==> {}".format(contig, self.contigdict[contig]["toplevel_marker"], self.contigdict[contig]["contradict_consensus"]))
-			# ~ print(self.contigdict[contig]["toplevel_marker"]!= None)
-			# ~ print(not self.contigdict[contig]["contradict_consensus"])
-			# ~ print((self.contigdict[contig]["toplevel_marker"]!= None and not self.contigdict[contig]["contradict_consensus"]))
+			# ~ print(contig)
 			modificator = 0
 			if self.contigdict[contig]["toplevel_marker"]!= None and not self.contigdict[contig]["contradict_consensus"]: #if matches consensus-tax, +bonus based on which marker level was used, what the identity was and whether the lca was ambigeous or not
 				# ~ print("({} * ({}/100)) - (0.25 * {}) + {}".format(markerboni[self.contigdict[contig]["toplevel_marker"]], self.contigdict[contig]["toplevel_ident"], self.contigdict[contig]["consensus_level_diff"], (not self.contigdict[contig]["ambigeous"])))
+				# ~ print("pos1a")
 				modificator = (markerboni[self.contigdict[contig]["toplevel_marker"]] * (self.contigdict[contig]["toplevel_ident"]/100)) - (0.2 * self.contigdict[contig]["consensus_level_diff"]) + (not self.contigdict[contig]["ambigeous"])
 				# ~ print("modificator = {}".format(modificator))
 				for interlevel_penalty in self.contigdict[contig]['contradictions_interlevel']:
@@ -832,13 +828,13 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 			elif ignore_viral == True and self.contigdict[contig]["viral"] == True:
 				modificator = -1 #viral are set to score = 5 --< trust_index 4
 			elif self.contigdict[contig]["toplevel_marker"]!= None and self.contigdict[contig]["contradict_consensus"] != None:
+				# ~ print("({} * ({}/100) * {}) - {}".format(marker_basepenalty[self.contigdict[contig]["toplevel_marker"]], self.contigdict[contig]["contradict_consensus_evidence"], taxlevelpenalty[self.contigdict[contig]["contradict_consensus"]], (not self.contigdict[contig]["ambigeous"])))
 				modificator = (marker_basepenalty[self.contigdict[contig]["toplevel_marker"]] * (self.contigdict[contig]["contradict_consensus_evidence"]/100) * taxlevelpenalty[self.contigdict[contig]["contradict_consensus"]]) - (not self.contigdict[contig]["ambigeous"])
-
-				
+				# ~ print("modificator = {}".format(modificator))
 			score = basescore + modificator
-			self.contigdict[contig]["tax_score"] = score
-			self.contigdict[contig]["trust_index"] = round((score/maxscore) *10) #0 untrusted, 1-3 highly suspicious, 4-5 unknown, 6-10: trusted
-		 
+			# ~ print("score = {}".format(score))
+			self.contigdict[contig]["tax_score"] = max([0, score]) #setting negative scores to zero (--> lowest possible score = 0)!
+			self.contigdict[contig]["trust_index"] = round((max([0, score])/maxscore) *10) #0 untrusted, 1-3 highly suspicious, 4-5 unknown, 6-10: trusted
 		
 	def print_contigdict(self, filename = None):
 		if filename:
