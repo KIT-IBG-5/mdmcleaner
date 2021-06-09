@@ -475,7 +475,7 @@ def combine_multiple_fastas(infastalist, outfilename = None, delete_original = T
 	for f in infastalist:
 		print(f)
 		infile=openfile(f)
-		if outfilename!= None:
+		if outfilename != None:
 			for record in SeqIO.parse(infile, "fasta"):
 				# ~ print(record.id)
 				recordcount += 1
@@ -495,6 +495,7 @@ def combine_multiple_fastas(infastalist, outfilename = None, delete_original = T
 			#print(outrecordlist)
 			for record in outrecordlist: #todo: this is redundant. Simplify!
 				# ~ print(record.id)
+				recordcount += 1 
 				markerdict[record.id] = {"stype": "total", "tax": None } #todo: duplicae command. may be error prone. streamline this
 				contigname = re.sub(pattern, "", record.id)
 				contigdict[contigname]["totalprots"] += [record.id] #todo: if i understand python scopes correctly, te dictionary should be changed globally, even if not explicitely returned... check this!
@@ -572,6 +573,7 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 		self.outbasedir = outbasedir		
 		self.bin_tempname = bin_tempname
 		self.bin_resultfolder = os.path.join(self.outbasedir, self.bin_tempname)
+		self.pickle_progressfile = os.path.join(self.bin_resultfolder, "bindata_progress.pickle") #todo: change to better system
 		for d in [self.outbasedir, self.bin_resultfolder]:
 			if not os.path.exists(d):
 				print("creating {}".format(d))
@@ -580,16 +582,16 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 		self.majortaxdict = None 
 		self.totalprotsfile = os.path.join(self.bin_resultfolder, self.bin_tempname + "_totalprots.faa")
 		self._get_all_markers(threads, mincontiglength, cutofftable)
+	
 
 		
-		#todo:finish this
 	    #todo: simplify all those dicts
 	    # todo the contigdict is probably not necessary in that form...
 	    # todo: one function mapping protein-ids to contigs (just based on prodigal-nomenclature) --> DONE
-	    #	todo: a new dict mapping gene/protein-ids to markers ["ssu", "lsu", "prok", "bact", "arch", "total"] --> started (self.markerdict)
+	    #	todo: a new dict mapping gene/protein-ids to markers ["ssu", "lsu", "prok", "bact", "arch", "total"] --> DONE
 	    # todo: inititate all dicts/variables set in _get_all_markers as None here, so that an overview remains possible
 	     
-	def _get_all_markers(self, threads, mincontiglength, cutofftable): #todo: split into a.) get totalprots b.) get_markerprots c.) get rRNA genes!
+	def _get_all_markers(self, threads, mincontiglength, cutofftable, from_json = True): #todo: split into a.) get totalprots b.) get_markerprots c.) get rRNA genes! #todo: delete the "from_json argument or set default to False
 		#todo: make a more elegant checkpoint system. This convoluted stuff here may only be temporary because of shortage of time 
 		if os.path.exists(self.totalprotsfile):
 			sys.stderr.write("\n{} already exists. --> skipping ORF-calling!\n".format(self.totalprotsfile))
@@ -602,17 +604,30 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 		for pml in range(len(self.protmarkerdictlist)): #todo: contigdict is maybe not needed in this form. choose simpler dicts ?
 			# ~ print("   pml = {}".format(pml))
 			self.contigdict = parse_protmarkerdict(self.protmarkerdictlist[pml], self.contigdict, pml, self.markerdict)
-		self.rRNA_fasta_dict, self.rrnamarkerdict = runbarrnap_all(infasta=self.binfastafile, outfilebasename=os.path.join(self.bin_resultfolder, self.bin_tempname + "_rRNA"), barrnap="barrnap", threads=threads) #todo add option for rnammer (using the subdivided fastafiles)?
-		self.contigdict, self.markerdict = add_rrnamarker_to_contigdict_and_markerdict(self.rrnamarkerdict, self.contigdict, self.markerdict) #todo: contigdict is probably not needed in this form. choose simpler dicts?
-		print("created self.contigdict: {}".format(len(self.contigdict)))
-		#todo: save progress as pickle of this the currenc instance of this class-object
+		if from_json and os.path.exists(self.pickle_progressfile): #todo: for debugging. hacy solution to preserve LCA from previous runs. can be done better (complete progress_dict like during db-downlad). this here is only temporary!
+			print("loading bindata from json")
+			markerprogress_dict = misc.from_pickle(self.pickle_progressfile)
+			self.rRNA_fasta_dict = markerprogress_dict["rRNA_fasta_dict"]
+			self.rrnamarkerdict = markerprogress_dict["rrnamarkerdict"]
+			self.contigdict = markerprogress_dict["contigdict"]
+			self.markerdict = markerprogress_dict["markerdict"]
+			import pdb; pdb.set_trace()
+		else:
+			self.rRNA_fasta_dict, self.rrnamarkerdict = runbarrnap_all(infasta=self.binfastafile, outfilebasename=os.path.join(self.bin_resultfolder, self.bin_tempname + "_rRNA"), barrnap="barrnap", threads=threads) #todo add option for rnammer (using the subdivided fastafiles)?
+			self.contigdict, self.markerdict = add_rrnamarker_to_contigdict_and_markerdict(self.rrnamarkerdict, self.contigdict, self.markerdict) #todo: contigdict is probably not needed in this form. choose simpler dicts?
+		print("created self.contigdict: {}".format(len(self.contigdict))) #todo: delete this line
+		#todo: create progressdict like in db-setup (pickling won't work with this kid of object)
+
+	def _save_current_status(self): #todo: for debugging. find better solution later. had to use pickle rather than json, because json does not recognize named_tuples
+		markerprogress_dict = {"rRNA_fasta_dict": self.rRNA_fasta_dict, "rrnamarkerdict": self.rrnamarkerdict, "contigdict": self.contigdict, "markerdict": self. markerdict}
+		misc.to_pickle(markerprogress_dict, self.pickle_progressfile)
 	
 	def _prep_contigsANDtotalprots(self, mincontiglength, threads):
 		subfastas, self.contigdict = split_fasta_for_parallelruns(self.binfastafile, minlength = mincontiglength, number_of_fractions = threads)
 		commandlist = [("getmarkers", "runprodigal", {"infasta" : subfastas[i], "outfilename" : os.path.join(self.bin_resultfolder, "tempfile_{}_prodigal_{}.faa".format(self.bin_tempname, i)) }) for i in range(len(subfastas))]
 		tempprotfiles = misc.run_multiple_functions_parallel(commandlist, threads)
 		self.totalprotsfile, self.markerdict = combine_multiple_fastas(tempprotfiles, outfilename = self.totalprotsfile, delete_original = True, contigdict = self.contigdict,return_markerdict = True)
-		print("created self.contigdict: {}".format(len(self.contigdict)))
+		print("created self.contigdict: {}".format(len(self.contigdict)))  #todo: delete this line
 	
 	def _prep_protmarker(self):
 		self.protmarkerdictlist = get_markerprotnames(self.totalprotfile, cutofftable, hmmsearch = "hmmsearch", outdir = self.bin_resultfolder, cmode = "moderate", level = "all", threads = "4") #todo: delete hmm_intermediate_results

@@ -135,6 +135,8 @@ def main():
 				protblasts = blasthandler.blastdata(*protblastfiles, score_cutoff_fraction = 0.75)
 				sys.stderr.write("looking up taxids of protein blast hits...\n")
 				protblasts.add_info_to_blastlines(bindata, db)
+				print("saving protblasts for reuse") #todo: make this optional. is only for debugging now!
+				protblasts.to_json(protblastjsonfilename)
 			##### then rnablasts
 			if os.path.isfile(nucblastjsonfilename) and args.force != True: #for debugging. allows picking up AFTER blastlines were already classified when re-running
 				nucblasts = blasthandler.blastdata(nucblastjsonfilename, score_cutoff_fraction = 0.8, continue_from_json = True)
@@ -153,20 +155,23 @@ def main():
 				print("\nthis blast took {} seconds\n".format(endtime - starttime))
 				nucblasts = blasthandler.blastdata(*rnablastfiles, score_cutoff_fraction = 0.8) #stricter cutoff for nucleotide blasts
 				sys.stderr.write("looking up taxids of nucleotide blast hits...\n")
-				nucblasts.add_info_to_blastlines(bindata, db)			
+				nucblasts.add_info_to_blastlines(bindata, db)
+				print("saving nuclasts for reuse") #todo: make this optional. is only for debugging now!
+				nucblasts.to_json(nucblastjsonfilename)		
 			# ~ import pdb; pdb.set_trace()
 
 			############## getting LCA classifications
-			sys.stderr.write("classifying protein sequences...\n")
-			bindata.add_lca2markerdict(protblasts, db)
-			sys.stderr.write("classifying rRNA sequences...\n")
-			bindata.add_lca2markerdict(nucblasts, db)
-			bindata.verify_arcNbac_marker(db) #todo: maybe skip that step and assume bac/arch-markers as more conserved even if assignable to the other domain? (after all, these archaeal and bacterial marker sets correspond to SINGLE-COPY markers and we don't care if they are single copy, only if they are conserved)
-			#todo: combine prok with corresponding bac or arc markers for each contig
-			print("saving protblasts for reuse") #todo: make this optional. is only for debugging now!
-			protblasts.to_json(protblastjsonfilename)
-			print("saving nuclasts for reuse") #todo: make this optional. is only for debugging now!
-			nucblasts.to_json(nucblastjsonfilename)
+			if os.path.exists(bindata.pickle_progressfile):
+				print("skipping LCA classification, because already present in pickle file")
+			else:
+				sys.stderr.write("classifying protein sequences...\n")
+				bindata.add_lca2markerdict(protblasts, db)
+				sys.stderr.write("classifying rRNA sequences...\n")
+				bindata.add_lca2markerdict(nucblasts, db)
+				bindata.verify_arcNbac_marker(db) #todo: maybe skip that step and assume bac/arch-markers as more conserved even if assignable to the other domain? (after all, these archaeal and bacterial marker sets correspond to SINGLE-COPY markers and we don't care if they are single copy, only if they are conserved)
+				#todo: combine prok with corresponding bac or arc markers for each contig
+				bindata._save_current_status()
+
 			testlca_dict_total = {}
 			testlca_dict_prok = {}
 			testlca_dict_23s = {}
