@@ -20,9 +20,15 @@ progressdump_filename = "mdmprogress.json"
 #todo: find actual names for ncbi dbs
 dbfiles = { "gtdb" : {	"protblastdbs" : ["gtdbplus_protdb.dmnd"], \
 						"nucblastdbs" : ["concat_refgenomes", "SILVA_138.1_SSURef_NR99_tax_silva", "SILVA_138.1_LSURef_NR99_tax_silva"] ,\
+						"ssu_nucblastdbs" : ["concat_refgenomes", "SILVA_138.1_SSURef_NR99_tax_silva"], \
+						"lsu_nucblastdbs" : ["concat_refgenomes", "SILVA_138.1_LSURef_NR99_tax_silva"], \
+						"trna_nucblastdbs" : ["concat_refgenomes"], \
 						"mdmdbs" : ["gtdb_all.accession2taxid.sorted", "gtdb_taxonomy_br.json.gz", "gtdb_lcawalkdb_br.db"] },\
 			"ncbi" : { "protblastdbs" : ["nr"], \
 						"nucblastdbs" : ["nt"], \
+						"ssu_nucblastdbs" : ["nt"], \
+						"lsu_nucblastdbs" : ["nt"], \
+						"trna_nucblastdbs" : ["nt"], \
 						"mdmdbs" : [ "ncbi_accession2taxid", "ncbi_taxonomy_br.json.gz", "ncbi_lcawalkdb_br.db"] } }
 
 def find_global_configfile():
@@ -87,6 +93,7 @@ def main():
 	myparser.add_argument("--config", action = "store", dest = "configfile", default = find_local_configfile(), help = "provide a local config file with basic settings (such as the location of database-files). default: looks for config files named 'mdmcleaner.config' in current working directory. settings in the local config file will override settings in the global config file '{}'".format(os.path.join(os.path.dirname(os.path.abspath(__file__)), "mdmcleaner.config")))
 	myparser.add_argument("-t", "--threads", action = "store", dest = "threads", type = int, default = None, help = "Number of threads to use. Can also be set in the  mdmcleaner.config file")
 	myparser.add_argument("-f", "--force", action = "store_true", dest = "force", default = False, help = "Force reclassification of pre-existing blast-results")
+	myparser.add_argument("--blast2pass", action = "store_true", dest = "blast2pass", default = "False", help = "add a second-pass blastx blast-run for all contigs without any classification on blastp level (default: False)")
 	args = myparser.parse_args()
 	#print(args.configfile)
 	
@@ -99,6 +106,8 @@ def main():
 	
 	db = getdatabase(*[os.path.join(configs["db_basedir"][0], configs["db_type"][0], dbfile) for dbfile in dbfiles[configs["db_type"][0]]["mdmdbs"]]) #todo: instead have getdb() accept the congifs.dict as input?
 	errorlistfile = openfile("errorlist.txt", "wt")
+	hoho= getmarkers.get_trnas(args.input_fastas[0], aragorn = "aragorn", threads = 1)
+	# ~ import pdb; pdb.set_trace()
 	for infasta in args.input_fastas:
 		try:
 			sys.stdout.flush()
@@ -143,13 +152,30 @@ def main():
 			else:
 				rnablastfiles = []
 				starttime = time.time()
-				nucblastdblist = [os.path.join(configs["db_basedir"][0], configs["db_type"][0], nbdb) for nbdb in dbfiles[configs["db_type"][0]]["nucblastdbs"]] #todo: set nucblastdblist during initialization!
-				nucblastquerylist = list(bindata.rRNA_fasta_dict.values())
+				#todo: not all rRNAs should be blasted against all databases. create a nucquery2nucdb function or dictionary!
+				# ~ nucblastdblist = [os.path.join(configs["db_basedir"][0], configs["db_type"][0], nbdb) for nbdb in dbfiles[configs["db_type"][0]]["nucblastdbs"]] #todo: set nucblastdblist during initialization!
+				ssu_nucblastdblist = [os.path.join(configs["db_basedir"][0], configs["db_type"][0], nbdb) for nbdb in dbfiles[configs["db_type"][0]]["ssu_nucblastdbs"]]
+				lsu_nucblastdblist = [os.path.join(configs["db_basedir"][0], configs["db_type"][0], nbdb) for nbdb in dbfiles[configs["db_type"][0]]["ssu_nucblastdbs"]]
+				# ~ trna_nucblastdblist = [os.path.join(configs["db_basedir"][0], configs["db_type"][0], nbdb) for nbdb in dbfiles[configs["db_type"][0]]["trna_nucblastdbs"]]		#todo: implement tRNA_blasts		
+				lsublastquerylist = [bindata.rRNA_fasta_dict["lsu_rRNA"],  bindata.rRNA_fasta_dict["tsu_rRNA"]]
+				ssublastquerylist = [bindata.rRNA_fasta_dict["lsu_rRNA"]]
+				# ~ ssublastquerylist = [bindata.trnafile]
 				import itertools #todo move up	
 				print("blasting rRNA data") 
 				#todo: the following blasts all against all (including 16S vs 23S database). But blasting 16S only makes sense against a 16S dabatase... --> ensure blasts are only against appropriate dbs![
-				all_blast_combinations = [ blasttuple + ("blastn",) for blasttuple in list(itertools.chain(*list(zip(nucblastquerylist, permu) for permu in itertools.permutations(nucblastdblist, len(nucblastquerylist)))))] #Todo see if this works correctly. Only works as long as nucblastdbist is longer or equal to nucblastquerylist...
+				lsu_blast_combinations = [ blasttuple + ("blastn",) for blasttuple in list(itertools.chain(*list(zip(lsublastquerylist, permu) for permu in itertools.permutations(lsu_nucblastdblist, len(lsublastquerylist)))))] #Todo see if this works correctly. Only works as long as nucblastdbist is longer or equal to nucblastquerylist...
+				ssu_blast_combinations = [ blasttuple + ("blastn",) for blasttuple in list(itertools.chain(*list(zip(ssublastquerylist, permu) for permu in itertools.permutations(ssu_nucblastdblist, len(ssublastquerylist)))))] #Todo see if this works correctly. Only works as long as nucblastdbist is longer or equal to nucblastquerylist...
+				# ~ trna_blast_combinations = [ blasttuple + ("blastn",) for blasttuple in list(itertools.chain(*list(zip(trnablastquerylist, permu) for permu in itertools.permutations(trna_nucblastdblist, len(trnablastquerylist)))))] #Todo see if this works correctly. Only works as long as nucblastdbist is longer or equal to nucblastquerylist...
+				all_blast_combinations = lsu_blast_combinations + ssu_blast_combinations
+				print("queries")
+				print(lsublastquerylist)
+				print(ssublastquerylist)
+				print("dbs")
+				print(lsu_nucblastdblist)
+				print(ssu_nucblastdblist)
+				print("combinations")
 				print(all_blast_combinations)
+				print("---------___")
 				rnablastfiles = blasthandler.run_multiple_blasts_parallel(all_blast_combinations, os.path.join(bindata.bin_resultfolder, "blastn"), configs["threads"])
 				endtime = time.time()
 				print("\nthis blast took {} seconds\n".format(endtime - starttime))
@@ -162,7 +188,7 @@ def main():
 
 			############## getting LCA classifications
 			if os.path.exists(bindata.pickle_progressfile):
-				print("skipping LCA classification, because already present in pickle file")
+				print("skipping LCA classification, because already present in pickle file") #todo: add check for toplevel_taxlevel set in contigdict and setting it if not
 			else:
 				sys.stderr.write("classifying protein sequences...\n")
 				bindata.add_lca2markerdict(protblasts, db)
@@ -185,25 +211,27 @@ def main():
 				# ~ print(contig)
 				# ~ print("totalprots")
 				ctotalprottax = [bindata.markerdict[x]["tax"] for x in bindata.contigdict[contig]["totalprots"] if bindata.markerdict[x]["tax"] != None]
-				testlca_dict_total[contig] = lca.weighted_lca(db, contig, ctotalprottax)
+				testlca_dict_total[contig] = lca.weighted_lca(db, contig, ctotalprottax, taxlevel="total_prots_tax")
 				if len(testlca_dict_total[contig]) != 0:
 					bindata.contigdict[contig]["total_prots_tax"] = testlca_dict_total[contig]
 				# ~ print("------\nprokmarkers")
 				cprokprottax = [bindata.markerdict[x]["tax"] for x in bindata.contigdict[contig]["prok_marker"] + bindata.contigdict[contig]["bac_marker"] + bindata.contigdict[contig]["arc_marker"] if bindata.markerdict[x]["tax"] != None]
-				testlca_dict_prok[contig] = lca.weighted_lca(db, contig, cprokprottax)
+				testlca_dict_prok[contig] = lca.weighted_lca(db, contig, cprokprottax, taxlevel = "prok_marker_tax")
 				if len(testlca_dict_prok[contig]) != 0:
 					bindata.contigdict[contig]["prok_marker_tax"] = testlca_dict_prok[contig]
 				# ~ print("------\n23S")
 				c23srrnatax = [bindata.markerdict[x]["tax"] for x in bindata.contigdict[contig]["lsu_rRNA"] if bindata.markerdict[x]["tax"] != None]
-				testlca_dict_23s[contig] = lca.weighted_lca(db, contig, c23srrnatax)
+				testlca_dict_23s[contig] = lca.weighted_lca(db, contig, c23srrnatax, taxlevel = "lsu_rRNA_tax")
 				if len(testlca_dict_23s[contig]) != 0:
 					bindata.contigdict[contig]["lsu_rRNA_tax"] = testlca_dict_23s[contig]
 				# ~ print("------\n16S")
 				c16srrnatax =[bindata.markerdict[x]["tax"] for x in bindata.contigdict[contig]["ssu_rRNA"] if bindata.markerdict[x]["tax"] != None]
-				testlca_dict_16s[contig] = lca.weighted_lca(db, contig, c16srrnatax) 
+				testlca_dict_16s[contig] = lca.weighted_lca(db, contig, c16srrnatax, taxlevel = "ssu_rRNA_tax") 
 				if len(testlca_dict_16s[contig]) != 0:
 					bindata.contigdict[contig]["ssu_rRNA_tax"] = testlca_dict_16s[contig]
 				#todo: add another optional level, where all remaining contigs without protein hits are blasted via blastx 
+				#todo: add 5S rRNA and trna LCAs from nucblasts as lowest level (only to be used if no annotation based on proteins to be found, and after second-pass blastx)
+				#todo: everything without proteins should then be assumed noncoding eukaryotal (perhaps add 5S rRNA and tRNAscans first)
 			# ~ import pdb; pdb.set_trace()
 			bindata.get_major_taxon(db)
 			# ~ import pdb; pdb.set_trace()
@@ -225,7 +253,7 @@ def main():
 			
 
 def test_1(bindata):
-	outfile = openfile(os.path.join(bindata.bin_resultfolder, "testcontigmarkers.tsv"), "wt")
+	outfile = openfile(os.path.join(bindata.bin_resultfolder, "testcontigmarkers7.tsv"), "wt")
 	sys.stderr.write("\n" + outfile.name + "\n")
 	sys.stderr.write("\nwriting results\n")
 	outfile.write("contig\t{}\n".format("\t".join([x for x in bindata.contigdict[list(bindata.contigdict.keys())[0]]])))

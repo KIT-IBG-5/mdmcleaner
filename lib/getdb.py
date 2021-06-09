@@ -112,7 +112,7 @@ def _create_sorted_acc2taxid_lookup(acc2taxidfilelist, acc2taxid_outfilename): #
 	#TODO: find out if removing verison numbers from accessions actually necessary for ncbi data. Find a flexible workaround that works for ncbi AND gtdb data
 	presortcmd = "zcat {infile} | cut -f 2,3| grep -v accession | grep -v -P '^$'| env LC_ALL=C sort > {outfile}" #IMPORTANT! removes a sed substitution in accession field. check  if still works for nucleotide basts.  additional note: using shell commands probably way faster than anything i can do in pure python
 	#ALSO IMPORTANT: added removal of empty lines in the above command. This is because some input files contain mepty lines. This resulted in emptylines in the sorted lookupfile, resulting in broken lookups. Check if that is fixed now.
-	#ALSO IMPORTANT: added "env LC_ALL=C before the sort command, in a desperate attempt to ensure same localse seetings for creating and using the accession index. Sort behaves differently based on locale settings and that can acuse problems
+	#ALSO IMPORTANT: added "env LC_ALL=C before the sort command, in a desperate attempt to ensure same localse seetings for creating and using the accession index. Sort behaves differently based on locale settings and that can cajuse problems
 	finalsortcmd = "sort -m {filelist} > {finaldb}"
 	tempfilelist = []
 	for f in acc2taxidfilelist:

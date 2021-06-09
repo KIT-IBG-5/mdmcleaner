@@ -40,8 +40,11 @@ _rnammerpattern = re.compile("^rRNA_(.+)_\d+-\d+_DIR[+-](\s.*)*$")
 _barrnappattern = re.compile("^\d{1,2}S_rRNA::(.+):\d+-\d+\([+-]\)(\s.*)*$")
 _prodigalpattern = re.compile("^(.+)_\d+(\s.*)*")
 
+full_tRNA_species=[	"tRNA-Ala", "tRNA-Arg", "tRNA-Asn", "tRNA-Asp", "tRNA-Cys", "tRNA-Gln", "tRNA-Glu", "tRNA-Gly", "tRNA-His", "tRNA-Ile", \
+							"tRNA-Leu", "tRNA-Lys", "tRNA-Met", "tRNA-Phe", "tRNA-Pro", "tRNA-Ser", "tRNA-Thr", "tRNA-Trp", "tRNA-Tyr", "tRNA-Val"] #expected "full" set of tRNA species expeced for prototoph bacteria. For estimating completeness
+
 def _get_new_contigdict_entry(record):
-	return {"contiglen": [len(record)], "totalprotcount" : [0], "ssu_rRNA" : [], "ssu_rRNA_tax" : None, "lsu_rRNA" : [], "lsu_rRNA_tax":None, "prok_marker" : [], "prok_marker_tax" :None,  "bac_marker" : [], "arc_marker" : [], "totalprots" : [], "total_prots_tax": None, "toplevel_marker" : None, "toplevel_tax" : None, "toplevel_ident": None, "ambigeous" : False, "consensus_level_diff": 0, "contradict_consensus": None, "contradict_consensus_evidence": 0, "contradictions_interlevel": [], "viral" : None, "tax_score" : None, "trust_index" : None}
+	return {"contiglen": [len(record)], "totalprotcount" : [0], "ssu_rRNA" : [], "ssu_rRNA_tax" : None, "lsu_rRNA" : [], "lsu_rRNA_tax":None, "tsu_rRNA" : [], "tRNAs": [],"prok_marker" : [], "prok_marker_tax" :None,  "bac_marker" : [], "arc_marker" : [], "totalprots" : [], "total_prots_tax": None, "toplevel_marker" : None, "toplevel_tax" : None, "toplevel_taxlevel" : None, "toplevel_ident": None, "ambigeous" : False, "consensus_level_diff": 0, "contradict_consensus": None, "contradict_consensus_evidence": 0, "contradictions_interlevel": [], "viral" : None, "tax_score" : None, "trust_index" : None}
 
 def split_fasta_for_parallelruns(infasta, minlength = 0, number_of_fractions = 2, outfilebasename = None):
 	"""
@@ -91,7 +94,7 @@ def split_fasta_for_parallelruns(infasta, minlength = 0, number_of_fractions = 2
 
 	return outlist, contigdict
 
-def runprodigal(infasta, outfilename, prodigal="prodigal", threads = 1): #todo: allow piping via stdin (if input is a list: simply expect it to be a list of seqrecords)
+def runprodigal(infasta, outfilename, prodigal="prodigal", threads = 1): # if input is a list it simply expect it to be a list of seqrecords, for piping via stdin
 	"""
 	creates a protein fasta file of all CDS identified in the inputfasta via prodigal,
 	all other prodigal output is ignored
@@ -113,12 +116,73 @@ def runprodigal(infasta, outfilename, prodigal="prodigal", threads = 1): #todo: 
 		sys.stderr.write(prodigal_proc.stderr)
 		raise Exception("\nERROR: Something went wrong while trying to call prodigal...\n")
 	return outfilename
+
+def _get_trnas_single(infasta,  aragorn="aragorn", threads=1):
+	# ~ import pdb; pdb.set_trace()
+	aragorn_cmd = [aragorn, "-gcbact", "-w"]
+	try:
+		print(infasta)
+		print("wtf")
+		aragorn_cmd = aragorn_cmd + [ infasta]
+		print("::::::::::::::::::::::::::::")
+		print(aragorn_cmd)
+		print("............................")
+		print(" ".join(aragorn_cmd))
+		aragorn_proc = subprocess.run(aragorn_cmd, stdout = subprocess.PIPE, stderr = subprocess.PIPE, text = True)
+		aragorn_proc.check_returncode()
+	except Exception:
+		sys.stderr.write(aragorn_proc.stderr)
+		raise Exception("\nERROR: Something went wrong while trying to call Aragorn...\n")
+	outlinelist = aragorn_proc.stdout.split("\n")
+	return  outlinelist
+
+def get_trnas(*subfastas, outdirectory = ".", aragorn = "aragorn", threads = 1):
+	"""
+	runs aragorn on each provided genomic (sub)fasta, to identify tRNA sequences.
+	if multiple subfastas and multiple threads are given, it will run several instances of aragorn in parallel
+	returns a dictionary with contignames of contigs carrying tRNAs as keys, and lists of tuples (each consisting of the corresponding tRNA name and contig-coordinates) as values.
+	if no contig carries a tRNA gene, it will return an empty dictionary
+	"""
+	#TODO: create another function "extract_trnas" that can extract the exact trna seqeucne based on the respective coordinates, for blasting against the nucleotide-dbs
+	from itertools import chain
+	commandlist = [("getmarkers", "_get_trnas_single", {"infasta" : subfasta}) for subfasta in subfastas]
+	outstringlistlist =misc.run_multiple_functions_parallel(commandlist, threads)
+	outdict = _parse_aragorn_output(list(chain(*outstringlistlist)))
+	return outdict
 	
-def runbarrnap_single(infasta, barrnap="barrnap", kingdom = "bac", threads=1): 
+def _parse_aragorn_output(outstringlist):
+	import re
+	trnapattern = " (tRNA-\w+)\s+(c?\[\d+,\d+\])"
+	
+	outdict = {}
+	trnalist = []
+	contig = None
+	trnaset = set()
+	for line in outstringlist:
+		if line.startswith(">"):
+			if len(trnalist) > 0:
+				outdict[contig] = trnalist
+				trnalist = []
+			contig = line[1:]
+			continue
+		trnahit = re.search(trnapattern, line)
+		if trnahit != None:
+			trna = trnahit.group(1)
+			location = trnahit.group(2)
+			# ~ print(trna, location)
+			# ~ print("-----------")
+			assert trna in full_tRNA_species, "\nERROR: unknown type of trna: {}\n".format(trna)
+			trnalist.append((trna, location))
+			trnaset.add(trna)
+	print("found {} of {} tRNAs --> {}%".format(len(trnaset), len(full_tRNA_species), len(trnaset)/len(full_tRNA_species)*100))
+	return outdict
+			
+		
+def runbarrnap_single(infasta, barrnap="barrnap", kingdom = "bac", output_directory = ".", threads=1): 
 	#tempfastalist, gffoutputs = [], []
 	#for kingdom in ["bac", "arc", "euk"]:
 	#todo: the following hack is to circumvent the problem of barrnap not handling compressed files. A better way to do this would to just assume files are sent via pipe?
-	tempfasta = "temp_barrnap_{}.fasta".format(kingdom)
+	tempfasta = os.path.join(output_directory, "temp_barrnap_{}.fasta".format(kingdom))
 	barrnap_cmd = [barrnap, "--kingdom", kingdom, "--outseq", tempfasta, "--threads", str(threads), "--quiet"] #todo: enable piping via stdin 
 	if type(infasta) == str and os.path.isfile(infasta): #todo: this is convoluted. maybe just always read the fasta if provided as file and pass it as fasta-string?
 		if infasta.endswith(".gz"):
@@ -130,7 +194,7 @@ def runbarrnap_single(infasta, barrnap="barrnap", kingdom = "bac", threads=1):
 		inputarg =  "\n".join([record.format("fasta") for record in infasta])
 	else:
 		raise IOError("\nERROR: don't recognize query argument\n")
-	assert os.path.isfile(infasta), "Error. can't find input file {}".format(infasta) # since barrnap can do multithreading, do not accet subdivided input_fasta for this
+	assert os.path.isfile(infasta), "Error. can't find input file {}".format(infasta) # since barrnap can do multithreading, do not accept subdivided input_fasta for this
 	try:
 		print(" ".join(barrnap_cmd))
 		barrnap_proc = subprocess.run(barrnap_cmd, input = inputarg, stdout = subprocess.PIPE, stderr = subprocess.PIPE, text = True)
@@ -142,13 +206,13 @@ def runbarrnap_single(infasta, barrnap="barrnap", kingdom = "bac", threads=1):
 	#todo: need to parse barrnap results from stdout (gff-output) rather than output-fasta-headers
 	return (tempfasta, gff_output) #todo: make sure these results are then collected for each kingdom and run through deduplicate_barrnap_results()
 
-def runbarrnap_all(infasta, outfilebasename, barrnap="barrnap", threads=3): #todo: split rRNA outputfiles by TYPE (16S & 23S)!. Also: return a contig2rRNA_dict in addition to the outfastaname!
+def runbarrnap_all(infasta, outfilebasename, barrnap="barrnap", output_directory = ".", threads=3): #todo: parse resultfolder from basename. or rather basename from resultfolder!
 	from Bio import SeqIO
 	import misc
 	sys.stderr.write("\nscanning for rRNA genes...\n")
 	joblist = []
 	for kingdom in ["bac", "arc", "euk"]:
-		joblist.append(("getmarkers", "runbarrnap_single", {"infasta" : infasta, "barrnap" : barrnap, "kingdom" : kingdom }))
+		joblist.append(("getmarkers", "runbarrnap_single", {"infasta" : infasta, "barrnap" : barrnap, "kingdom" : kingdom, "output_directory" : output_directory }))
 	outputlist = misc.run_multiple_functions_parallel(joblist, threads)
 	tempfasta_list = [op[0] for op in outputlist]
 	# ~ print(tempfasta_list)
@@ -156,6 +220,7 @@ def runbarrnap_all(infasta, outfilebasename, barrnap="barrnap", threads=3): #tod
 	# ~ print(gff_outputlist)
 	final_fastadict, contig_rrnadict = deduplicate_barrnap_results(tempfasta_list, gff_outputlist) #todo: also get a dictionary which which markers are on which contig
 	for ff in final_fastadict:
+		# ~ print("temporary barrnap file: {}_{}.fasta".format(outfilebasename, ff))
 		outfile = openfile("{}_{}.fasta".format(outfilebasename, ff), "wt")
 		SeqIO.write(final_fastadict[ff], outfile, "fasta")
 		outfile.close()
@@ -173,7 +238,7 @@ def deduplicate_barrnap_results(tempfastas, gff_outputs):
 	from Bio import SeqIO #todo: check if this is even necessary if SeqIO was already imported globally for this module
 	import os
 	contig_hit_dict = {}
-	seqtype_dict = { "18S_rRNA": "ssu_rRNA", "16S_rRNA": "ssu_rRNA",  "23S_rRNA": "lsu_rRNA",  "23S_rRNA": "lsu_rRNA"}
+	seqtype_dict = { "18S_rRNA": "ssu_rRNA", "16S_rRNA": "ssu_rRNA",  "12S_rRNA": "ssu_rRNA", "23S_rRNA": "lsu_rRNA",  "28S_rRNA": "lsu_rRNA", "5S_rRNA" : "tsu_rRNA", "5_8S_rRNA" : "tsu_rRNA"}
 	for gff in gff_outputs:
 		for line in gff.rstrip().split("\n"):
 			if line.startswith("#"):
@@ -187,8 +252,8 @@ def deduplicate_barrnap_results(tempfastas, gff_outputs):
 			rrna = tokens[8].split(";")[0][5:]
 			seqid = "{}::{}:{}-{}({})".format(rrna, contig, start, stop, orient)
 			altseqid = "{}::{}:{}-{}({})".format(rrna, contig, start-1, stop, orient) ##todo: remove this if barrnap issue is resolved. barrnap currently (v.0.9) gives different start position in fasta header and in gff output. Until i am sure what is the reason, or to make this work when if that is fixed in barrnap, i have to check for both variants
-			if rrna == "5S_rRNA":
-				continue #ignoring 5S rRNA for now
+			# ~ if rrna in ["5S_rRNA", "5_8S_rRNA"]:
+				# ~ continue #ignoring 5S rRNA for now
 			if contig in contig_hit_dict:
 				redundant = False
 				index = 0
@@ -198,7 +263,7 @@ def deduplicate_barrnap_results(tempfastas, gff_outputs):
 					rangeold = range(contig_hit_dict[contig][index]["coords"][0], contig_hit_dict[contig][index]["coords"][1])
 					intersection = rangenew.intersection(rangeold)
 					if len(intersection)/min([len(rangenew), len(rangeold)]) > 0.5: #if it intersects by more than 50%, keep only the one with the better evalue
-						if evalue < evalueold:
+						if evalue <= evalueold:
 							contig_hit_dict[contig].pop(index)
 							continue
 						else:
@@ -213,7 +278,7 @@ def deduplicate_barrnap_results(tempfastas, gff_outputs):
 		for seq in contig_hit_dict[contig]:
 			finalseqids.add(seq["seqid"])
 			finalseqids.add(seq["altseqid"]) #todo: remove this if barrnap issue is resolved
-	finalfastadict = {"ssu_rRNA" : [], "lsu_rRNA" : []} #16S & 18S are "ssu_rRNAs", 23S & 28S are "lsu_rRNAs". 5S is ignored
+	finalfastadict = {"ssu_rRNA" : [], "lsu_rRNA" : [], "tsu_rRNA" : []} #16S & 18S are "ssu_rRNAs", 23S & 28S are "lsu_rRNAs". 5S is ignored #todo: change this and save 5S also (just to distinguisch actual noncoding contigs from those that have at least 5S rRNA or trRNA)
 	#beforecounter = 0
 	contig_rrna_dict = {}
 	for fasta in tempfastas:
@@ -226,10 +291,10 @@ def deduplicate_barrnap_results(tempfastas, gff_outputs):
 			if record.id in finalseqids: # todo:/note: I realize that if two models (e.g. arc & bac) detect the exact same region with the exact same coordinates, this would lead to a dupicate genesequence in the rRNA-predictions. However, currently it seems this would be without consequences for the further workflow
 				finalfastadict[seqtype_dict[recordtype]].append(record)
 				if contig not in contig_rrna_dict:
-					contig_rrna_dict[contig] = {"ssu_rRNA" : [], "lsu_rRNA" : [] }
+					contig_rrna_dict[contig] = {"ssu_rRNA" : [], "lsu_rRNA" : [], "tsu_rRNA" : []}
 				contig_rrna_dict[contig][seqtype_dict[recordtype]].append(record.id)
-	#for fasta in tempfastas: #currently doing this AFTER the previous loop, to make sure the files are only deleted when everything went well (debugging purposes)
-		#os.remove(fasta)
+	for fasta in tempfastas: #currently doing this AFTER the previous loop, to make sure the files are only deleted when everything went well (debugging purposes)
+		os.remove(fasta)
 	print("\nfound {} rna sequences\n".format(sum([ len(finalfastadict[ghj]) for ghj in finalfastadict]))) #todo: delete this line (debugging only)
 	return finalfastadict, contig_rrna_dict		#todo: also return a dictionary with contignames as keys and type of marker as values?
 					
@@ -514,11 +579,6 @@ def combine_multiple_fastas(infastalist, outfilename = None, delete_original = T
 		return output, markerdict
 	return output
 
-def get_trnas():
-	'''
-	this function is still under construction. will call Aragorn or trnascan-se or similar to predict tRNA genes in input contigs
-	'''
-	pass
 
 def seqid2contig(seqid):
 	for pattern in [ _barrnappattern, _rnammerpattern, _prodigalpattern ]:
@@ -567,6 +627,7 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 		self.rnammer_pattern = re.compile("^rRNA_(.+)_\d+-\d+_DIR[+-]")
 		self.binfastafile = contigfile
 		bin_tempname = os.path.basename(contigfile)
+		self.trnadict = {}
 		for suffix in [".gz", ".fa", ".fasta", ".fna", ".fas", ".fsa"]:
 			if bin_tempname.endswith(suffix):
 				bin_tempname = bin_tempname[:-len(suffix)]
@@ -574,6 +635,7 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 		self.bin_tempname = bin_tempname
 		self.bin_resultfolder = os.path.join(self.outbasedir, self.bin_tempname)
 		self.pickle_progressfile = os.path.join(self.bin_resultfolder, "bindata_progress.pickle") #todo: change to better system
+		self.trna_jsonfile = os.path.join(self.bin_resultfolder, "bindata_progress.json.gz") #todo: REALLY start implementing a better system!
 		for d in [self.outbasedir, self.bin_resultfolder]:
 			if not os.path.exists(d):
 				print("creating {}".format(d))
@@ -611,10 +673,21 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 			self.rrnamarkerdict = markerprogress_dict["rrnamarkerdict"]
 			self.contigdict = markerprogress_dict["contigdict"]
 			self.markerdict = markerprogress_dict["markerdict"]
-			import pdb; pdb.set_trace()
+			 
+			# ~ import pdb; pdb.set_trace()
 		else:
-			self.rRNA_fasta_dict, self.rrnamarkerdict = runbarrnap_all(infasta=self.binfastafile, outfilebasename=os.path.join(self.bin_resultfolder, self.bin_tempname + "_rRNA"), barrnap="barrnap", threads=threads) #todo add option for rnammer (using the subdivided fastafiles)?
+			self.rRNA_fasta_dict, self.rrnamarkerdict = runbarrnap_all(infasta=self.binfastafile, outfilebasename=os.path.join(self.bin_resultfolder, self.bin_tempname + "_rRNA"), barrnap="barrnap", output_directory = self.bin_resultfolder, threads=threads) #todo add option for rnammer (using the subdivided fastafiles)?
 			self.contigdict, self.markerdict = add_rrnamarker_to_contigdict_and_markerdict(self.rrnamarkerdict, self.contigdict, self.markerdict) #todo: contigdict is probably not needed in this form. choose simpler dicts?
+		if from_json and os.path.exists(self.trna_jsonfile):
+			trna_tempdict = misc.from_json(self.trna_jsonfile)
+		else:
+			trna_tempdict = get_trnas(self.binfastafile) #todo: aragorn does not accept input from stdin (WHY!?) --> multithreading a bit more complicated. find a solution for mutiprocessing later, that does not break current workflow!
+			misc.to_json(trna_tempdict, self.trna_jsonfile)
+		for contig in trna_tempdict:
+			for trna in trna_tempdict[contig]:
+				self.trnadict[trna[0]] = contig
+			self.contigdict[contig]["tRNAs"] = trna_tempdict[contig] 
+			
 		print("created self.contigdict: {}".format(len(self.contigdict))) #todo: delete this line
 		#todo: create progressdict like in db-setup (pickling won't work with this kid of object)
 
@@ -626,6 +699,10 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 		subfastas, self.contigdict = split_fasta_for_parallelruns(self.binfastafile, minlength = mincontiglength, number_of_fractions = threads)
 		commandlist = [("getmarkers", "runprodigal", {"infasta" : subfastas[i], "outfilename" : os.path.join(self.bin_resultfolder, "tempfile_{}_prodigal_{}.faa".format(self.bin_tempname, i)) }) for i in range(len(subfastas))]
 		tempprotfiles = misc.run_multiple_functions_parallel(commandlist, threads)
+		# ~ tempdict = get_trnas(subfastas, threads=threads) #todo: aragorn does not accept input from stdin. find a solution for mutiprocessing later!
+		# ~ self.trnadict = { trna[0]: contig for trna in tempdict[contig] for contig in tempdict} 
+		# ~ for contig in self.contigdict:
+			# ~ self.contigdict[contig]["tRNAs"] = tempdict[contig] 
 		self.totalprotsfile, self.markerdict = combine_multiple_fastas(tempprotfiles, outfilename = self.totalprotsfile, delete_original = True, contigdict = self.contigdict,return_markerdict = True)
 		print("created self.contigdict: {}".format(len(self.contigdict)))  #todo: delete this line
 	
@@ -635,10 +712,11 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 			self.contigdict = parse_protmarkerdict(self.protmarkerdictlist[pml], self.contigdict, pml)	
 
 	def _prep_rRNAmarker(self):
-		self.rRNA_fasta_dict, self.rrnamarkerdict = runbarrnap_all(infasta=self.binfastafile, outfilebasename=os.path.join(self.bin_resultfolder, self.bin_tempname + "_rRNA"), barrnap="barrnap", threads=threads) #todo add option for rnammer (using the subdivided fastafiles)?
+		self.rRNA_fasta_dict, self.rrnamarkerdict = runbarrnap_all(infasta=self.binfastafile, outfilebasename=os.path.join(self.bin_resultfolder, self.bin_tempname + "_rRNA"), barrnap="barrnap", output_directory = self.bin_resultfolder, threads=threads) #todo add option for rnammer (using the subdivided fastafiles)? #todo: parse resultfolder from basename. or rather basename from resultfolder!
 		self.contigdict = add_rrnamarker_to_contigdict(self.rrnamarkerdict, self.contigdict)
 				
 	def _prep_onlycontigs(self, mincontiglength, threads):
+		#todo: add trna-scan
 		infile = openfile(self.binfastafile)
 		self.contigdict = {}
 		for record in SeqIO.parse(infile, "fasta"):
@@ -757,6 +835,7 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 						self.contigdict[contig]["toplevel_tax"] = major_taxon
 						self.contigdict[contig]["toplevel_marker"] = m
 						self.contigdict[contig]["toplevel_ident"] = major_taxon[-1].average_ident
+						self.contigdict[contig]["toplevel_taxlevel"] = lca.taxlevels[len(major_taxon)-1]
 					else:
 						contradiction, contradiction_evidence = lca.contradicting_taxtuples(self.contigdict[contig][m], major_taxon, return_idents = True)
 						if contradiction != None:
@@ -803,6 +882,18 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 		#return taxondict, majortaxdict 
 
 	def calc_contig_scores(self, ignore_viral = True): #ignore_viral --> no penalty for contigs that differ from consensus but are marked "viral". Those might simply be prophages
+		"""
+		scores are calculated differently based on whether the contig-taxassignment matches the bin-consensus-taxon or not, or whether no taxon-info could be determined at all
+		if taxon asssignment is viral: contig trustworthiness is per default classified as 4 ("unkown/slightly-suspiceous") because bacterial genomes may well carry prophages. This behaviour can optionally be turned off.
+		if no taxon-assignment is possible because no marker or protein sequence was found on the contig: contig trustworthines is automatically classified as 3 ("suspiceous"), because based on the relatively high coding density of prokaryotes such contigs are likely to be eukaryotic
+		TODO: if assigned only to domain or root BUT average identity is > 45% (based on https://doi.org/10.1093/nar/gku169): assume database crosscontamination! --> set trustworthiness to 3 ("suspiceous")
+		if taxon-assignment does not contradict consensus: assign score-bonus based on used taxmarker (rRNA, markerprots or totalprots) and average blast-identity, then apply deductions for each level difference that it is lower than the consensus-taxon. Also apply deductions for each lower-ranking markerst contradicting this tax-assignment
+			--> this boni is tehrefore granted independent of the taxlevel but only on the marker used. uncertainties indicated by assigning lower taxlevels or contradictions between marker-sets lead to deductions
+		if taxon assignment contradicts consensus: apply score-penalty based on used taxmarker, average blast-identity and taxlevel. in case of classification up to species level, the species-identity cutoffs on amino-acid or rRNA-level are factored in.
+			--> this penalty is a combination of marker-level and taxon-level
+		in both cases, non-ambigeous assignments increase or decrease the bonus/penalty by 1, respectively
+		possible taxon-scores range from -4 to 12. for calculating trustworthiness-score, tax-scores <0 are assumed as 0, leading to trusworthiness-scores ranging from 0-10 (0= probably contamination, 3 = suspiceous, 4 = unknown/slightly suspiceous,  5 = unkown, 6 = "probably trustworthy", 10 = highly trustworthy
+		"""
 		print("calculating contig scores...")
 		#todo: this is convoluted. find a more elegant way when time
 		basescore = 6 #scores start out at 6
@@ -811,22 +902,22 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 						'lsu_rRNA_tax' : 5, \
 						'prok_marker_tax' : 2, \
 						'total_prots_tax' : 1, \
-							None : 0 }
+							None : 0 } #boni granted independent of taxlevel at first. each level difference to consenus_taxon and each disagreement between marker-levels leads to substractions later 
 		
-		marker_basepenalty = {	"ssu_rRNA_tax" : 2, \
+		marker_basepenalty = {	"ssu_rRNA_tax" : 3, \
 								'lsu_rRNA_tax' : 2, \
 								'prok_marker_tax' : 1, \
-								'total_prots_tax' : 0.5, \
-								None : 0 }	#positive values, because negative value is already set by taxlevelpenalty	
-		
-		taxlevelpenalty = {	"species" : -0.5, \
-							"genus" : -1, \
-							"family" : -2, \
-							"class" : -3,\
-							"order" : -5, \
-							"phylum" : -6, \
-							"domain" : -7, \
-							"root": -8 }
+								'total_prots_tax' : 1, \
+								None : 0 }	# total penalty calculated based on combination of marker_basepenalty and taxlevelbasepenalty. positive values, because being substracted from 0 later	
+
+		taxlevelbasepenalty = {	"species" : 1, \
+							"genus" : 1.5, \
+							"family" : 3, \
+							"class" : 4,\
+							"order" : 5, \
+							"phylum" : 6, \
+							"domain" : 7, \
+							"root": 8 } #positive values, because being substracted from 0 later					
 		
 		# ~ import pdb; pdb.set_trace()
 		for contig in self.contigdict:
@@ -840,16 +931,19 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 				for interlevel_penalty in self.contigdict[contig]['contradictions_interlevel']:
 					modificator -= 1 * (interlevel_penalty/100)
 					# ~ print("\t -{} --> modificator = {}".format(1 * (interlevel_penalty/100), modificator))
-			elif ignore_viral == True and self.contigdict[contig]["viral"] == True:
-				modificator = -1 #viral are set to score = 5 --< trust_index 4
 			elif self.contigdict[contig]["toplevel_marker"]!= None and self.contigdict[contig]["contradict_consensus"] != None:
-				# ~ print("({} * ({}/100) * {}) - {}".format(marker_basepenalty[self.contigdict[contig]["toplevel_marker"]], self.contigdict[contig]["contradict_consensus_evidence"], taxlevelpenalty[self.contigdict[contig]["contradict_consensus"]], (not self.contigdict[contig]["ambigeous"])))
-				modificator = (marker_basepenalty[self.contigdict[contig]["toplevel_marker"]] * (self.contigdict[contig]["contradict_consensus_evidence"]/100) * taxlevelpenalty[self.contigdict[contig]["contradict_consensus"]]) - (not self.contigdict[contig]["ambigeous"])
+				# ~ print("({} * ({}/100) * {}) - {}".format(marker_basepenalty[self.contigdict[contig]["toplevel_marker"]], self.contigdict[contig]["contradict_consensus_evidence"], taxlevelbasepenalty[self.contigdict[contig]["contradict_consensus"]], (not self.contigdict[contig]["ambigeous"])))
+				modificator -= (marker_basepenalty[self.contigdict[contig]["toplevel_marker"]] * (self.contigdict[contig]["contradict_consensus_evidence"]/100) * taxlevelbasepenalty[self.contigdict[contig]["contradict_consensus"]]) + (not self.contigdict[contig]["ambigeous"])
 				# ~ print("modificator = {}".format(modificator))
 			score = basescore + modificator
 			# ~ print("score = {}".format(score))
 			self.contigdict[contig]["tax_score"] = max([0, score]) #setting negative scores to zero (--> lowest possible score = 0)!
 			self.contigdict[contig]["trust_index"] = round((max([0, score])/maxscore) *10) #0 untrusted, 1-3 highly suspicious, 4-5 unknown, 6-10: trusted
+			if ignore_viral == True and self.contigdict[contig]["viral"] == True:
+				self.contigdict[contig]["trust_index"] = 4 #viral are set to trust_index 4
+			if self.contigdict[contig]["toplevel_taxlevel"] in ["root", "domain"] and self.contigdict[contig]["toplevel_ident"] >= 85:
+				print("possible indication for reference database cross-domain/phylum-contamination in {}! setting trustworthiness to 3!".format(contig))
+				self.contigdict[contig]["trust_index"] = 3
 		
 	def print_contigdict(self, filename = None):
 		if filename:
