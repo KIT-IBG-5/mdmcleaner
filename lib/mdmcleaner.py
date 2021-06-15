@@ -101,12 +101,18 @@ def main():
 	configfile_hierarchy = [ cf for cf in [find_global_configfile(), args.configfile] if cf != None ]
 	print(configfile_hierarchy)
 	configs = read_configs(configfile_hierarchy, args) #todo finish this
+	#initialize blastdbs
+	ssu_nucblastdblist = [os.path.join(configs["db_basedir"][0], configs["db_type"][0], nbdb) for nbdb in dbfiles[configs["db_type"][0]]["ssu_nucblastdbs"]]
+	lsu_nucblastdblist = [os.path.join(configs["db_basedir"][0], configs["db_type"][0], nbdb) for nbdb in dbfiles[configs["db_type"][0]]["lsu_nucblastdbs"]] #used for lsu and "tsu" rRNAs
+	trna_nucblastdblist = [os.path.join(configs["db_basedir"][0], configs["db_type"][0], nbdb) for nbdb in dbfiles[configs["db_type"][0]]["trna_nucblastdbs"]]		#todo: implement tRNA_blasts		
+	protblastdblist = [os.path.join(configs["db_basedir"][0], configs["db_type"][0], pbdb) for pbdb in dbfiles[configs["db_type"][0]]["protblastdbs"]]
+	
 	sys.stderr.write("\n\nSTETTINGS:\n" + pprint.pformat(configs)+ "\n\n")
 	progressdump = check_progressdump(args.output_folder, args.input_fastas) #todo: this is meant to implement a "major-progressdump", consisting of multiple "mini-progressdumps" (one for each input-fasta). for each input-fasta, it should list the current progress-state [None = not started yet, stepxx = currently unfinished, "Finished" = finished]
 	
 	db = getdatabase(*[os.path.join(configs["db_basedir"][0], configs["db_type"][0], dbfile) for dbfile in dbfiles[configs["db_type"][0]]["mdmdbs"]]) #todo: instead have getdb() accept the congifs.dict as input?
 	errorlistfile = openfile("errorlist.txt", "wt")
-	hoho= getmarkers.get_trnas(args.input_fastas[0], aragorn = "aragorn", threads = 1)
+	# ~ hoho= getmarkers.get_trnas(args.input_fastas[0], aragorn = "aragorn", threads = 1)
 	# ~ import pdb; pdb.set_trace()
 	for infasta in args.input_fastas:
 		try:
@@ -125,17 +131,23 @@ def main():
 
 			############### getting blast data for markers
 			##### first protein blasts
+
+			sys.stdout.flush()
+			sys.stderr.flush()			
 			if os.path.isfile(protblastjsonfilename) and args.force != True: #for debugging. allows picking up AFTER blastlines were already classified when re-running
 				protblasts = blasthandler.blastdata(protblastjsonfilename, score_cutoff_fraction = 0.75, continue_from_json = True)
 			else:
+				print("blasting protein data")
 				protblastfiles = []
-				for pbdb in dbfiles[configs["db_type"][0]]["protblastdbs"]: #for protmarkers, every db is blasted one after another with full threads #todo: set list of pbdb names during initialization!
+				for blastdb in protblastdblist: #for protmarkers, every db is blasted one after another with full threads #todo: set list of pbdb names during initialization!
+					pbdb = os.path.basename(blastdb)
 					print("-"*20)
 					print(configs["db_basedir"])
 					print(configs["db_type"])
 					print(pbdb)
 					print("-"*20)
-					blastdb = os.path.join(configs["db_basedir"][0], configs["db_type"][0], pbdb)
+					sys.stdout.flush()
+					sys.stderr.flush()	
 					starttime = time.time()
 					protblastfiles.append(blasthandler._run_any_blast(bindata.totalprotsfile, blastdb, "diamond", os.path.join(bindata.bin_resultfolder, "{}_totalprots_vs_{}.blast.tsv".format(bindata.bin_tempname, pbdb)), configs["threads"]))  #todo make choce of blast tool flexible. perhaps dependent on db (add tool/db tuple pairs to configs-dict)
 					endtime = time.time()
@@ -152,20 +164,19 @@ def main():
 			else:
 				rnablastfiles = []
 				starttime = time.time()
-				#todo: not all rRNAs should be blasted against all databases. create a nucquery2nucdb function or dictionary!
+				#todo: not all rRNAs should be blasted against all databases.  so creating different blast_combiantions for lsu & ssu (and tsu and trna?) here. create a get_blast_combinations function for this in blasthander!
 				# ~ nucblastdblist = [os.path.join(configs["db_basedir"][0], configs["db_type"][0], nbdb) for nbdb in dbfiles[configs["db_type"][0]]["nucblastdbs"]] #todo: set nucblastdblist during initialization!
-				ssu_nucblastdblist = [os.path.join(configs["db_basedir"][0], configs["db_type"][0], nbdb) for nbdb in dbfiles[configs["db_type"][0]]["ssu_nucblastdbs"]]
-				lsu_nucblastdblist = [os.path.join(configs["db_basedir"][0], configs["db_type"][0], nbdb) for nbdb in dbfiles[configs["db_type"][0]]["ssu_nucblastdbs"]]
+
 				# ~ trna_nucblastdblist = [os.path.join(configs["db_basedir"][0], configs["db_type"][0], nbdb) for nbdb in dbfiles[configs["db_type"][0]]["trna_nucblastdbs"]]		#todo: implement tRNA_blasts		
-				lsublastquerylist = [bindata.rRNA_fasta_dict["lsu_rRNA"],  bindata.rRNA_fasta_dict["tsu_rRNA"]]
-				ssublastquerylist = [bindata.rRNA_fasta_dict["lsu_rRNA"]]
-				# ~ ssublastquerylist = [bindata.trnafile]
+				lsublastquerylist = [bindata.rRNA_fasta_dict["lsu_rRNA"]] #,  bindata.rRNA_fasta_dict["tsu_rRNA"]] was thinking about running the 5S blasts now, but actually they should only be run if needed at the end!
+				ssublastquerylist = [bindata.rRNA_fasta_dict["ssu_rRNA"]]
+				# ~ trnablastquerylist = [bindata.trnafile]
 				import itertools #todo move up	
 				print("blasting rRNA data") 
 				#todo: the following blasts all against all (including 16S vs 23S database). But blasting 16S only makes sense against a 16S dabatase... --> ensure blasts are only against appropriate dbs![
-				lsu_blast_combinations = [ blasttuple + ("blastn",) for blasttuple in list(itertools.chain(*list(zip(lsublastquerylist, permu) for permu in itertools.permutations(lsu_nucblastdblist, len(lsublastquerylist)))))] #Todo see if this works correctly. Only works as long as nucblastdbist is longer or equal to nucblastquerylist...
-				ssu_blast_combinations = [ blasttuple + ("blastn",) for blasttuple in list(itertools.chain(*list(zip(ssublastquerylist, permu) for permu in itertools.permutations(ssu_nucblastdblist, len(ssublastquerylist)))))] #Todo see if this works correctly. Only works as long as nucblastdbist is longer or equal to nucblastquerylist...
-				# ~ trna_blast_combinations = [ blasttuple + ("blastn",) for blasttuple in list(itertools.chain(*list(zip(trnablastquerylist, permu) for permu in itertools.permutations(trna_nucblastdblist, len(trnablastquerylist)))))] #Todo see if this works correctly. Only works as long as nucblastdbist is longer or equal to nucblastquerylist...
+				lsu_blast_combinations = blasthandler.get_blast_combinations(lsu_nucblastdblist, lsublastquerylist, blast = "blastn")
+				ssu_blast_combinations = blasthandler.get_blast_combinations(ssu_nucblastdblist, ssublastquerylist, blast = "blastn")
+			# ~ trna_blast_combinations = blasthandler.get_blast_combinations(trna_nucblastdblist, trnablastquerylist, blast = "blastn")
 				all_blast_combinations = lsu_blast_combinations + ssu_blast_combinations
 				print("queries")
 				print(lsublastquerylist)
@@ -233,7 +244,7 @@ def main():
 				#todo: add 5S rRNA and trna LCAs from nucblasts as lowest level (only to be used if no annotation based on proteins to be found, and after second-pass blastx)
 				#todo: everything without proteins should then be assumed noncoding eukaryotal (perhaps add 5S rRNA and tRNAscans first)
 			# ~ import pdb; pdb.set_trace()
-			bindata.get_major_taxon(db)
+			bindata.get_topleveltax(db)
 			# ~ import pdb; pdb.set_trace()
 			bindata.calc_contig_scores()
 			# ~ import pdb; pdb.set_trace()

@@ -379,14 +379,19 @@ def __add_taxid2blasthits_later(blastlinelist, db_obj): #todo: probably obsolte.
 		blastlinelist[bl]["taxid"] = db_obj.acc2taxid(blastlinelist[bl]["taxid"]["subject"])
 	return blastlinelist
 
-def run_single_blastp(query, db, blast, outname, threads = 1):
-#	from Bio.Blast.Applications import NcbiblastpCommandline
-#	blastcmd = NcbiblastpCommandline(cmd = blast, query = query, db = db, evalue = 1e-10, out = outname + ".tmp", \
-#								outfmt = 6, num_threads = threads)
+def run_single_blast(query, db, blast, outname, threads = 1): 
 	import subprocess
+	assert os.path.basename(blast) in ["blastn", "blastp", "blastx"]
+	if type(query) == str and os.path.isfile(query):
+		inputarg = None
+	elif type(query) == list:
+		inputarg =  "\n".join([record.format("fasta") for record in query])
+		query = "-"
+	else:
+		raise IOError("\nERROR: don't recognize query argument\n")
 	blastcmd = subprocess.run([blast, "-query", query, "-db", db, "-evalue", "1e-10",\
-							   "-outfmt", "6", "-num_threads", str(threads), "-out", outname + ".tmp"], \
-							   stdout = subprocess.PIPE, stderr = subprocess.PIPE, text = True)
+							   "-outfmt", "6", "-num_threads", str(int(threads)), "-out", outname + ".tmp"], \
+							  input = inputarg, stdout = subprocess.PIPE, stderr = subprocess.PIPE, text = True)
 	try:
 		blastcmd.check_returncode()
 	except Exception:
@@ -395,23 +400,17 @@ def run_single_blastp(query, db, blast, outname, threads = 1):
 		raise RuntimeError
 	return outname
 
+def run_single_blastp(query, db, blast, outname, threads = 1):
+	assert os.path.basename(blast) == "blastp" 
+	return run_single_blast(query, db, blast, outname, threads)
+
 def run_single_blastn(query, db, blast, outname, threads = 1):
-	# ~ from Bio.Blast.Applications import NcbiblastnCommandline
-	# ~ blastcmd = NcbiblastnCommandline(cmd = blast, query = query, db = db, evalue = 1e-10, out = outname + ".tmp", \
-								# ~ outfmt = 6, num_threads = threads)
-	import subprocess
-	blastcmd = subprocess.run([blast, "-query", query, "-db", db, "-evalue", "1e-10",\
-							   "-outfmt", "6", "-num_threads", str(int(threads)), "-out", outname + ".tmp"], \
-							   stdout = subprocess.PIPE, stderr = subprocess.PIPE, text = True)
-	try:
-		#print(blastcmd.cmd)
-		print(" ".join(blastcmd.args))
-		blastcmd.check_returncode()
-	except Exception:
-		sys.stderr.write("\nAn error occured during blastn run with query '{}'\n".format(query))
-		sys.stderr.write("{}\n".format(blastcmd.stderr))
-		raise RuntimeError
-	return outname
+	assert os.path.basename(blast) == "blastn"
+	return run_single_blast(query, db, blast, outname, threads)
+
+def run_single_blastx(query, db, blast, outname, threads = 1):
+	assert os.path.basename(blast) == "blastx"
+	return run_single_blast(query, db, blast, outname, threads)
 	
 def run_single_diamondblastp(query, db, diamond, outname, threads = 1): #TODO: currently not setting "--tmpdir" & "--parallel-tmpdir" here! figure something out if this turns out to be problematic on hpc systems
 	#TODO: add a maxmem arguemt that states how much memory can be used. use this to determine optimal blocksize and chunks for more efficient blasting. BLOCKSIZE=INT(MEMORY/6) CHUNKS=4/2/1 IF MEMORY >=12/24/48
@@ -541,6 +540,13 @@ def make_blast_db_from_gz(infasta, outfilename, makeblastdb="makeblastdb", db_ty
 	return outfilename
 	#todo: compare how long it take to pipe this via python subprocess and ow long to do the same on the bash shell
 
+
+def get_blast_combinations(dblist, querylist, blast = "blastn"):
+	import itertools #todo move up
+	acceptable_blasttools = ["blastn", "blastp", "blastx"]
+	assert os.path.basename(blast) in acceptable_blasttools, "Error: 'blast' must be one of {}".format(acceptable_blasttools) #maybe remove this check or add a workaround to use diamond whith this also?
+	return [ blasttuple + (blast,) for blasttuple in list(itertools.chain(*list(zip(querylist, permu) for permu in itertools.permutations(dblist, len(querylist)))))] #todo:Only works as long as dblist is longer or equal to querylist... find a way to ensure/workaround this
+
 def _command_available(command="diamond"): #todo: move this to misc, maybe?
 	'''
 	for checking if diamond or blast are actually installed in the current environment
@@ -588,8 +594,10 @@ def main():
 	""" for testing purposes only"""
 	#test_prodigal_blasts()
 	print("main")
-	test_multiblastjobs()
-
+	blastdatabase = "/home/ww5070/delme3/dbdir/gtdb/concat_refgenomes"
+	import pdb; pdb.set_trace()
+	# ~ test_multiblastjobs()
+	print("FINISHED")
 ####### End of test functions
 
 if __name__ == '__main__':

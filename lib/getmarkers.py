@@ -130,10 +130,12 @@ def _get_trnas_single(infasta,  aragorn="aragorn", threads=1):
 		print(" ".join(aragorn_cmd))
 		aragorn_proc = subprocess.run(aragorn_cmd, stdout = subprocess.PIPE, stderr = subprocess.PIPE, text = True)
 		aragorn_proc.check_returncode()
+		print("aragorn single run finished")
 	except Exception:
 		sys.stderr.write(aragorn_proc.stderr)
 		raise Exception("\nERROR: Something went wrong while trying to call Aragorn...\n")
 	outlinelist = aragorn_proc.stdout.split("\n")
+	print("will return outlinelist now")
 	return  outlinelist
 
 def get_trnas(*subfastas, outdirectory = ".", aragorn = "aragorn", threads = 1):
@@ -145,13 +147,23 @@ def get_trnas(*subfastas, outdirectory = ".", aragorn = "aragorn", threads = 1):
 	"""
 	#TODO: create another function "extract_trnas" that can extract the exact trna seqeucne based on the respective coordinates, for blasting against the nucleotide-dbs
 	from itertools import chain
+	print("startring trna scan")
 	commandlist = [("getmarkers", "_get_trnas_single", {"infasta" : subfasta}) for subfasta in subfastas]
 	outstringlistlist =misc.run_multiple_functions_parallel(commandlist, threads)
+	print("should be finished now!")
+	sys.stdout.flush()
+	sys.stderr.flush()
 	outdict = _parse_aragorn_output(list(chain(*outstringlistlist)))
+	print("finished parsing trna results")
+	sys.stdout.flush()
+	sys.stderr.flush()
 	return outdict
 	
 def _parse_aragorn_output(outstringlist):
 	import re
+	print("started parsing")
+	sys.stdout.flush()
+	sys.stderr.flush()
 	trnapattern = " (tRNA-\w+)\s+(c?\[\d+,\d+\])"
 	
 	outdict = {}
@@ -163,7 +175,7 @@ def _parse_aragorn_output(outstringlist):
 			if len(trnalist) > 0:
 				outdict[contig] = trnalist
 				trnalist = []
-			contig = line[1:]
+			contig = line[1:].split()[0]
 			continue
 		trnahit = re.search(trnapattern, line)
 		if trnahit != None:
@@ -278,7 +290,7 @@ def deduplicate_barrnap_results(tempfastas, gff_outputs):
 		for seq in contig_hit_dict[contig]:
 			finalseqids.add(seq["seqid"])
 			finalseqids.add(seq["altseqid"]) #todo: remove this if barrnap issue is resolved
-	finalfastadict = {"ssu_rRNA" : [], "lsu_rRNA" : [], "tsu_rRNA" : []} #16S & 18S are "ssu_rRNAs", 23S & 28S are "lsu_rRNAs". 5S is ignored #todo: change this and save 5S also (just to distinguisch actual noncoding contigs from those that have at least 5S rRNA or trRNA)
+	finalfastadict = {"ssu_rRNA" : [], "lsu_rRNA" : [], "tsu_rRNA" : []} #16S & 18S are "ssu_rRNAs", 23S & 28S are "lsu_rRNAs". 5S is stored for later use if required. The term "tsu" was adopted from rnammer, to distinguish  todo: change this and save 5S also (just to distinguisch actual noncoding contigs from those that have at least 5S rRNA or trRNA)
 	#beforecounter = 0
 	contig_rrna_dict = {}
 	for fasta in tempfastas:
@@ -810,13 +822,13 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 				print("removing the following 'archaeal' markers from contig {} : {}".format(contig, ", ".join(wrongmarkerlist)))
 			self.contigdict[contig]["arc_marker"] = [m for m in self.contigdict[contig]["arc_marker"] if m not in wrongmarkerlist ]	
 	
-	def get_major_taxon(self, db):
+	def get_topleveltax(self, db):
 		def levels_difference(querytax, majortax): #querytax and majortax can be either taxtuplelists or majortaxdicts, doesnt matter
-			if majortax != None:
+			if topleveltax != None:
 				if querytax == None:
-					return len(majortax)
-				if len(majortax) > len(querytax):
-					return len(majortax) - len(querytax)
+					return len(topleveltax)
+				if len(topleveltax) > len(querytax):
+					return len(topleveltax) - len(querytax)
 			return 0 
 			
 		import lca
@@ -826,38 +838,37 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 		self.taxondict = { tl: {} for tl in lca.taxlevels }
 		#todo: taxlevels shoule be keys. values should be subdicts tuples of taxas as keys showing the lineage to each taxlevel (e.g.: ("bacteria", "proteobacteria", "alphaproteobacteria")
 		for contig in self.contigdict:
-			major_taxon = None
+			topleveltax = None
 			contiglen = self.contigdict[contig]["contiglen"][0]
 			for m in markerranking:
 				if self.contigdict[contig][m] != None:
-					if major_taxon == None:
-						major_taxon = self.contigdict[contig][m]
-						self.contigdict[contig]["toplevel_tax"] = major_taxon
+					if topleveltax == None:
+						topleveltax = self.contigdict[contig][m]
+						self.contigdict[contig]["toplevel_tax"] = topleveltax
 						self.contigdict[contig]["toplevel_marker"] = m
-						self.contigdict[contig]["toplevel_ident"] = major_taxon[-1].average_ident
-						self.contigdict[contig]["toplevel_taxlevel"] = lca.taxlevels[len(major_taxon)-1]
+						self.contigdict[contig]["toplevel_ident"] = topleveltax[-1].average_ident
+						self.contigdict[contig]["toplevel_taxlevel"] = lca.taxlevels[len(topleveltax)-1]
 					else:
-						contradiction, contradiction_evidence = lca.contradicting_taxtuples(self.contigdict[contig][m], major_taxon, return_idents = True)
+						contradiction, contradiction_evidence = lca.contradicting_taxtuples(self.contigdict[contig][m], topleveltax, return_idents = True)
 						if contradiction != None:
 							self.contigdict[contig]["contradictions_interlevel"].append(contradiction_evidence[0])
-			if major_taxon != None: #mark viral contigs, in case theys should be considered specially later (cases were value remains at default "None" are not classified, therfore not sure if viral or not)
+			if topleveltax != None: #mark viral contigs, in case theys should be considered specially later (cases were value remains at default "None" are not classified, therfore not sure if viral or not)
 				# ~ print("!"*40)
-				# ~ print(major_taxon)
+				# ~ print(topleveltax)
 				# ~ print("--")
-				# ~ print(major_taxon[0])
+				# ~ print(topleveltax[0])
 				# ~ print("--")
-				# ~ print(major_taxon[0].taxid)
+				# ~ print(topleveltax[0].taxid)
 				# ~ print("!"*40)
-				if db.is_viral(major_taxon[0].taxid):
+				if db.is_viral(topleveltax[0].taxid):
 					self.contigdict[contig]["viral"] = True
 				else:
 					self.contigdict[contig]["viral"] = False		
-					#todo: change all namings of "major_taxon" to "toplevel_taxon" or so.
 					
-			if major_taxon  != None:
-				for x in range(len(major_taxon)):
+			if topleveltax  != None:
+				for x in range(len(topleveltax)):
 					taxlevel = lca.taxlevels[x]
-					taxtuple = tuple(mt.taxid for mt in major_taxon[:x+1])
+					taxtuple = tuple(mt.taxid for mt in topleveltax[:x+1])
 					if taxtuple not in self.taxondict[taxlevel]:
 						self.taxondict[taxlevel][taxtuple] = {"contiglengths": [contiglen], "sumofcontiglengths" : contiglen}
 					else:
