@@ -59,18 +59,33 @@ def contradicting_taxtuples(taxtuplelistA, taxtuplelistB, return_idents = False)
 
 def contradict_taxtuble_taxpath(taxtuplelist, majortaxdict, return_idents = False): #todo: this is very convoluted. standardize taxpath, lca and majrtaxdict data types (create a taxobject or so...)
 	if not None in [taxtuplelist, majortaxdict]:
+		# ~ print("not None")
 		maxlevel = min(len(taxtuplelist), len(majortaxdict))
+		print(maxlevel)
 		for i in range(maxlevel):
+			# ~ print("{} = {}".format(i, taxtuplelist[i]))
+			sys.stdout.flush()
 			levelname = taxlevels[i]
+			if taxtuplelist[i] is None or majortaxdict[levelname] is None: #todo: apparently should not occur. probably better to fix it in the barrnap- and majortaxdict functions of getmarkers.py, or if that fails in the previous maxlen-check (add a list comprehension that removes all entires with value None). this here is just a workaround...
+				break
+			# ~ print (taxtuplelist[i].taxid)
+			# ~ print(levelname)
+			# ~ print(majortaxdict[levelname])
+			# ~ print(majortaxdict[levelname][0])
+			# ~ print(majortaxdict[levelname][0][i])
+						
 			if taxtuplelist[i].taxid != majortaxdict[levelname][0][i]:
 				# ~ print(taxtuplelist)
 				# ~ print(len(taxtuplelist)
 				# ~ print(majortaxdict[0])
 				# ~ print(len(majortaxdict[0]))
 				# ~ print("contradiction! {} != {}".format(taxtuplelist[i].taxid, majortaxdict[levelname][0][i]))
+				print("returning {}, {}".format(levelname, taxtuplelist[i].average_ident))
 				if return_idents:
 					return levelname, taxtuplelist[i].average_ident
 				return levelname
+			sys.stdout.flush()
+	# ~ print("returning None")
 	if return_idents:
 		return None, None
 	return None

@@ -252,6 +252,15 @@ class taxdb(object):
 			return True
 		return False			
 	
+	def taxid2taxname(self, taxid):
+		return self.taxdict[taxid]["taxname"]
+	
+	def taxid2pathstring(self, taxid):
+		"""returns semicolon-seperated string-representation of the full taxpath for a given taxid
+		"""
+		return ";".join([ p.taxname for p in self.taxid2taxpath(taxid) ])
+
+
 	def taxid2taxpath(self, taxid, fullpath = True, unofficials = False): #may skip the outformat and return all levels as tuples (taxname, taxid, rank). MAy change fullpath default to False AFTER i checked how to best deal with "unofficial candidate phyla"
 		#print("Hi, taxid2taxpath here. I got this: '{}'".format(taxid))
 		def notroot(taxid):
@@ -268,7 +277,7 @@ class taxdb(object):
 		"""
 		Returns a list of tuples representing the taxonomic Path for a given Taxid.
 		Each tuple represents a single taxonomic level and consists of three values: ( taxon name [String] , taxon ID [String] , rank [Integer])
-		The returned path will include all ranks,including minor intermediade ranks such as "Subfamily" if fullpath == True, otherwise it will consistonly of the 7 major ranks.
+		The returned path will include all ranks,including minor intermediate ranks such as "Subfamily" if fullpath == True, otherwise it will consistonly of the 7 major ranks.
 		When using the ncbi taxonomic system, set unofficials==True to include unofficial ranks such as Candidate phyla or "Incertae sedis" taxa. 
 		When using the gtdb taxonomy, set unofficials==False.
 		"""

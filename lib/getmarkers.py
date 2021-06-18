@@ -42,13 +42,13 @@ protmarkerlevel_dict = { 0 : "prok_marker", 1 : "bac_marker", 2 : "arc_marker" }
 _rnammerpattern = re.compile("^rRNA_(.+)_\d+-\d+_DIR[+-](\s.*)*$")
 _barrnappattern = re.compile("^[\d_]{1,3}S_rRNA::(.+):\d+-\d+\([+-]\)(\s.*)*$") #adjusted to also capture "5_8S_rRNA"
 _prodigalpattern = re.compile("^(.+)_\d+(\s.*)*")
-_trnapattern = re.compile('^trna_([\w\|]+)__aragorn_([\w-]+)__(c?\[\d+,\d+\])')
+_trnapattern = re.compile('^trna_([\w\|\.-]+)__aragorn_([\w-]+)__(c?\[\d+,\d+\])')
 
 full_tRNA_species=[	"tRNA-Ala", "tRNA-Arg", "tRNA-Asn", "tRNA-Asp", "tRNA-Cys", "tRNA-Gln", "tRNA-Glu", "tRNA-Gly", "tRNA-His", "tRNA-Ile", \
-							"tRNA-Leu", "tRNA-Lys", "tRNA-Met", "tRNA-Phe", "tRNA-Pro", "tRNA-Ser", "tRNA-Thr", "tRNA-Trp", "tRNA-Tyr", "tRNA-Val"] #expected "full" set of tRNA species expeced for prototoph bacteria. For estimating completeness
+							"tRNA-Leu", "tRNA-Lys", "tRNA-Met", "tRNA-Phe", "tRNA-Pro", "tRNA-Ser", "tRNA-Thr", "tRNA-Trp", "tRNA-Tyr", "tRNA-Val", "tRNA-SeC"] #expected "full" set of tRNA species expeced for prototoph bacteria. For estimating completeness
 
 def _get_new_contigdict_entry(record): #todo change contiglen and totalprotcount to ints rather than lists!
-	return {"contiglen": len(record), "totalprotcount" : 0, "ssu_rRNA" : [], "ssu_rRNA_tax" : None, "lsu_rRNA" : [], "lsu_rRNA_tax":None, "tsu_rRNA" : [], "tRNAs": [],"prok_marker" : [], "prok_marker_tax" :None,  "bac_marker" : [], "arc_marker" : [], "totalprots" : [], "total_prots_tax": None, "toplevel_marker" : None, "toplevel_tax" : None, "toplevel_taxlevel" : None, "toplevel_ident": None, "ambigeous" : False, "consensus_level_diff": 0, "contradict_consensus": None, "contradict_consensus_evidence": 0, "contradictions_interlevel": [], "viral" : None, "refdb_contam" : False, "tax_score" : None, "trust_index" : None,"tax_note" : None}
+	return {"contiglen": len(record), "totalprotcount" : 0, "ssu_rRNA" : [], "ssu_rRNA_tax" : None, "lsu_rRNA" : [], "lsu_rRNA_tax":None, "tsu_rRNA" : [], "tRNAs": [],"prok_marker" : [], "prok_marker_tax" :None,  "bac_marker" : [], "arc_marker" : [], "totalprots" : [], "total_prots_tax": None, "toplevel_marker" : None, "toplevel_tax" : None, "toplevel_taxlevel" : None, "toplevel_ident": None, "ambigeous" : False, "consensus_level_diff": 0, "contradict_consensus": None, "contradict_consensus_evidence": 0, "contradictions_interlevel": [], "viral" : None, "refdb_contam" : False, "tax_score" : None, "trust_index" : None,"tax_note" : None, "ssu_rRNA_taxscore": None, "lsu_rRNA_taxscore": None, "prok_marker_taxscore":None, "total_prots_taxscore" : None}
 
 def split_fasta_for_parallelruns(infasta, minlength = 0, number_of_fractions = 2, outfilebasename = None):
 	"""
@@ -195,7 +195,9 @@ def _parse_aragorn_output(outstringlist):
 				# ~ stop = int(coordinatematch.group(2))
 			# ~ print(trna, location)
 			# ~ print("-----------")
-			assert trna in full_tRNA_species, "\nERROR: unknown type of trna: {}\n".format(trna)
+			if trna not in full_tRNA_species:
+				sys.stderr.write("\nWARNING: unknown type of trna: {}\n".format(trna))
+				sys.stderr.flush()
 			outlist.append(genename)
 			trnaset.add(trna)
 	print("found {} of {} tRNAs --> {}%".format(len(trnaset), len(full_tRNA_species), len(trnaset)/len(full_tRNA_species)*100))
@@ -767,7 +769,19 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 			contigset = set([contig for contig in self.contigdict]) #per default return all contigs	
 		else:
 			contigset = set(contiglist)
-		return [ record for record in SeqIO.parse(openfile(self.binfastafile), "fasta") if record.id in contigset ]
+		outlist = []
+		for record in SeqIO.parse(openfile(self.binfastafile), "fasta"):
+			if record.id in contigset:
+				if self.contigdict[record.id]["toplevel_tax"] != None:
+					taxid = self.contigdict[record.id]["toplevel_tax"][-1].taxid
+				else:
+					taxid = None
+				# ~ print(self.contigdict[record.id])
+				# ~ print(list(self.contigdict[record.id].keys()))
+				note = self.contigdict[record.id]["tax_note"]
+				record.description = "taxid={}; note=\"{}\"".format(taxid, note)
+				outlist.append(record) 
+		return outlist
 	
 	def marker2contig(self, seqid):
 		contigname = seqid2contig(seqid)
@@ -961,6 +975,27 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 		in both cases, non-ambigeous assignments increase or decrease the bonus/penalty by 1, respectively
 		possible taxon-scores range from -4 to 12. for calculating trustworthiness-score, tax-scores <0 are assumed as 0, leading to trusworthiness-scores ranging from 0-10 (0= probably contamination, 3 = suspiceous, 4 = unknown/slightly suspiceous,  5 = unkown, 6 = "probably trustworthy", 10 = highly trustworthy
 		"""
+		import lca
+		def individual_scores(contig_entry): #todo: this is redundant (seperae calculatipn for toplevel_tax and for individual marker-levels (the latter were added as afterthought and too little time to integrate cleanly). move all taxscore calculations to a single subfunction
+			markerlist =  ["ssu_rRNA_tax", "lsu_rRNA_tax", "prok_marker_tax", "total_prots_tax"]
+			scoredict = {sl : 6 for sl in markerlist if contig_entry[sl] != None}
+			modificatordict = {ml : 0 for ml in markerlist if contig_entry[ml] != None}
+			for markerlevel in markerlist:
+				if markerlevel == contig_entry["toplevel_marker"]:
+					scoredict[markerlevel] = contig_entry["tax_score"]
+					continue
+				if contig_entry[markerlevel] == None:
+					continue
+				contradiction, contradiction_evidence = lca.contradict_taxtuble_taxpath(contig_entry[markerlevel], self.majortaxdict, return_idents = True)
+				if not contradiction: #if matches consensus-tax, +bonus based on which marker level was used, what the identity was and whether the lca was ambigeous or not
+					modificatordict[markerlevel] = (markerboni[markerlevel] * (contig_entry[markerlevel][-1].average_ident/100)) - (0.2 * max([0, len(contig_entry[markerlevel])-len(self.majortaxdict)])) + (not contig_entry[markerlevel][-1].ambigeous)
+				elif contradiction:
+					modificatordict[markerlevel] -= (marker_basepenalty[markerlevel] * (contradiction_evidence/100) * taxlevelbasepenalty[contradiction]) + (not contig_entry[markerlevel][-1].ambigeous)
+				scoredict[markerlevel] += modificator
+				contig_entry[markerlevel + "score"] = scoredict[markerlevel]
+				# ~ print("\tscore for {}: {}".format(markerlevel, scoredict[markerlevel]))
+			return contig_entry
+				
 		print("calculating contig scores...")
 		#todo: this is convoluted. find a more elegant way when time
 
@@ -987,28 +1022,30 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 		
 		# ~ import pdb; pdb.set_trace()
 		for contig in self.contigdict:
+			# ~ import pdb; pdb.set_trace()
 			note = ""
 			# ~ print(contig)
 			modificator = 0
 			if self.contigdict[contig]["toplevel_marker"]!= None and not self.contigdict[contig]["contradict_consensus"]: #if matches consensus-tax, +bonus based on which marker level was used, what the identity was and whether the lca was ambigeous or not
 				# ~ print("({} * ({}/100)) - (0.25 * {}) + {}".format(markerboni[self.contigdict[contig]["toplevel_marker"]], self.contigdict[contig]["toplevel_ident"], self.contigdict[contig]["consensus_level_diff"], (not self.contigdict[contig]["ambigeous"])))
 				# ~ print("pos1a")
-				note += "tax matches consensus-classification on {} level".format(self.contigdict[contig]["toplevel_taxlevel"])
+				note += "toplevel tax matches consensus-classification on {} level".format(self.contigdict[contig]["toplevel_taxlevel"])
 				modificator = (markerboni[self.contigdict[contig]["toplevel_marker"]] * (self.contigdict[contig]["toplevel_ident"]/100)) - (0.2 * self.contigdict[contig]["consensus_level_diff"]) + (not self.contigdict[contig]["ambigeous"])
 				# ~ print("modificator = {}".format(modificator))
-				for interlevel_penalty in self.contigdict[contig]['contradictions_interlevel']:
-					note +=" BUT shows contradictions between marker-levels"
-					modificator -= 1 * (interlevel_penalty/100)
+				for interlevel_penalty in self.contigdict[contig]['contradictions_interlevel']: #todo: probably nit needed IF we form an average of each leels score!
+					note +=" BUT shows contradictions between marker-levels"#todo: probably nit needed IF we form an average of each leels score!
+					modificator -= 1 * (interlevel_penalty/100)#todo: probably nit needed IF we form an average of each leels score!
 					# ~ print("\t -{} --> modificator = {}".format(1 * (interlevel_penalty/100), modificator))
 			elif self.contigdict[contig]["toplevel_marker"]!= None and self.contigdict[contig]["contradict_consensus"] != None:
 				# ~ print("({} * ({}/100) * {}) - {}".format(marker_basepenalty[self.contigdict[contig]["toplevel_marker"]], self.contigdict[contig]["contradict_consensus_evidence"], taxlevelbasepenalty[self.contigdict[contig]["contradict_consensus"]], (not self.contigdict[contig]["ambigeous"])))
-				note += "tax contradicts consensus-classification on {} level".format(self.contigdict[contig]["toplevel_taxlevel"])
+				note += "toplevel tax contradicts consensus-classification on {} level".format(self.contigdict[contig]["toplevel_taxlevel"])
 				modificator -= (marker_basepenalty[self.contigdict[contig]["toplevel_marker"]] * (self.contigdict[contig]["contradict_consensus_evidence"]/100) * taxlevelbasepenalty[self.contigdict[contig]["contradict_consensus"]]) + (not self.contigdict[contig]["ambigeous"])
 				# ~ print("modificator = {}".format(modificator))
 			score = basescore + modificator
 			# ~ print("score = {}".format(score))
+			self.contigdict[contig] = individual_scores(self.contigdict[contig])
 			self.contigdict[contig]["tax_score"] = score #not setting score to sźero so when averaging taxscores and getting overall-bin_trustindex, very low scoring contigs have higher weight! 
-			self.contigdict[contig]["trust_index"] = self.__trust_indexfrom_tax_score(score)
+			self.contigdict[contig]["trust_index"] = self.trust_index_from_tax_score(score)
 			if self.contigdict[contig]["toplevel_tax"] == None and max([len(self.contigdict[contig]["totalprots"]), len(self.contigdict[contig]["tRNAs"]), len(self.contigdict[contig]["tsu_rRNA"])]) == 0: #if no markers are available for a contig at all, assume eukaryote (due to lower coding density)
 				self.contigdict[contig]["trust_index"] = 3
 				note += "assumed potential eukaryote due to lack of coding regions"
@@ -1024,7 +1061,7 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 				self.contigdict[contig]["refdb_contam"] = True
 				note += "; marked as possible ref-db contamination!"
 				self.contigdict[contig]["trust_index"] = 3
-			self.contigdict[contig]["note"] = note
+			self.contigdict[contig]["tax_note"] = note
 		
 	def print_contigdict(self, filename = None):
 		if filename:
@@ -1076,24 +1113,24 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 	#read in the trna and 5S fastas
 	#return only those genes of interest
 	
-	def __trust_indexfrom_tax_score(self, tax_score):
+	def trust_index_from_tax_score(self, tax_score):
 		return round((max([0, tax_score])/maxscore) *10) #0 untrusted, 1-3 highly suspicious, 4-5 unknown, 6-10: trusted
 		
 	
 	def get_contignames_with_trustscore(self, trustscore):
-		return [ contig for contig in self.contigdict if self.contigdict[contig]["trust_index"] == trustcutoff ]
+		return [ contig for contig in self.contigdict if self.contigdict[contig]["trust_index"] == trustscore ]
 	
-	def get_trusted_contignames(self, trustcutoff=5):
-		return [ contig for contig in self.contigdict if self.contigdict[contig]["trust_index"] > trustcutoff ]
+	def get_trusted_contignames(self, trustcutoff=6):
+		return [ contig for contig in self.contigdict if self.contigdict[contig]["trust_index"] >= trustcutoff ]
 	
-	def get_trusted_contigs(self, trustcutoff=4):
+	def get_trusted_contigs(self, trustcutoff=6):
 		return self.get_contig_records(self.get_trusted_contignames())
 	
 	def get_untrusted_contignames(self, trustcutoff=4):
 		return [ contig for contig in self.contigdict if self.contigdict[contig]["trust_index"] <= trustcutoff ]
 
 	def get_untrusted_contigs(self, trustcutoff=4):
-		return self.get_contig_records(self.get_untrusted_contignames())
+		return self.get_contig_records(self.get_untrusted_contignames(trustcutoff))
 
 	def get_fraction_contamination(self, trustcutoff=4):
 		sum([ self.contigdict[contig]["contiglen"] for contig in self.get_untrusted_contignames(trustcutoff)]) / self.get_total_size()
@@ -1101,6 +1138,18 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 	def get_total_size(self):
 		return sum([ self.contigdict[contig]["contiglen"] for contig in self.contigdict ])
 	
+	def get_refdbcontamination_contignames(self):
+		return [ contig for contig in self.contigdict if "ref-db contamination" in self.contigdict[contig]["tax_note"] ]
+		
+	def get_fraction_refdbcontamination(self):
+		return sum([ self.contigdict[contig]["contiglen"] for contig in self.get_refdbcontamination_contignames() ]) / self.get_total_size()
+
+	def get_nocoding_contignames(self):
+		return [ contig for contig in self.contigdict if " lack of coding regions" in self.contigdict[contig]["tax_note"] ]
+
+	def get_fraction_nocoding(self):
+		return sum([ self.contigdict[contig]["contiglen"] for contig in self.get_nocoding_contignames() ]) / self.get_total_size()
+
 	def get_trna_coordinates(self, trna_name):
 		import re
 		locationpattern = "c?\[(\d+),(\d+)\]"
@@ -1123,7 +1172,7 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 		contignamelist = list(set([self.marker2contig(trna_name) for trna_name in trna_namelist]))
 		contigrecords = { record.id : record for record in self.get_contig_records(contignamelist) }
 		outrecords = []
-		print("loopin")
+		# ~ print("loopin")
 		for trna in trna_namelist:
 			print(trna)
 			sys.stdout.flush()
@@ -1137,9 +1186,17 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 			outrecords.append(newrecord)
 		return outrecords
 		
-	def make_kronachart(self):
-		pass	
-		
+	# ~ def make_kronachart(self):
+		# ~ def make_krona_inputtable(contigdict):
+			# ~ outlines = []
+			# ~ for contig in contigdict:
+				
+				
+		# ~ pass
+	
+	def clean_yourself(self, trustcutoff=4, ignore_viral=True):	
+		for  contig in self.get_untrusted_contignames(trustcutoff=4): #todo: actually have to make sure that all corresponding marker entries in markerdict, that belong to those removed conitgs are also removed. But skipping for now (time issues)
+			self.contigdict.pop(contig, None)
 
 ######################################################
 # test functions below (can be deleted)

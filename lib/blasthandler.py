@@ -94,7 +94,7 @@ def read_lookup_table(lookup_table, table_format = None): #should be able to rea
 
 class blastdata(object): #todo: define differently for protein or nucleotide blasts (need different score/identity cutoffs)
 	_blasttsv_columnnames = {"query" : 0, "subject" : 1, "ident" : 2, "alignlen" : 3, "qstart": 6, "qend" : 7, "sstart" : 8, "ssend" : 9, "evalue" : 10, "score" : 11, "contig" : None, "stype" : None, "taxid": None} #reading in all fields, in case functionality is added later that also uses the sstat send etc fields
-	def __init__(self, *blastfiles, max_evalue = None, min_ident = None, score_cutoff_fraction = 0.75, keep_max_hit_fraction = 0.5, keep_min_hit_count = 2, continue_from_json = False): #todo: add a min_score #todo: change score_cutoff_fraction to 0.75?
+	def __init__(self, *blastfiles, max_evalue = None, min_ident = None, score_cutoff_fraction = 0.75, keep_max_hit_fraction = 0.5, keep_min_hit_count = 2, continue_from_json = False, auxilliary = False): #todo: add a min_score #todo: change score_cutoff_fraction to 0.75?
 		#methods:
 		#	method 1: filter by query-genes. For each gene remove all hits with score below <score_cutoff_fraction> (default = 0.5) of maximum score for that gene
 		#			  from these keep the <keep_max_hit_fraction> of hits (default = 0.5), but keep at least <keep_min_fraction> (default = 2) in every case if possible
@@ -428,7 +428,7 @@ def run_single_diamondblastp(query, db, diamond, outname, threads = 1): #TODO: c
 	return outname
 	
 def _run_any_blast(query, db, path_appl, outname, threads, force = False):
-	#TODO: fix stupid problem that blast (unfortunately) cannot handle gzipped query files
+	#TODO: fix stupid problem that blast (unfortunately) cannot handle gzipped query files. solution read in compressed fastas, pipe records to blast-functions via stdin (TODO: add this function also to diamond (already present in ncbi-blast)
 	appl = os.path.basename(path_appl)
 	#print("\nblasting --> {}".format(outname))
 	if os.path.isfile(outname) and force == False:
@@ -464,8 +464,13 @@ def run_multiple_blasts_parallel(basic_blastarg_list, outbasename, total_threads
 	thread_args, no_processes = _distribute_threads_over_jobs(total_threads, len(basic_blastarg_list))
 	arglist = []
 	for i in range(len(basic_blastarg_list)):
+		if type(basic_blastarg_list[i][0]) == list:
+			print("blast input is a list with {} entries".format(len(basic_blastarg_list[i][0])))
+			querystring = "auxblasts"
+		else:
+			querystring = os.path.basename(basic_blastarg_list[i][0])
 		outname = "{prefix}_{counter:03d}{appl}_{query}_vs_{db}.tsv".format(prefix = outbasename, counter = i, \
-					appl = os.path.basename(basic_blastarg_list[i][2]), query = os.path.basename(basic_blastarg_list[i][0]), \
+					appl = os.path.basename(basic_blastarg_list[i][2]), query = querystring, \
 					db = os.path.basename(basic_blastarg_list[i][1]))
 		arglist.append(tuple(bba for bba in basic_blastarg_list[i]) + (outname, thread_args[i]))
 	masterblaster = Pool(processes = no_processes)

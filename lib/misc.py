@@ -19,6 +19,11 @@ def read_fasta(infilename):
 	from Bio import SeqIO
 	infile = openfile(infilename)
 	return list(SeqIO.parse(infile, "fasta"))
+
+def write_fasta(outrecords, outfilename):
+	from Bio import SeqIO
+	SeqIO.write(outrecords, openfile(outfilename, "wt"), "fasta")
+	
 	
 def unixzcat(infilelist, outfilename): #my guess is, that this is probably much faster than doing it natively with python...
 	pass
@@ -103,6 +108,8 @@ def run_multiple_functions_parallel(jobtuple_list, total_threads): #jobtuple_lis
 	jobpool = Pool(processes = no_processes)
 	# ~ print(arglist)
 	outfile_list = jobpool.starmap(_run_any_function, arglist)
+	# ~ print("---huhu--")
+	# ~ print(outfile_list)
 	jobpool.close()
 	jobpool.join()
 	return outfile_list
