@@ -94,7 +94,9 @@ def read_lookup_table(lookup_table, table_format = None): #should be able to rea
 
 class blastdata(object): #todo: define differently for protein or nucleotide blasts (need different score/identity cutoffs)
 	_blasttsv_columnnames = {"query" : 0, "subject" : 1, "ident" : 2, "alignlen" : 3, "qstart": 6, "qend" : 7, "sstart" : 8, "ssend" : 9, "evalue" : 10, "score" : 11, "contig" : None, "stype" : None, "taxid": None} #reading in all fields, in case functionality is added later that also uses the sstat send etc fields
-	def __init__(self, *blastfiles, max_evalue = None, min_ident = None, score_cutoff_fraction = 0.75, keep_max_hit_fraction = 0.5, keep_min_hit_count = 2, continue_from_json = False, auxilliary = False): #todo: add a min_score #todo: change score_cutoff_fraction to 0.75?
+	# ~ _nuc_stypelist = ["ssu_rRNA", "lsu_rRNA"]
+	# ~ _prot_stypelist = ["total", "bac_marker", "prok_marker", "arc_marker"]
+	def __init__(self, *blastfiles, max_evalue = None, min_ident = None, score_cutoff_fraction = 0.75, keep_max_hit_fraction = 0.5, keep_min_hit_count = 2, continue_from_json = False, auxilliary = False, seqtype=None): #todo: add a min_score #todo: change score_cutoff_fraction to 0.75?
 		#methods:
 		#	method 1: filter by query-genes. For each gene remove all hits with score below <score_cutoff_fraction> (default = 0.5) of maximum score for that gene
 		#			  from these keep the <keep_max_hit_fraction> of hits (default = 0.5), but keep at least <keep_min_fraction> (default = 2) in every case if possible
@@ -103,6 +105,8 @@ class blastdata(object): #todo: define differently for protein or nucleotide bla
 		# ~ if from_pickle and len(blastfiles) == 1: #if from_pickle is set, that means input shuld NOT be a list of blastfiles, but a single blastdata-object-pickle-file
 			# ~ print("blastdata object already exists! loading from pickle")
 			# ~ self.unpickleyourself(blastfiles[0])
+		assert seqtype in ["nuc", "prot", None], "\nERROR: seqtype must be either 'nuc', 'prot' or None (if unknown)\n"
+		self.seqtype = seqtype #todo: do something with this (e.g. set some cutoff)
 		self.min_ident = min_ident
 		self.max_evalue = max_evalue
 		self.score_cutoff_fraction = score_cutoff_fraction
@@ -118,6 +122,14 @@ class blastdata(object): #todo: define differently for protein or nucleotide bla
 			self.blastlinelist = [ dict(t) for t in {tuple(bl.items()) for bl in self.blastlinelist} ] #remove duplicate blast hits that apparently turn up in gtdb and silva dbs ... alternatively i could simply only blast vs silva, but that could miss some potentially incorrectly called rna genes...
 			self.blastlinelist = self.sort_blastlines_by_gene()
 			self.filter_hits_per_gene(score_cutoff_fraction, keep_max_hit_fraction, keep_min_hit_count)
+	
+	# ~ def _prot_or_nuc(self, stype):
+		# ~ stype_query = stype.strip().split()[0]
+		# ~ if stype_query in self._nuc_stypelist:
+			# ~ return "nuc"
+		# ~ elif stype_query in self._prot_stypelist:
+			# ~ return "prot"
+		
 			
 	def filter_hits_per_gene(self, score_cutoff_fraction = 0.75, keep_max_hit_fraction = 0.5, keep_min_hit_count = 2): #todo: allow additional filter settings for rRNA data (e.g. filter by identity not score)
 		"""
@@ -157,6 +169,11 @@ class blastdata(object): #todo: define differently for protein or nucleotide bla
 		for i in range(len(self.blastlinelist)):
 			self.blastlinelist[i]["contig"] = bindata_obj.marker2contig(self.blastlinelist[i]["query"])
 			self.blastlinelist[i]["stype"] = bindata_obj.markerdict[self.blastlinelist[i]["query"]]["stype"]
+			# ~ if self.seqtype != None:
+				# ~ if self._prot_or_nuc(self.blastlinelist[i]["stype"]) != self.seqtype:
+					# ~ self.seqtype = "mixed"
+			# ~ else:
+				# ~ self.seqtype = self._prot_or_nuc(self.blastlinelist[i]["stype"])
 			if taxdb_obj != None:
 				# ~ print("--{}--".format(self.blastlinelist[i]))
 				# ~ import pdb; pdb.set_trace()
@@ -264,7 +281,61 @@ class blastdata(object): #todo: define differently for protein or nucleotide bla
 			# ~ print(bl)
 			# ~ print("*"*20)
 			self.blastlinelist.append(bl)
+	
+	def get_contradicting_tophits(self, markernames, db, cutoff, markerlevel):
+		import lca
+		tempmarkerdict = { mn : { "tophit": None, "tophit_blastline" : None, "contrahit": None, "contrahit_blastline" : None, "lca_taxlevel" : None} for mn in markernames }
+		tempsinglemarkerlcas = []
+		for mn in markernames:
+			templines = sorted([ self.blastlinelist[x] for x in range(len(self.blastlinelist)) if self.blastlinelist[x]["query"] == mn ], key =  lambda x: -x["score"])
+			tophit = lca.strict_lca(db, blasthitlist = _blastlines2blasthits([templines[0]]))
+			tempmarkerdict[mn]["tophit"] = tophit
+			tempmarkerdict[mn]["tophit_blastline"] = templines[0]
+			templca = None
+			currentline = 1
 			
+			while currentline < len(templines):
+				templca = lca.strict_lca(db, blasthitlist = _blastlines2blasthits(templines[:currentline + 1]))
+				templcataxlevel = db.taxid2taxlevel(templca.taxid)
+				print(templcataxlevel)
+				print("{} in {} ??".format(templcataxlevel, lca.taxlevels[:3] + ["superkingdom"] ))
+				print(templcataxlevel in lca.taxlevels[:3] + ["superkingdom"] )
+				print(templca.identity)
+				if templcataxlevel in lca.taxlevels[:3] + ["superkingdom"] and templca.identity >= cutoff:  # refdb-inconsistency if lca is "root", "domain" or "phylum" (=lca.taxlevels[:3]) despite high average identities
+					contrahit = lca.strict_lca(db, blasthitlist = _blastlines2blasthits([templines[currentline]]))
+					tempmarkerdict[mn]["contrahit"] = contrahit
+					tempmarkerdict[mn]["contrahit_blastline"] = templines[currentline] 
+					break
+				currentline += 1
+			tempmarkerdict[mn]["lca_taxlevel"] = templcataxlevel
+			tempsinglemarkerlcas.append(templca)
+		
+		outtaxpath, top2_contras, top2_contras_avidents = lca.weighted_lca(db, blasthitlist=tempsinglemarkerlcas, taxlevel=markerlevel, return_contradicting_top2 = True)
+		print("\n"+"-"*50)
+		print("looking at refdb_inconsisentcies:")
+		print("single marker lcas")
+		for marker in tempmarkerdict:
+			topclass = tempmarkerdict[marker]["tophit"].taxid
+			taxpath = db.taxid2taxpath(topclass)
+			topident = tempmarkerdict[marker]["tophit"].identity
+			contraclass = None
+			contrataxpath = None
+			contraident = None
+			if tempmarkerdict[marker]["contrahit"] != None:
+				contraclass = tempmarkerdict[marker]["contrahit"].taxid
+				contrataxpath = db.taxid2taxpath(contraclass)
+				contraident = tempmarkerdict[marker]["contrahit"].identity
+			print("**\n{} --> {} ; {}  ; {}  ;\n {} ; {} ; {}".format(marker, topclass, taxpath, topident, contraclass, contrataxpath, contraident))
+		# ~ print(tempmarkerdict)
+		print("+"*50)
+		print("weighted_lca")
+		if top2_contras != None:
+			print([val for pair in zip(top2_contras, top2_contras_avidents) for val in pair])
+		else:
+			print("no contradiction??")
+			print(outtaxpath)
+		
+				#next steps: while resulting taxlevel > phylum: make strict_lca of rising fraction of blastlines. return the taxid of the fist blastline that returns a strict lca of < phylum (with average id >= 80)
 	# ~ def pickleyourself(self, filename): #todo: does not work yet! figure out why!
 		# ~ try:
 			# ~ import cPickle as pickle #this way the faster cPickle gets used IF available, but the slower standard pickle gets used otherwise
@@ -306,6 +377,9 @@ def read_blast_tsv(infilename, max_evalue = None, min_ident = None, dbobj = None
 		blastlinelist.append(bl)
 	infile.close()
 	return blastlinelist
+
+def _blastlines2blasthits(blastlinelist):
+	return [ hit(accession=q["subject"], taxid=q["taxid"], identity=q["ident"], score=q["score"]) for q in blastlinelist ]
 
 def __add_contigs2blasthits_later(blastlinelist, parsetype = "prodigal", lookup_table = None): #todo: probably obsolete...
 	"""

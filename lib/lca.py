@@ -94,7 +94,7 @@ def contradict_taxtuble_taxpath(taxtuplelist, majortaxdict, return_idents = Fals
 def strict_lca(taxdb, seqid = None, blasthitlist=None, threads=1):
 	"""
 	Returns strict lca of a list of blasthits or pre-lca-annotations.
-	Each blast hit should be represented as a named tuple with the following fields: (Accession, taxid, identity, score)
+	Each blast hit should be represented as a named tuple with the following fields: (Accession/seqid, taxid, identity, score)
 	"""
 	assert blasthitlist != None and len(blasthitlist) > 0, "\nError, but provide at least one blast hit!\n"
 	interim_taxid = blasthitlist[0].taxid
@@ -107,7 +107,7 @@ def strict_lca(taxdb, seqid = None, blasthitlist=None, threads=1):
 	return taxtuple(seqid = seqid, taxid = interim_taxid, identity = interim_id, score = interim_score) 
 	# ~ return "fuck"
 	
-def weighted_lca(taxdb, seqid = None, blasthitlist=None, fractioncutoff = 0.95, taxlevel="total_prots_tax", threads=1):
+def weighted_lca(taxdb, seqid = None, blasthitlist=None, fractioncutoff = 0.95, taxlevel="total_prots_tax", threads=1, return_contradicting_top2 = False):
 	#todo: maybe allow option to use identity as criterium, instead of score?
 	"""
 	Returns weighted lca of a list of blasthits or pre-lca-annotations.
@@ -115,6 +115,7 @@ def weighted_lca(taxdb, seqid = None, blasthitlist=None, fractioncutoff = 0.95, 
 	fractioncutoff should be given as a fraction between 0.5 and 1. A taxon is accepted, as long as the sum of blast scroes supporting this assignment represents more than this fraction of the total sum of scores of all blast hits 
 	It is not trecommended to use this function for a cutoff of 1 (strict lca)! For strict lca, please use the function "strict_lca" instead, which should be much faster!
 	"""
+	top2_contras, top2_contras_avidents  = None, None
 	assert fractioncutoff >= 0.5 and fractioncutoff <=1, "\nError: rangecutoff {} not within allowed range (0.5-1.0)!\n"
 	if fractioncutoff == 1:
 		sys.stderr.write("\nWARNING: it is NOT recommended to use 'weighted_lca' with a fractioncutoff of 1! Try using 'strict_lca' instead!\n")
@@ -224,8 +225,16 @@ def weighted_lca(taxdb, seqid = None, blasthitlist=None, fractioncutoff = 0.95, 
 				# ~ print(outtaxpath)
 				found_major_tax = True
 		if not found_major_tax:
+			# ~ print(i)
+			# ~ print(tempdict[i])
+			# ~ print(tempdict[i].items())
+			sorted_taxoptions = sorted(tempdict[i].items(), key = lambda x:sum(x[1]["scores"])/len(x[1]["scores"]))
+			top2_contras = [ t[0] for t in sorted_taxoptions[:2]] #dict.items() returns a list of key/value tuples
+			top2_contras_avidents = [ sum(t[1]["identities"])/len(t[1]["identities"]) for t in sorted_taxoptions[:2] ]
 			break #if there are multiple contradicting taxonomic assignments, and no weighted major taxon can be determined based on fractioncutoff, then stop here and return current taxon-level as LCA
 	#check if annotated to species level, and if that is the case, check if identity abov speciescutoff (default 90% for proteins)
+	if return_contradicting_top2:
+		return outtaxpath, top2_contras, top2_contras_avidents
 	return outtaxpath #, tempdict #todo: only return last lca
 
 

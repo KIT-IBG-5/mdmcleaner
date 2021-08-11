@@ -22,7 +22,8 @@ import re
 
 basescore = 6 #scores start out at 6
 maxscore = 12 #todo: this can change based on the scoring system. find a way to calculate this automatically, no matter how much the scoring system may change...
-
+ref_db_contam_cutoff_protein = 85
+ref_db_contam_cutoff_rRNA = 96
 #currently the marker-hmms only encompass universal SINGLE-COPY genes. It would be interesting to include the multicopy-universal genes as well! --> parse the COG-database for this...?
 
 libpath = os.path.dirname(os.path.realpath(__file__))
@@ -713,7 +714,7 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 		if from_json and os.path.exists(self.trna_jsonfile):
 			trna_list = misc.from_json(self.trna_jsonfile)
 		else:
-			trna_list = get_trnas(self.binfastafile) #todo: aragorn does not accept input from stdin (WHY!?) --> multithreading a bit more complicated. find a solution for mutiprocessing later, that does not break current workflow!
+			trna_list = get_trnas(self.binfastafile) #todo: aragorn does not accept input from stdin (WHY!?) --> multithreading a bit more complicated. find a solution for mutiprocessing later, that does not break current workflow! --> probably switch to trnascanSE after all?
 			trna_records = self.get_trna_sequences_from_contigs(trna_list)
 			SeqIO.write(trna_records, openfile(self.trnafastafile, "wt"), "fasta")
 			misc.to_json(trna_list, self.trna_jsonfile)
@@ -977,6 +978,8 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 		"""
 		import lca
 		def individual_scores(contig_entry): #todo: this is redundant (seperae calculatipn for toplevel_tax and for individual marker-levels (the latter were added as afterthought and too little time to integrate cleanly). move all taxscore calculations to a single subfunction
+			# ~ print(contig_entry)
+			sys.stdout.flush()
 			markerlist =  ["ssu_rRNA_tax", "lsu_rRNA_tax", "prok_marker_tax", "total_prots_tax"]
 			scoredict = {sl : 6 for sl in markerlist if contig_entry[sl] != None}
 			modificatordict = {ml : 0 for ml in markerlist if contig_entry[ml] != None}
@@ -986,6 +989,12 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 					continue
 				if contig_entry[markerlevel] == None:
 					continue
+				# ~ print(contig_entry[markerlevel])
+				# ~ print("_"*40)
+				# ~ print(self.majortaxdict)
+				# ~ print("*"*40)
+				# ~ print()
+				sys.stdout.flush()
 				contradiction, contradiction_evidence = lca.contradict_taxtuble_taxpath(contig_entry[markerlevel], self.majortaxdict, return_idents = True)
 				if not contradiction: #if matches consensus-tax, +bonus based on which marker level was used, what the identity was and whether the lca was ambigeous or not
 					modificatordict[markerlevel] = (markerboni[markerlevel] * (contig_entry[markerlevel][-1].average_ident/100)) - (0.2 * max([0, len(contig_entry[markerlevel])-len(self.majortaxdict)])) + (not contig_entry[markerlevel][-1].ambigeous)
@@ -1053,15 +1062,43 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 				note += "; marked as viral"
 				self.contigdict[contig]["trust_index"] = 4 #viral are set to trust_index 4
 			if self.contigdict[contig]["toplevel_marker"] in ["total_prots_tax", "prok_marker_tax"]:
-				ref_db_contam_cutoff = 85
+				ref_db_contam_cutoff = ref_db_contam_cutoff_protein
 			elif self.contigdict[contig]["toplevel_marker"] in ["ssu_rRNA_tax", "lsu_rRNA_tax"]:
-				ref_db_contam_cutoff = 96
+				ref_db_contam_cutoff = ref_db_contam_cutoff_rRNA
 			if self.contigdict[contig]["toplevel_taxlevel"] in ["root", "domain"] and self.contigdict[contig]["toplevel_ident"] >= ref_db_contam_cutoff:
 				print("possible indication for reference database cross-domain/phylum-contamination in {}! setting trustworthiness to 3!".format(contig))
 				self.contigdict[contig]["refdb_contam"] = True
 				note += "; marked as possible ref-db contamination!"
 				self.contigdict[contig]["trust_index"] = 3
 			self.contigdict[contig]["tax_note"] = note
+
+	def doublecheck_refdb_contam(self, *args, nucblasts, protblasts, db): #todo: still under construction. one or more blastdata-objects should be passed. the correct one should then be selected 
+		outinfo = {}
+		refdb_contams = self.get_refdbcontamination_contignames()
+		for contig in refdb_contams:
+			print("---" + contig + "---")
+			#first re-gather the appropriate markers and determine approriate blast-object to parse	
+			if self.contigdict[contig]["toplevel_marker"] == "ssu_rRNA_tax":
+				blastobj = nucblasts
+				markernames = self.contigdict[contig]["ssu_rRNA"]
+				cutoff = ref_db_contam_cutoff_rRNA
+			elif self.contigdict[contig]["toplevel_marker"] == "lsu_rRNA_tax":
+				blastobj = nucblasts
+				markernames = self.contigdict[contig]["lsu_rRNA"]
+				cutoff = ref_db_contam_cutoff_rRNA
+			elif self.contigdict[contig]["toplevel_marker"] == "prok_marker_tax":
+				blastobj = protblasts
+				markernames = self.contigdict[contig]["prok_marker"] + self.contigdict[contig]["arc_marker"] + self.contigdict[contig]["bac_marker"]
+				cutoff = ref_db_contam_cutoff_protein
+			elif self.contigdict[contig]["toplevel_marker"] == "total_prots_tax":
+				blastobj = protblasts
+				markernames = self.contigdict[contig]["totalprots"]
+				cutoff = ref_db_contam_cutoff_protein
+			contaminfo = blastobj.get_contradicting_tophits(markernames, db, cutoff, self.contigdict[contig]["toplevel_marker"])
+			outinfo[contig] = contaminfo
+		return outinfo
+				
+			
 		
 	def print_contigdict(self, filename = None):
 		if filename:

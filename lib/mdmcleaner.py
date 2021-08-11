@@ -233,7 +233,7 @@ def main():
 			sys.stdout.flush()
 			sys.stderr.flush()			
 			if os.path.isfile(protblastjsonfilename) and args.force != True: #for debugging. allows picking up AFTER blastlines were already classified when re-running
-				protblasts = blasthandler.blastdata(protblastjsonfilename, score_cutoff_fraction = 0.75, continue_from_json = True)
+				protblasts = blasthandler.blastdata(protblastjsonfilename, score_cutoff_fraction = 0.75, continue_from_json = True, seqtype = "prot")
 			else:
 				print("blasting protein data")
 				protblastfiles = []
@@ -251,14 +251,14 @@ def main():
 					endtime = time.time()
 					print("\nthis blast took {} seconds\n".format(endtime - starttime))
 				sys.stderr.write("\nreading in protblast files...\n")
-				protblasts = blasthandler.blastdata(*protblastfiles, score_cutoff_fraction = 0.75)
+				protblasts = blasthandler.blastdata(*protblastfiles, score_cutoff_fraction = 0.75, seqtype = "prot")
 				sys.stderr.write("looking up taxids of protein blast hits...\n")
 				protblasts.add_info_to_blastlines(bindata, db)
 				print("saving protblasts for reuse") #todo: make this optional. is only for debugging now!
 				protblasts.to_json(protblastjsonfilename)
 			##### then rnablasts
 			if os.path.isfile(nucblastjsonfilename) and args.force != True: #for debugging. allows picking up AFTER blastlines were already classified when re-running
-				nucblasts = blasthandler.blastdata(nucblastjsonfilename, score_cutoff_fraction = 0.8, continue_from_json = True)
+				nucblasts = blasthandler.blastdata(nucblastjsonfilename, score_cutoff_fraction = 0.8, continue_from_json = True, seqtype = "nuc")
 			else:
 				rnablastfiles = []
 				starttime = time.time()
@@ -288,7 +288,7 @@ def main():
 				rnablastfiles = blasthandler.run_multiple_blasts_parallel(all_blast_combinations, os.path.join(bindata.bin_resultfolder, "blastn"), configs["threads"])
 				endtime = time.time()
 				print("\nthis blast took {} seconds\n".format(endtime - starttime))
-				nucblasts = blasthandler.blastdata(*rnablastfiles, score_cutoff_fraction = 0.8) #stricter cutoff for nucleotide blasts
+				nucblasts = blasthandler.blastdata(*rnablastfiles, score_cutoff_fraction = 0.8, seqtype = "nuc") #stricter cutoff for nucleotide blasts
 				sys.stderr.write("looking up taxids of nucleotide blast hits...\n")
 				nucblasts.add_info_to_blastlines(bindata, db)
 				print("saving nuclasts for reuse") #todo: make this optional. is only for debugging now!
@@ -357,7 +357,8 @@ def main():
 			#    					, those that still have no hit or have no RNAs --> blastx against protein-db
 			#						, those that are still not assignable: mark as potential Eukaryote contamination (based on relatively high coding density of prokaryotic genomes) 
 			bindata.calc_contig_scores()
-			# ~ import pdb; pdb.set_trace()
+			import pdb; pdb.set_trace()
+			# ~ bindata.doublecheck_refdb_contam(db=db, nucblasts = nucblasts, protblasts = protblasts)
 			bindata.print_contigdict(os.path.join(bindata.bin_resultfolder, "contigdict.tsv"))
 			sys.stdout.flush()
 			sys.stderr.flush()
