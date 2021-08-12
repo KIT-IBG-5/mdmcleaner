@@ -61,10 +61,10 @@ def contradict_taxtuble_taxpath(taxtuplelist, majortaxdict, return_idents = Fals
 	if not None in [taxtuplelist, majortaxdict]:
 		# ~ print("not None")
 		maxlevel = min(len(taxtuplelist), len(majortaxdict))
-		print(maxlevel)
+		# ~ print(maxlevel)
 		for i in range(maxlevel):
 			# ~ print("{} = {}".format(i, taxtuplelist[i]))
-			sys.stdout.flush()
+			# ~ sys.stdout.flush()
 			levelname = taxlevels[i]
 			if taxtuplelist[i] is None or majortaxdict[levelname] is None: #todo: apparently should not occur. probably better to fix it in the barrnap- and majortaxdict functions of getmarkers.py, or if that fails in the previous maxlen-check (add a list comprehension that removes all entires with value None). this here is just a workaround...
 				break
@@ -80,7 +80,7 @@ def contradict_taxtuble_taxpath(taxtuplelist, majortaxdict, return_idents = Fals
 				# ~ print(majortaxdict[0])
 				# ~ print(len(majortaxdict[0]))
 				# ~ print("contradiction! {} != {}".format(taxtuplelist[i].taxid, majortaxdict[levelname][0][i]))
-				print("returning {}, {}".format(levelname, taxtuplelist[i].average_ident))
+				# ~ print("returning {}, {}".format(levelname, taxtuplelist[i].average_ident))
 				if return_idents:
 					return levelname, taxtuplelist[i].average_ident
 				return levelname
@@ -97,13 +97,18 @@ def strict_lca(taxdb, seqid = None, blasthitlist=None, threads=1):
 	Each blast hit should be represented as a named tuple with the following fields: (Accession/seqid, taxid, identity, score)
 	"""
 	assert blasthitlist != None and len(blasthitlist) > 0, "\nError, but provide at least one blast hit!\n"
+	# ~ print("doing LCA!")
 	interim_taxid = blasthitlist[0].taxid
 	#if len(blasthitlist) == 1: #probably already covered by looping over "range(1, len(blasthitlist))"
 	#	return blasthitlist[0].taxid
 	for i in range(1,len(blasthitlist)):
+		# ~ print(interim_taxid)
 		interim_taxid = taxdb.get_strict_pairwise_lca(interim_taxid, blasthitlist[i].taxid)
 	interim_score = sum([bh.score for bh in blasthitlist])/len(blasthitlist)
 	interim_id = sum([bh.identity for bh in blasthitlist])/len(blasthitlist)
+	# ~ print(interim_taxid)
+	# ~ print("============")
+	# ~ import pdb; pdb.set_trace()
 	return taxtuple(seqid = seqid, taxid = interim_taxid, identity = interim_id, score = interim_score) 
 	# ~ return "fuck"
 	

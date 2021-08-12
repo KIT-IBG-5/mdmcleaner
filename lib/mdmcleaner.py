@@ -355,19 +355,23 @@ def main():
 			#auxblasts.add_info_to_blastlines(bindata, db)
 			
 			#    					, those that still have no hit or have no RNAs --> blastx against protein-db
-			#						, those that are still not assignable: mark as potential Eukaryote contamination (based on relatively high coding density of prokaryotic genomes) 
+			#						, those that are still not assignable (on domain-level): mark as potential Eukaryote contamination (based on relatively high coding density of prokaryotic genomes) 
 			bindata.calc_contig_scores()
-			import pdb; pdb.set_trace()
-			# ~ bindata.doublecheck_refdb_contam(db=db, nucblasts = nucblasts, protblasts = protblasts)
+			# ~ import pdb; pdb.set_trace()
+			bindata.doublecheck_refdb_contam(db=db, nucblasts = nucblasts, protblasts = protblasts)
 			bindata.print_contigdict(os.path.join(bindata.bin_resultfolder, "contigdict.tsv"))
 			sys.stdout.flush()
 			sys.stderr.flush()
 			test_1(bindata, os.path.join(bindata.bin_resultfolder, "testcontigmarkersnew_beforecleanup.tsv"))
 			overview_before = gather_extended_bin_metrics(bindata, outfile=overview_before, cutoff=5)
-			bindata.clean_yourself()
+			import pdb; pdb.set_trace()
+			bindata.clean_yourself() #todo: mdmcleaner runs into error if all contigs are removed fix this
+			# ~ import pdb; pdb.set_trace()
 			test_1(bindata, os.path.join(bindata.bin_resultfolder, "testcontigmarkersnew_aftercleanup.tsv"))
 			misc.write_fasta(bindata.get_contig_records(), os.path.join(bindata.bin_resultfolder, bindata.bin_tempname + "after_cleanup.fasta.gz"))
+			# ~ import pdb; pdb.set_trace()
 			overview_after = gather_extended_bin_metrics(bindata, outfile=overview_after, cutoff=5)
+			# ~ import pdb; pdb.set_trace()
 			
 		except Exception as e:
 			sys.stderr.write("\nTHERE WAS A EXCEPTION WHILE HANDLING {}\n".format(infasta))

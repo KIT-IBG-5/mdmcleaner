@@ -29,15 +29,17 @@ things to consider:
 # TODO: add flags specifying progress, for better being able to resume where it last stopped
 
 rank2index = { "no rank" : 0, \
-				"ignored rank" : -1, \
 				"superkingdom" : 10, \
 				"phylum" : 20, \
 				"class" : 30, \
 				"order" : 40, \
 				"family" : 50, \
 				"genus" : 60, \
-				"species" : 70 } # using increments of 10 in case i want to use the indermediate ranks (e.g. subfamily) at some later point also
+				"species" : 70, \
+				"ignored rank" : -1} # using increments of 10 in case i want to use the indermediate ranks (e.g. subfamily) at some later point also
 				#rank "root" does not exist (as previously planned. Instead checking for taxid=1 (= root)
+				#todo: conflicting naming scheme "superkingdom"  and "domain". Fix this!
+				#todo: switched order of keys (moved "ignored rank" from second, to last position). Keep an eye out on whether this breaks something somewehere(although relying on exact key-order in dicts WOULD be DUMB!)!
 
 index2rank = { rank2index[key] : key for key in rank2index }
 
@@ -258,7 +260,7 @@ class taxdb(object):
 	def taxid2pathstring(self, taxid):
 		"""returns semicolon-seperated string-representation of the full taxpath for a given taxid
 		"""
-		return ";".join([ p.taxname for p in self.taxid2taxpath(taxid) ])
+		return ";".join([ p.taxname for p in self.taxid2taxpath(taxid) ]) #todo: correct p.taxname to p[0] after next commit
 
 
 	def taxid2taxpath(self, taxid, fullpath = True, unofficials = False): #may skip the outformat and return all levels as tuples (taxname, taxid, rank). MAy change fullpath default to False AFTER i checked how to best deal with "unofficial candidate phyla"
