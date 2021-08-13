@@ -86,12 +86,14 @@ def gather_extended_bin_metrics(bindata, outfile, cutoff=5): #todo: make a simpl
 		sys.stdout.flush()
 		sys.stderr.flush()
 		if isinstance(outfile, str):
-			# ~ print("IS A STRING --> CREATING NEW FILE")
+			print("IS A STRING --> CREATING NEW FILE")
 			outfile = openfile(outfile, "wt")
 			outfile.write("#{}\n".format("\t".join(list(indict.keys()))))
 		if isinstance(outfile, io.IOBase):
-			# ~ print("IS A FILE --> APPENDING")
+			print("IS A FILE --> APPENDING")
 			line = "{}\n".format("\t".join([";".join([str(y) for y in indict[x]]) if type(indict[x]) == list else str(indict[x]) for x in indict ]))
+			print(outfile.name)
+			print(line)
 			outfile.write(line)
 		return outfile
 	
@@ -100,42 +102,81 @@ def gather_extended_bin_metrics(bindata, outfile, cutoff=5): #todo: make a simpl
 	#bc_ = before cleanup
 	#ac_ = after cleanup
 	import statistics
+	#todo: this is awfull and convoluted! Improve & simplify or get rid of this before final release!
 	binname = bindata.bin_tempname
 	totalbincontigs = len(bindata.contigdict)
-	totalbinbp = bindata.get_total_size()
-	majortaxpath = bindata.get_consensus_taxstringlist()
-	fraction_trustedbp = sum([ bindata.contigdict[contig]["contiglen"] for contig in bindata.get_trusted_contignames() ])/totalbinbp
-	fraction_unknownbp = sum([ bindata.contigdict[contig]["contiglen"] for contig in bindata.get_contignames_with_trustscore(5) ])/totalbinbp
-	fraction_untrustedbp = sum([ bindata.contigdict[contig]["contiglen"] for contig in bindata.get_untrusted_contignames() ])/totalbinbp
-	bin_trust = bindata.trust_index_from_tax_score(statistics.mean( [ bindata.contigdict[contig]["tax_score"] for contig in bindata.contigdict]))
-	bin_trust_ignoring_viral = bindata.trust_index_from_tax_score(statistics.mean( [ bindata.contigdict[contig]["tax_score"] for contig in bindata.contigdict if not bindata.contigdict[contig]["viral"]] ))
-	fraction_different_species = sum([ bindata.contigdict[contig]["contiglen"] for contig in bindata.contigdict if bindata.contigdict[contig]["contradict_consensus"] == "species"])/totalbinbp
-	fraction_different_genus = sum([ bindata.contigdict[contig]["contiglen"] for contig in bindata.contigdict if bindata.contigdict[contig]["contradict_consensus"] == "genus"])/totalbinbp
-	fraction_different_family = sum([ bindata.contigdict[contig]["contiglen"] for contig in bindata.contigdict if bindata.contigdict[contig]["contradict_consensus"] == "family"])/totalbinbp
-	fraction_different_order = sum([ bindata.contigdict[contig]["contiglen"] for contig in bindata.contigdict if bindata.contigdict[contig]["contradict_consensus"] == "order"])/totalbinbp
-	fraction_different_class = sum([ bindata.contigdict[contig]["contiglen"] for contig in bindata.contigdict if bindata.contigdict[contig]["contradict_consensus"] == "class"])/totalbinbp
-	fraction_different_phylum = sum([ bindata.contigdict[contig]["contiglen"] for contig in bindata.contigdict if bindata.contigdict[contig]["contradict_consensus"] == "phylum"])/totalbinbp
-	fraction_different_domain = sum([ bindata.contigdict[contig]["contiglen"] for contig in bindata.contigdict if bindata.contigdict[contig]["contradict_consensus"] == "domain"])/totalbinbp
-	fraction_refdb_contamination = bindata.get_fraction_refdbcontamination()
-	fraction_nocoding = bindata.get_fraction_nocoding()
-	fraction_viral = sum([ bindata.contigdict[contig]["contiglen"] for contig in bindata.contigdict if bindata.contigdict[contig]["viral"]])/totalbinbp
-	fraction_trust0 = sum([ bindata.contigdict[contig]["contiglen"] for contig in bindata.get_contignames_with_trustscore(0) ])/totalbinbp
-	fraction_trust1 = sum([ bindata.contigdict[contig]["contiglen"] for contig in bindata.get_contignames_with_trustscore(1) ])/totalbinbp
-	fraction_trust2 = sum([ bindata.contigdict[contig]["contiglen"] for contig in bindata.get_contignames_with_trustscore(2) ])/totalbinbp
-	fraction_trust3 = sum([ bindata.contigdict[contig]["contiglen"] for contig in bindata.get_contignames_with_trustscore(3) ])/totalbinbp
-	fraction_trust4 = sum([ bindata.contigdict[contig]["contiglen"] for contig in bindata.get_contignames_with_trustscore(4) ])/totalbinbp
-	fraction_trust5 = sum([ bindata.contigdict[contig]["contiglen"] for contig in bindata.get_contignames_with_trustscore(5) ])/totalbinbp
-	fraction_trust6 = sum([ bindata.contigdict[contig]["contiglen"] for contig in bindata.get_contignames_with_trustscore(6) ])/totalbinbp
-	fraction_trust7 = sum([ bindata.contigdict[contig]["contiglen"] for contig in bindata.get_contignames_with_trustscore(7) ])/totalbinbp
-	fraction_trust8 = sum([ bindata.contigdict[contig]["contiglen"] for contig in bindata.get_contignames_with_trustscore(8) ])/totalbinbp
-	fraction_trust9 = sum([ bindata.contigdict[contig]["contiglen"] for contig in bindata.get_contignames_with_trustscore(9) ])/totalbinbp
-	fraction_trust10 = sum([ bindata.contigdict[contig]["contiglen"] for contig in bindata.get_contignames_with_trustscore(10) ])/totalbinbp
-	total_16SrRNA = len([gene for gene in bindata.markerdict if  getmarkers.seqid2contig(gene) in bindata.contigdict and bindata.markerdict[gene]["stype"] == "ssu_rRNA"])
-	total_23SrRNA = len([gene for gene in bindata.markerdict if  getmarkers.seqid2contig(gene) in bindata.contigdict and bindata.markerdict[gene]["stype"] == "lsu_rRNA"])
-	total_5SrRNA = len([gene for gene in bindata.markerdict if  getmarkers.seqid2contig(gene) in bindata.contigdict and bindata.markerdict[gene]["stype"] == "tsu_rRNA"])
-	total_trna = len([gene for gene in bindata.markerdict if  getmarkers.seqid2contig(gene) in bindata.contigdict and bindata.markerdict[gene]["stype"] == "trna"])
-	total_marker_prots = len([gene for gene in bindata.markerdict if getmarkers.seqid2contig(gene) in bindata.contigdict and "_marker " in bindata.markerdict[gene]["stype"]])
-	total_proteins = len([gene for gene in bindata.markerdict if getmarkers.seqid2contig(gene) in bindata.contigdict and bindata.markerdict[gene]["stype"] == "total"]) + total_marker_prots
+	if totalbincontigs > 0:
+		totalbinbp = bindata.get_total_size()
+		majortaxpath = bindata.get_consensus_taxstringlist()
+		fraction_trustedbp = sum([ bindata.contigdict[contig]["contiglen"] for contig in bindata.get_trusted_contignames() ])/totalbinbp
+		fraction_unknownbp = sum([ bindata.contigdict[contig]["contiglen"] for contig in bindata.get_contignames_with_trustscore(5) ])/totalbinbp
+		fraction_untrustedbp = sum([ bindata.contigdict[contig]["contiglen"] for contig in bindata.get_untrusted_contignames() ])/totalbinbp
+		bin_trust = bindata.trust_index_from_tax_score(statistics.mean( [ bindata.contigdict[contig]["tax_score"] for contig in bindata.contigdict]))
+		bin_trust_ignoring_viral = bindata.trust_index_from_tax_score(statistics.mean( [ bindata.contigdict[contig]["tax_score"] for contig in bindata.contigdict if not bindata.contigdict[contig]["viral"]] ))
+		fraction_different_species = sum([ bindata.contigdict[contig]["contiglen"] for contig in bindata.contigdict if bindata.contigdict[contig]["contradict_consensus"] == "species"])/totalbinbp
+		fraction_different_genus = sum([ bindata.contigdict[contig]["contiglen"] for contig in bindata.contigdict if bindata.contigdict[contig]["contradict_consensus"] == "genus"])/totalbinbp
+		fraction_different_family = sum([ bindata.contigdict[contig]["contiglen"] for contig in bindata.contigdict if bindata.contigdict[contig]["contradict_consensus"] == "family"])/totalbinbp
+		fraction_different_order = sum([ bindata.contigdict[contig]["contiglen"] for contig in bindata.contigdict if bindata.contigdict[contig]["contradict_consensus"] == "order"])/totalbinbp
+		fraction_different_class = sum([ bindata.contigdict[contig]["contiglen"] for contig in bindata.contigdict if bindata.contigdict[contig]["contradict_consensus"] == "class"])/totalbinbp
+		fraction_different_phylum = sum([ bindata.contigdict[contig]["contiglen"] for contig in bindata.contigdict if bindata.contigdict[contig]["contradict_consensus"] == "phylum"])/totalbinbp
+		fraction_different_domain = sum([ bindata.contigdict[contig]["contiglen"] for contig in bindata.contigdict if bindata.contigdict[contig]["contradict_consensus"] == "domain"])/totalbinbp
+		fraction_refdb_contamination = bindata.get_fraction_refdbcontamination()
+		fraction_nocoding = bindata.get_fraction_nocoding()
+		fraction_viral = sum([ bindata.contigdict[contig]["contiglen"] for contig in bindata.contigdict if bindata.contigdict[contig]["viral"]])/totalbinbp
+		fraction_trust0 = sum([ bindata.contigdict[contig]["contiglen"] for contig in bindata.get_contignames_with_trustscore(0) ])/totalbinbp
+		fraction_trust1 = sum([ bindata.contigdict[contig]["contiglen"] for contig in bindata.get_contignames_with_trustscore(1) ])/totalbinbp
+		fraction_trust2 = sum([ bindata.contigdict[contig]["contiglen"] for contig in bindata.get_contignames_with_trustscore(2) ])/totalbinbp
+		fraction_trust3 = sum([ bindata.contigdict[contig]["contiglen"] for contig in bindata.get_contignames_with_trustscore(3) ])/totalbinbp
+		fraction_trust4 = sum([ bindata.contigdict[contig]["contiglen"] for contig in bindata.get_contignames_with_trustscore(4) ])/totalbinbp
+		fraction_trust5 = sum([ bindata.contigdict[contig]["contiglen"] for contig in bindata.get_contignames_with_trustscore(5) ])/totalbinbp
+		fraction_trust6 = sum([ bindata.contigdict[contig]["contiglen"] for contig in bindata.get_contignames_with_trustscore(6) ])/totalbinbp
+		fraction_trust7 = sum([ bindata.contigdict[contig]["contiglen"] for contig in bindata.get_contignames_with_trustscore(7) ])/totalbinbp
+		fraction_trust8 = sum([ bindata.contigdict[contig]["contiglen"] for contig in bindata.get_contignames_with_trustscore(8) ])/totalbinbp
+		fraction_trust9 = sum([ bindata.contigdict[contig]["contiglen"] for contig in bindata.get_contignames_with_trustscore(9) ])/totalbinbp
+		fraction_trust10 = sum([ bindata.contigdict[contig]["contiglen"] for contig in bindata.get_contignames_with_trustscore(10) ])/totalbinbp
+		total_16SrRNA = len([gene for gene in bindata.markerdict if  getmarkers.seqid2contig(gene) in bindata.contigdict and bindata.markerdict[gene]["stype"] == "ssu_rRNA"])
+		total_23SrRNA = len([gene for gene in bindata.markerdict if  getmarkers.seqid2contig(gene) in bindata.contigdict and bindata.markerdict[gene]["stype"] == "lsu_rRNA"])
+		total_5SrRNA = len([gene for gene in bindata.markerdict if  getmarkers.seqid2contig(gene) in bindata.contigdict and bindata.markerdict[gene]["stype"] == "tsu_rRNA"])
+		total_trna = len([gene for gene in bindata.markerdict if  getmarkers.seqid2contig(gene) in bindata.contigdict and bindata.markerdict[gene]["stype"] == "trna"])
+		total_marker_prots = len([gene for gene in bindata.markerdict if getmarkers.seqid2contig(gene) in bindata.contigdict and "_marker " in bindata.markerdict[gene]["stype"]])
+		total_proteins = len([gene for gene in bindata.markerdict if getmarkers.seqid2contig(gene) in bindata.contigdict and bindata.markerdict[gene]["stype"] == "total"]) + total_marker_prots
+	else:
+		print("hererherherherherhehre")
+		totalbinbp = 0
+		majortaxpath = 0
+		fraction_trustedbp = 0
+		fraction_unknownbp = 0
+		fraction_untrustedbp = 0
+		bin_trust = None
+		bin_trust_ignoring_viral = None
+		fraction_different_species = 0
+		fraction_different_genus = 0
+		fraction_different_family = 0
+		fraction_different_order = 0
+		fraction_different_class = 0
+		fraction_different_phylum = 0
+		fraction_different_domain = 0
+		fraction_refdb_contamination = 0
+		fraction_nocoding = 0
+		fraction_viral = 0
+		fraction_trust0 = 0
+		fraction_trust1 = 0
+		fraction_trust2 = 0
+		fraction_trust3 = 0
+		fraction_trust4 = 0
+		fraction_trust5 = 0
+		fraction_trust6 = 0
+		fraction_trust7 = 0
+		fraction_trust8 = 0
+		fraction_trust9 = 0
+		fraction_trust10 = 0
+		total_16SrRNA = 0
+		total_23SrRNA = 0
+		total_5SrRNA = 0
+		total_trna = 0
+		total_marker_prots = 0
+		total_proteins = 0
+
 	print_dict = {  "binname" : binname, \
 							"totalbincontigs" : totalbincontigs,\
 							"totalbinbp" : totalbinbp,\
@@ -364,7 +405,7 @@ def main():
 			sys.stderr.flush()
 			test_1(bindata, os.path.join(bindata.bin_resultfolder, "testcontigmarkersnew_beforecleanup.tsv"))
 			overview_before = gather_extended_bin_metrics(bindata, outfile=overview_before, cutoff=5)
-			import pdb; pdb.set_trace()
+			# ~ import pdb; pdb.set_trace()
 			bindata.clean_yourself() #todo: mdmcleaner runs into error if all contigs are removed fix this
 			# ~ import pdb; pdb.set_trace()
 			test_1(bindata, os.path.join(bindata.bin_resultfolder, "testcontigmarkersnew_aftercleanup.tsv"))
@@ -372,6 +413,8 @@ def main():
 			# ~ import pdb; pdb.set_trace()
 			overview_after = gather_extended_bin_metrics(bindata, outfile=overview_after, cutoff=5)
 			# ~ import pdb; pdb.set_trace()
+			overview_before.close()
+			overview_after.close()
 			
 		except Exception as e:
 			sys.stderr.write("\nTHERE WAS A EXCEPTION WHILE HANDLING {}\n".format(infasta))
@@ -386,14 +429,16 @@ def main():
 def test_1(bindata, outfilename):
 	outfile = openfile(outfilename, "wt")
 	sys.stderr.write("\n" + outfile.name + "\n")
-	sys.stderr.write("\nwriting results\n")
-	outfile.write("contig\t{}\n".format("\t".join([x for x in bindata.contigdict[list(bindata.contigdict.keys())[0]]])))
-	for contig in bindata.contigdict:
-		#print("")
-		#print(bindata.contigdict[contig]["totalprots"])
-		#print("="*20)
-		line = "{}\t{}\n".format(contig, "\t".join([";".join([str(y) for y in bindata.contigdict[contig][x]]) if type(bindata.contigdict[contig][x]) == list else str(bindata.contigdict[contig][x]) for x in bindata.contigdict[contig] ])) #todo: in protmarkerdicts change "protid" to "seqid". Add "seqid" and "marker" keys to ssu and lsu entries
-		outfile.write(line)	
-
+	if len(bindata.contigdict) >= 1:
+		sys.stderr.write("\nwriting results\n")
+		outfile.write("contig\t{}\n".format("\t".join([x for x in bindata.contigdict[list(bindata.contigdict.keys())[0]]])))
+		for contig in bindata.contigdict:
+			#print("")
+			#print(bindata.contigdict[contig]["totalprots"])
+			#print("="*20)
+			line = "{}\t{}\n".format(contig, "\t".join([";".join([str(y) for y in bindata.contigdict[contig][x]]) if type(bindata.contigdict[contig][x]) == list else str(bindata.contigdict[contig][x]) for x in bindata.contigdict[contig] ])) #todo: in protmarkerdicts change "protid" to "seqid". Add "seqid" and "marker" keys to ssu and lsu entries
+			outfile.write(line)	
+	else:
+		sys.stderr.write("\nNo contigs left! Nothing left to write here!\n")
 main()
 	
