@@ -79,21 +79,35 @@ def check_progressdump(outfolder, infastas):
 		return getdb.jsonfile2dict(progressfile)
 	return { os.path.basename(i) : None for i in infastas} 
 
+def write_refdb_inconsistency_report(magsag, inconsistencies, outfile):
+	import io
+	if len(inconsistencies) > 0:
+		header = "magsag\tcontig\t{}\n".format("\t".join([key for key in inconsistencies[list(inconsistencies.keys())[0]]]))
+	if isinstance(outfile, str):
+		outfile = openfile(outfile, "wt")
+		outfile.write(header)
+	if isinstance(outfile, io.IOBase):
+		for i in inconsistencies:
+			line = "{}\t{}\t{}\n".format(magsag, i, "\t".join([str(v) for v in inconsistencies[i].values()]))
+			outfile.write(line)
+	# ~ import pdb; pdb.set_trace()
+	return outfile
+	
 def gather_extended_bin_metrics(bindata, outfile, cutoff=5): #todo: make a simple_binmetrics function
 	def write_dictlines(indict, outfile):
 		import io
 		# ~ print("{} = {}".format(outfile, type(outfile)))
-		sys.stdout.flush()
-		sys.stderr.flush()
+		# ~ sys.stdout.flush()
+		# ~ sys.stderr.flush()
 		if isinstance(outfile, str):
-			print("IS A STRING --> CREATING NEW FILE")
+			# ~ print("IS A STRING --> CREATING NEW FILE")
 			outfile = openfile(outfile, "wt")
 			outfile.write("#{}\n".format("\t".join(list(indict.keys()))))
 		if isinstance(outfile, io.IOBase):
-			print("IS A FILE --> APPENDING")
+			# ~ print("IS A FILE --> APPENDING")
 			line = "{}\n".format("\t".join([";".join([str(y) for y in indict[x]]) if type(indict[x]) == list else str(indict[x]) for x in indict ]))
-			print(outfile.name)
-			print(line)
+			# ~ print(outfile.name)
+			# ~ print(line)
 			outfile.write(line)
 		return outfile
 	
@@ -141,7 +155,7 @@ def gather_extended_bin_metrics(bindata, outfile, cutoff=5): #todo: make a simpl
 		total_marker_prots = len([gene for gene in bindata.markerdict if getmarkers.seqid2contig(gene) in bindata.contigdict and "_marker " in bindata.markerdict[gene]["stype"]])
 		total_proteins = len([gene for gene in bindata.markerdict if getmarkers.seqid2contig(gene) in bindata.contigdict and bindata.markerdict[gene]["stype"] == "total"]) + total_marker_prots
 	else:
-		print("hererherherherherhehre")
+		# ~ print("hererherherherherhehre")
 		totalbinbp = 0
 		majortaxpath = 0
 		fraction_trustedbp = 0
@@ -253,12 +267,13 @@ def main():
 	# ~ import pdb; pdb.set_trace()
 	overview_before = args.overview_basename + "_all_before_cleanup.tsv"
 	overview_after = args.overview_basename + "_all_after_cleanup.tsv"
+	refdb_inconsistency_report = args.overview_basename + "_refdb_inconsistencies.tsv"
 	for infasta in args.input_fastas:
 		try:
 			sys.stdout.flush()
 			sys.stderr.flush()
-			print("="*80)
-			print(infasta)
+			# ~ print("="*80)
+			# ~ print(infasta)
 			sys.stdout.flush()
 			sys.stderr.flush()
 			
@@ -399,7 +414,9 @@ def main():
 			#						, those that are still not assignable (on domain-level): mark as potential Eukaryote contamination (based on relatively high coding density of prokaryotic genomes) 
 			bindata.calc_contig_scores()
 			# ~ import pdb; pdb.set_trace()
-			bindata.doublecheck_refdb_contam(db=db, nucblasts = nucblasts, protblasts = protblasts)
+			refdb_inconsistencies = bindata.doublecheck_refdb_contam(db=db, nucblasts = nucblasts, protblasts = protblasts)
+			refdb_inconsistency_report = write_refdb_inconsistency_report(bindata.bin_tempname, refdb_inconsistencies, refdb_inconsistency_report)
+			
 			bindata.print_contigdict(os.path.join(bindata.bin_resultfolder, "contigdict.tsv"))
 			sys.stdout.flush()
 			sys.stderr.flush()
@@ -413,15 +430,15 @@ def main():
 			# ~ import pdb; pdb.set_trace()
 			overview_after = gather_extended_bin_metrics(bindata, outfile=overview_after, cutoff=5)
 			# ~ import pdb; pdb.set_trace()
-			overview_before.close()
-			overview_after.close()
 			
 		except Exception as e:
 			sys.stderr.write("\nTHERE WAS A EXCEPTION WHILE HANDLING {}\n".format(infasta))
 			print(e)
 			traceback.print_exc()
 			errorlistfile.write(infasta + "\n")
-			
+	overview_before.close()
+	overview_after.close()
+	refdb_inconsistency_report.close()
 	print("finished")
 	print("==="*100)	
 

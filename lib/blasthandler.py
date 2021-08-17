@@ -284,6 +284,7 @@ class blastdata(object): #todo: define differently for protein or nucleotide bla
 		
 
 	def get_contradicting_tophits(self, markernames, db, cutoff, markerlevel): #only checking tax-classification contradictions on phylumlevel or below!
+		#todo: add option to return dicts? or just return info-string?
 		import lca, getdb
 		def get_besthit_info(db, blastline, blastlineindex):
 			subject = blastline["subject"]
@@ -297,72 +298,59 @@ class blastdata(object): #todo: define differently for protein or nucleotide bla
 			identity = blastline["ident"]
 			score = blastline["score"]
 			return {"subject": subject, "taxid": taxid, "domain": domain, "phylum": phylum, "identity" : identity, "score": score, "blastlineindex" : blastlineindex}
-			
-		# ~ tempmarkerdict = { mn : { "tophit": None, "tophit_blastline" : None, "contrahit": None, "contrahit_blastline" : None, "lca_taxlevel" : None} for mn in markernames }
-		inconsistencies = { mn: { "lca": None, "best_hit" : None, "contradiction_level" : None, "best_contradiction" : None, "above_cutoff": False} for mn in markernames}   
+		
+		outinfo = {"discrepancy_taxlevel" : None, "sm_inconsistencies_domain,phylum(+identity)": [], "sm_inconsistencies_details": [], "sm_taxclass_totalcounts": {}, "additional_weighted_lca_top_contradictions(+identity)": None}	
+		singlemarkerlcadict = { mn: { "lca": None, "info": {"best_hit" : None, "contradiction_level" : None, "best_contradiction" : None, "above_cutoff": False} }for mn in markernames}   
 		tempsinglemarkerlcas = []
+		lowestcli = 999
 		for mn in markernames:
 			templines = sorted([ self.blastlinelist[x] for x in range(len(self.blastlinelist)) if self.blastlinelist[x]["query"] == mn ], key =  lambda x: -x["score"])
 			tophit = templines[0]
-			inconsistencies[mn]["lca"] = lca.strict_lca(db, blasthitlist = _blastlines2blasthits(templines)) #todo: is redundant to repeat this here. Should instead save individuyl marker-lcas when first doing them!
-			inconsistencies[mn]["best_hit"] = get_besthit_info(db, tophit, 0) 
+			singlemarkerlcadict[mn]["lca"] = lca.strict_lca(db, blasthitlist = _blastlines2blasthits(templines)) #todo: is redundant to repeat this here. Should instead save individuyl marker-lcas when first doing them!
+			singlemarkerlcadict[mn]["info"]["best_hit"] = get_besthit_info(db, tophit, 0) 
 			templca = templines[0]["taxid"]
 			currentline = 1
 			while currentline < len(templines):
 				templca = db.get_strict_pairwise_lca(templca, templines[currentline]["taxid"])
 				templcataxlevel = db.taxid2taxlevel(templca)
 				if templcataxlevel not in lca.taxlevels[3:] + [ "ignored rank"]:  # refdb-inconsistency if lca is "root" (= "no rank" at the moment, unfortunately), "domain" (aka "superkingdom") or "phylum" (=lca.taxlevels[:3]) despite high average identities
-					inconsistencies[mn]["best_contradiction"] = get_besthit_info(db, templines[currentline], currentline)
+					singlemarkerlcadict[mn]["info"]["best_contradiction"] = get_besthit_info(db, templines[currentline], currentline)
 					if templines[currentline]["ident"] >= cutoff:
-						inconsistencies[mn]["above_cutoff"] = True
+						singlemarkerlcadict[mn]["info"]["above_cutoff"] = True
 					contradictionlevelindex = list(getdb.rank2index.keys()).index(templcataxlevel) + 1 #can be only "domain", "phylum" or None, but this way allows adding more levels in the future easier
 					actual_contradictionlevel = lca.taxlevels[contradictionlevelindex]
-					inconsistencies[mn]["contradiction_level"] = actual_contradictionlevel
+					singlemarkerlcadict[mn]["info"]["contradiction_level"] = actual_contradictionlevel
+					if contradictionlevelindex < lowestcli:
+						lowestcli = contradictionlevelindex
+						outinfo["discrepancy_taxlevel"] = actual_contradictionlevel
+					# ~ import pdb; pdb.set_trace()
 					break
 				currentline += 1
 		
-		tempsinglemarkerlcas = [ inconsistencies[mn]["lca"] for mn in markernames if inconsistencies[mn]["lca"] != None ]			
+		tempsinglemarkerlcas = [ singlemarkerlcadict[mn]["lca"] for mn in markernames if singlemarkerlcadict[mn]["lca"] != None ]
+		for i in singlemarkerlcadict:
+			besthitdomphyl = "besthit={},{}".format(singlemarkerlcadict[i]["info"]["best_hit"]["domain"],singlemarkerlcadict[i]["info"]["best_hit"]["phylum"])
+			besthitident = "({}%)".format(singlemarkerlcadict[i]["info"]["best_hit"]["identity"])
+			bestcontradomphyl = "best_contradiction=None"
+			bestcontraident = ""
+			if singlemarkerlcadict[i]["info"]["best_contradiction"] != None:
+				bestcontradomphyl = ("best_contradiction={},{}".format(singlemarkerlcadict[i]["info"]["best_contradiction"]["domain"],singlemarkerlcadict[i]["info"]["best_contradiction"]["phylum"], singlemarkerlcadict[i]["info"]["best_contradiction"]["identity"]))
+				bestcontraident = "({}%)".format(singlemarkerlcadict[i]["info"]["best_contradiction"]["identity"])
+				outinfo["sm_inconsistencies_domain,phylum(+identity)"].append("{}: '{}{}, {}{}'".format(i, besthitdomphyl, besthitident, bestcontradomphyl, bestcontraident))
+				outinfo["sm_inconsistencies_details"].append(singlemarkerlcadict[i]["info"])
+			dmc_key = (besthitdomphyl, bestcontradomphyl)
+			if dmc_key in outinfo["sm_taxclass_totalcounts"]:
+				outinfo["sm_taxclass_totalcounts"][dmc_key] += 1
+			else:
+				outinfo["sm_taxclass_totalcounts"][dmc_key] = 1
+				
 		outtaxpath, top2_contras, top2_contras_avidents = lca.weighted_lca(db, blasthitlist=tempsinglemarkerlcas, taxlevel=markerlevel, return_contradicting_top2 = True)
 		
-		print("\n"+"-"*50)
-		print("looking at refdb_inconsisentcies:")
-		print("single marker lcas")
-		print("+"*50)
-		for mn in inconsistencies:
-			if inconsistencies[mn]["best_contradiction"] == None:
-				print("{} : no contradiction on or below phylum-level".format(mn))
-				continue
-			print(mn)
-			print("  best hit: {}".format(inconsistencies[mn]["best_hit"]))
-			print("  best contra: {}".format(inconsistencies[mn]["best_contradiction"]))
-			print(" contra_level: {}, above_cutoff : {}".format(inconsistencies[mn]["contradiction_level"], inconsistencies[mn]["above_cutoff"]))
-			print("___")
-		print("weighted_lca")
-		if top2_contras != None:
-			print([val for pair in zip(top2_contras, top2_contras_avidents) for val in pair])
-		else:
-			print("no (further) contradiction on weighted_lca level")
-			print(outtaxpath)
 		
-				#next steps: while resulting taxlevel > phylum: make strict_lca of rising fraction of blastlies. return the taxid of the fist blastline that returns a strict lca of < phylum (with average id >= 80)
-	# ~ def pickleyourself(self, filename): #todo: does not work yet! figure out why!
-		# ~ try:
-			# ~ import cPickle as pickle #this way the faster cPickle gets used IF available, but the slower standard pickle gets used otherwise
-		# ~ except:
-			# ~ import pickle
-		# ~ f = open(filename, 'wb')
-		# ~ pickle.dump(self.__dict__, f, 2)
-		# ~ f.close()
-	
-	# ~ def unpickleyourself(self, filename):#todo: does not work yet! figure out why!
-		# ~ try:
-			# ~ import cPickle as pickle #this way the faster cPickle gets used IF available, but the slower standard pickle gets used otherwise
-		# ~ except:
-			# ~ import pickle
-		# ~ f = open(filename, 'rb')
-		# ~ tmp_dict = pickle.load(f)
-		# ~ f.close()          
-		# ~ self.__dict__.update(tmp_dict)
+		if top2_contras != None:
+			outinfo["additional_weighted_lca_top_contradictions(+identity)"] = "{}({}\%) & {}({}\%)".format(top2_contras[0], top2_contras_avidents[0], top2_contras[1], top2_contras_avidents[1])
+
+		return outinfo
 				
 def read_blast_tsv(infilename, max_evalue = None, min_ident = None, dbobj = None, bindata_obj = None):
 	""" 

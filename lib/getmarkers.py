@@ -3,6 +3,9 @@
 extracting protein-coding as rRNA genes from assemblies, and identifying markergenes.
 """
 
+#TODO: !!! filtering contigs should NOT be based on trust-index by default! That should only be an additional info for evaluating the remaining bin. Instead filtering should be based only on divergent classification and/or the absence onf any coding features 
+
+
 # note to self:
 # cutoff values were determined in different ways:
 # for tigrfam and pfam: strict and sensitive values were parsed from the "GA" and "NC" fields, respectively. moderate values were calculated as the average betrween the respective strict and sensitive cutoffs
@@ -126,13 +129,13 @@ def _get_trnas_single(infasta,  aragorn="aragorn", threads=1):
 	# ~ import pdb; pdb.set_trace()
 	aragorn_cmd = [aragorn, "-gcbact", "-w"]
 	try:
-		print(infasta)
-		print("wtf")
+		# ~ print(infasta)
+		# ~ print("wtf")
 		aragorn_cmd = aragorn_cmd + [ infasta]
-		print("::::::::::::::::::::::::::::")
-		print(aragorn_cmd)
-		print("............................")
-		print(" ".join(aragorn_cmd))
+		# ~ print("::::::::::::::::::::::::::::")
+		# ~ print(aragorn_cmd)
+		# ~ print("............................")
+		# ~ print(" ".join(aragorn_cmd))
 		aragorn_proc = subprocess.run(aragorn_cmd, stdout = subprocess.PIPE, stderr = subprocess.PIPE, text = True)
 		aragorn_proc.check_returncode()
 		print("aragorn single run finished")
@@ -557,7 +560,7 @@ def combine_multiple_fastas(infastalist, outfilename = None, delete_original = T
 	"""
 	#todo: create an alternative version that writes to the outfile on the fly, for parsing huge assemblies
 	#todo: check if contigdict is needed in this form at all
-	print("HEEEEEELLLOOOOO!!!")
+	# ~ print("HEEEEEELLLOOOOO!!!")
 	import re
 	from Bio import SeqIO
 	markerdict = {}
@@ -567,7 +570,7 @@ def combine_multiple_fastas(infastalist, outfilename = None, delete_original = T
 	if outfilename != None:
 		outfile = openfile(outfilename, "wt")
 	for f in infastalist:
-		print(f)
+		# ~ print(f)
 		infile=openfile(f)
 		if outfilename != None:
 			for record in SeqIO.parse(infile, "fasta"):
@@ -970,7 +973,7 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 		if no taxon-assignment is possible because no marker or protein sequence was found on the contig: contig trustworthines is automatically classified as 3 ("suspiceous"), because based on the relatively high coding density of prokaryotes such contigs are likely to be eukaryotic
 		TODO: if assigned only to domain or root BUT average identity is > 45% (based on https://doi.org/10.1093/nar/gku169): assume database crosscontamination! --> set trustworthiness to 3 ("suspiceous")
 		if taxon-assignment does not contradict consensus: assign score-bonus based on used taxmarker (rRNA, markerprots or totalprots) and average blast-identity, then apply deductions for each level difference that it is lower than the consensus-taxon. Also apply deductions for each lower-ranking markerst contradicting this tax-assignment
-			--> this boni is tehrefore granted independent of the taxlevel but only on the marker used. uncertainties indicated by assigning lower taxlevels or contradictions between marker-sets lead to deductions
+			--> this boni is therefore granted independent of the taxlevel but only on the marker used. uncertainties indicated by assigning lower taxlevels or contradictions between marker-sets lead to deductions
 		if taxon assignment contradicts consensus: apply score-penalty based on used taxmarker, average blast-identity and taxlevel. in case of classification up to species level, the species-identity cutoffs on amino-acid or rRNA-level are factored in.
 			--> this penalty is a combination of marker-level and taxon-level
 		in both cases, non-ambigeous assignments increase or decrease the bonus/penalty by 1, respectively
@@ -1076,7 +1079,7 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 		outinfo = {}
 		refdb_contams = self.get_refdbcontamination_contignames()
 		for contig in refdb_contams:
-			print("---" + contig + "---")
+			# ~ print("---" + contig + "---")
 			#first re-gather the appropriate markers and determine approriate blast-object to parse	
 			if self.contigdict[contig]["toplevel_marker"] == "ssu_rRNA_tax":
 				blastobj = nucblasts
@@ -1094,7 +1097,8 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 				blastobj = protblasts
 				markernames = self.contigdict[contig]["totalprots"]
 				cutoff = ref_db_contam_cutoff_protein
-			contaminfo = blastobj.get_contradicting_tophits(markernames, db, cutoff, self.contigdict[contig]["toplevel_marker"])
+			contaminfo = blastobj.get_contradicting_tophits(markernames, db, cutoff, self.contigdict[contig]["toplevel_marker"]) #todo: currently returns only string (to add to note of contig in contigdict). maybe add option to add full dicts also?
+			self.contigdict[contig]["tax_note"] += "; refdb_inconsistency: {}".format(contaminfo) 
 			outinfo[contig] = contaminfo
 		return outinfo
 				
@@ -1205,13 +1209,13 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 	def get_trna_sequences_from_contigs(self, trna_namelist):
 		print("getting trna sequences")
 		trna_namelist = sorted(trna_namelist)
-		print(trna_namelist)
+		# ~ print(trna_namelist)
 		contignamelist = list(set([self.marker2contig(trna_name) for trna_name in trna_namelist]))
 		contigrecords = { record.id : record for record in self.get_contig_records(contignamelist) }
 		outrecords = []
 		# ~ print("loopin")
 		for trna in trna_namelist:
-			print(trna)
+			# ~ print(trna)
 			sys.stdout.flush()
 			sys.stderr.flush()
 			contig = self.marker2contig(trna)
