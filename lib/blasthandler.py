@@ -281,7 +281,20 @@ class blastdata(object): #todo: define differently for protein or nucleotide bla
 			# ~ print(bl)
 			# ~ print("*"*20)
 			self.blastlinelist.append(bl)
-		
+
+	def get_blastlines_for_query(self, queryname):
+		'''
+		returns all blastlines with a certain value in "query"
+		query must be a single string representing a query-name or -accession-number
+		'''
+		return [ self.blastlinelist[x] for x in range(len(self.blastlinelist)) if self.blastlinelist[x]["query"] == queryname ]
+	
+	def get_blastlines_for_contig(self, contigname):
+		'''
+		returns all blastlines with a certain value in "contig"
+		query must be a single string representing a contig-name or -accession-number
+		'''
+		return [ self.blastlinelist[x] for x in range(len(self.blastlinelist)) if self.blastlinelist[x]["contig"] == contigname ]		
 
 	def get_contradicting_tophits(self, markernames, db, cutoff, markerlevel): #only checking tax-classification contradictions on phylumlevel or below!
 		#todo: add option to return dicts? or just return info-string?
@@ -300,11 +313,13 @@ class blastdata(object): #todo: define differently for protein or nucleotide bla
 			return {"subject": subject, "taxid": taxid, "domain": domain, "phylum": phylum, "identity" : identity, "score": score, "blastlineindex" : blastlineindex}
 		
 		outinfo = {"discrepancy_taxlevel" : None, "sm_inconsistencies_domain,phylum(+identity)": [], "sm_inconsistencies_details": [], "sm_taxclass_totalcounts": {}, "additional_weighted_lca_top_contradictions(+identity)": None}	
-		singlemarkerlcadict = { mn: { "lca": None, "info": {"best_hit" : None, "contradiction_level" : None, "best_contradiction" : None, "above_cutoff": False} }for mn in markernames}   
+		singlemarkerlcadict = { mn: { "lca": None, "blastlines" : sorted(self.get_blastlines_for_query(mn), key = lambda x: -x["score"]), "info": {"best_hit" : None, "contradiction_level" : None, "best_contradiction" : None, "above_cutoff": False} }for mn in markernames if len(self.get_blastlines_for_query(mn)) > 0}   
 		tempsinglemarkerlcas = []
 		lowestcli = 999
-		for mn in markernames:
-			templines = sorted([ self.blastlinelist[x] for x in range(len(self.blastlinelist)) if self.blastlinelist[x]["query"] == mn ], key =  lambda x: -x["score"])
+		for mn in singlemarkerlcadict:
+			# ~ print(mn)
+			templines = singlemarkerlcadict[mn]["blastlines"]
+			# ~ import pdb; pdb.set_trace()
 			tophit = templines[0]
 			singlemarkerlcadict[mn]["lca"] = lca.strict_lca(db, blasthitlist = _blastlines2blasthits(templines)) #todo: is redundant to repeat this here. Should instead save individuyl marker-lcas when first doing them!
 			singlemarkerlcadict[mn]["info"]["best_hit"] = get_besthit_info(db, tophit, 0) 
@@ -327,7 +342,7 @@ class blastdata(object): #todo: define differently for protein or nucleotide bla
 					break
 				currentline += 1
 		
-		tempsinglemarkerlcas = [ singlemarkerlcadict[mn]["lca"] for mn in markernames if singlemarkerlcadict[mn]["lca"] != None ]
+		tempsinglemarkerlcas = [ singlemarkerlcadict[mn]["lca"] for mn in singlemarkerlcadict if singlemarkerlcadict[mn]["lca"] != None ]
 		for i in singlemarkerlcadict:
 			besthitdomphyl = "besthit={},{}".format(singlemarkerlcadict[i]["info"]["best_hit"]["domain"],singlemarkerlcadict[i]["info"]["best_hit"]["phylum"])
 			besthitident = "({}%)".format(singlemarkerlcadict[i]["info"]["best_hit"]["identity"])
