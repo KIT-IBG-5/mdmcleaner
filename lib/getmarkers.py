@@ -109,6 +109,7 @@ def runprodigal(infasta, outfilename, prodigal="prodigal", threads = 1): # if in
 	prodigal is called using the "-p meta" argument for metagenomes, in the assumption that the input fasta MAY consist of mutliple organisms
 	The return value is simply the value of 'outfilename'
 	"""
+	input_is_empty = False
 	prodigal_cmd = [prodigal, "-a", outfilename, "-p", "meta", "-q", "-o", "/dev/null"] # TODO: maybe add option to change translation table ("-g")? Although table 11 should be general enough?
 	if type(infasta) == str and os.path.isfile(infasta):
 		prodigal_cmd += ["-i", infasta]
@@ -155,7 +156,15 @@ def get_trnas(*subfastas, outdirectory = ".", aragorn = "aragorn", threads = 1):
 	"""
 	#TODO: create another function "extract_trnas" that can extract the exact trna seqeucne based on the respective coordinates, for blasting against the nucleotide-dbs
 	from itertools import chain
-	print("startring trna scan")
+	print("starting trna scan")
+	tempfilelist = []
+	subfastas=list(subfastas)
+	for i in range(len(subfastas)):
+		if misc.has_gzip_suffix(subfastas[i]):
+			tempfilename = os.path.join(outdirectory, "delme_aragorn_tempfile_{}.fa".format(len(tempfilelist)))
+			misc.unixzcat(subfastas[i], outfilename=tempfilename)
+			subfastas[i] = tempfilename
+			tempfilelist.append(tempfilename)
 	commandlist = [("getmarkers", "_get_trnas_single", {"infasta" : subfasta}) for subfasta in subfastas]
 	outstringlistlist =misc.run_multiple_functions_parallel(commandlist, threads)
 	print("should be finished now!")
@@ -165,6 +174,8 @@ def get_trnas(*subfastas, outdirectory = ".", aragorn = "aragorn", threads = 1):
 	print("finished parsing trna results")
 	sys.stdout.flush()
 	sys.stderr.flush()
+	for t in tempfilelist:
+		os.remove(t)
 	return outlist
 	
 def _parse_aragorn_output(outstringlist):
@@ -200,11 +211,11 @@ def _parse_aragorn_output(outstringlist):
 			# ~ print(trna, location)
 			# ~ print("-----------")
 			if trna not in full_tRNA_species:
-				sys.stderr.write("\nWARNING: unknown type of trna: {}\n".format(trna))
+				sys.stderr.write("\nAttention: non-standard trna: {}\n".format(trna))
 				sys.stderr.flush()
 			outlist.append(genename)
 			trnaset.add(trna)
-	print("found {} of {} tRNAs --> {}%".format(len(trnaset), len(full_tRNA_species), len(trnaset)/len(full_tRNA_species)*100))
+	print("found {} of {} tRNAs --> {}%".format(len(trnaset), len(full_tRNA_species), len(trnaset)/len(full_tRNA_species)*100)) #todo: change to an actual completeness function that takes into consideration that only about 22% or sequenced bacteria encode SeC-tRNAs
 	print(outlist)
 	return outlist
 	
@@ -557,6 +568,8 @@ def combine_multiple_fastas(infastalist, outfilename = None, delete_original = T
 	different steps in getmarkers may subdivide input into fractions for better multiprocessing, and subsequently produce multiple output files
 	This function is meant to combine such fastas to either a single output file (outfilename) or a list of seqrecords (if outfilename==None)
 	Will delete the original fraction-fastas unless delete_original is set to False
+	optionally returns a "markerdict", however this is only meant for use within the mdm-cleaner pipeline and only for protein-records.
+	Raises an Error if the inputfastas do not contain any records
 	"""
 	#todo: create an alternative version that writes to the outfile on the fly, for parsing huge assemblies
 	#todo: check if contigdict is needed in this form at all
@@ -606,7 +619,9 @@ def combine_multiple_fastas(infastalist, outfilename = None, delete_original = T
 	if delete_original:
 		for f in infastalist:
 			os.remove(f)
-	print("protein_recordcount = {}".format(recordcount))
+	print("recordcount = {}".format(recordcount))
+	if recordcount == 0:
+		raise Exception("\nERROR: no records in input\n")
 	if return_markerdict:
 		return output, markerdict
 	return output
@@ -1315,13 +1330,27 @@ def _test_splitfasta2file():
 	outfilebasename = "huhudelmetest/fractiontest"
 	a,b=split_fasta_for_parallelruns(infasta = infasta, number_of_fractions = threads, outfilebasename = outfilebasename)
 	print(a)
+
 def main():
+	import argparse
+	myparser = argparse.ArgumentParser(prog=os.path.basename(sys.argv[0]), description= "extracts markers from input-fastas")
+	subparsers = myparser.add_subparsers(dest = "command")
+	get_trna_args = subparsers.add_parser("get_trnas", help = "extracts trna sequences using Aragorn")
+	get_trna_args.add_argument("infastas", nargs = "+", help = "input fasta(s). May be gzip-compressed")
+	get_trna_args.add_argument("--outdir", dest = "outdir", default = ".", help = "Output directory for temporary files, etc. Default = '.'")
+	get_trna_args.add_argument("-b", "--binary", default = "binary", help = "aragorn executable (with path if not in PATH). Default= assume aragorn is in PATH")
+	get_trna_args.add_argument("-t", "--threads", default = 1, type = int, help = "number of parallel threads. Is only used when multiple input files are passed")
+	args = myparser.parse_args()
+	
+	if args.command == "get_trnas":
+		print("here are the results:")
+		print(get_trnas(*args.infastas, outdirectory = args.outdir, aragorn = args.binary, threads = args.threads)) # todo: make a dedicated standalone funtion with a mini_bindata-object (inherited from bindata)
 	#_test_markernames()
 	#_test_basicmarkers()
 	#_test_multiprodigal()
 	#_test_barrnap()
 	#_test_pipeline()
-	_test_pipelineobj()
+	# ~ _test_pipelineobj()
 	#_test_splitfasta2file()
 if __name__ == '__main__':
 	main()

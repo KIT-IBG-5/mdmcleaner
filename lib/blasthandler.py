@@ -297,7 +297,14 @@ class blastdata(object): #todo: define differently for protein or nucleotide bla
 		return [ self.blastlinelist[x] for x in range(len(self.blastlinelist)) if self.blastlinelist[x]["contig"] == contigname ]		
 
 	def get_contradicting_tophits(self, markernames, db, cutoff, markerlevel): #only checking tax-classification contradictions on phylumlevel or below!
-		#todo: add option to return dicts? or just return info-string?
+		#todo: distinguish between:
+		#				- probable actual contaminations (in either refdb or sagmag)
+		#				- only weakly supported contradictions (should only happen in some cases where contradicitons scored JUST high enough to factor in the weighted LCA)
+		#				- likely known gtdb taxon-problems (Firmicutes_A, Firmicuted_B etc, also some stuff in archaea
+		#				- contradicting taxonomies silva/gtdb
+		#				- rRNA-based silva taxon not backed by genomic data in gtdb
+		# 			- keep a lookput for more...
+		
 		import lca, getdb
 		def get_besthit_info(db, blastline, blastlineindex):
 			subject = blastline["subject"]
@@ -326,10 +333,15 @@ class blastdata(object): #todo: define differently for protein or nucleotide bla
 			templca = templines[0]["taxid"]
 			currentline = 1
 			while currentline < len(templines):
+				# ~ print("getting templca {}  & {}".format(templca, templines[currentline]["taxid"]))
 				templca = db.get_strict_pairwise_lca(templca, templines[currentline]["taxid"])
 				templcataxlevel = db.taxid2taxlevel(templca)
 				if templcataxlevel not in lca.taxlevels[3:] + [ "ignored rank"]:  # refdb-inconsistency if lca is "root" (= "no rank" at the moment, unfortunately), "domain" (aka "superkingdom") or "phylum" (=lca.taxlevels[:3]) despite high average identities
-					singlemarkerlcadict[mn]["info"]["best_contradiction"] = get_besthit_info(db, templines[currentline], currentline)
+					hitinfo = get_besthit_info(db, templines[currentline], currentline)
+					if hitinfo["domain"] == singlemarkerlcadict[mn]["info"]["best_hit"]["domain"] and  hitinfo["phylum"] == singlemarkerlcadict[mn]["info"]["best_hit"]["phylum"]: #e.g. if BOTH hits say "domain=Archaeum; phylum=None", they do not actually contradict each other...
+						currentline += 1
+						continue
+					singlemarkerlcadict[mn]["info"]["best_contradiction"] = hitinfo
 					if templines[currentline]["ident"] >= cutoff:
 						singlemarkerlcadict[mn]["info"]["above_cutoff"] = True
 					contradictionlevelindex = list(getdb.rank2index.keys()).index(templcataxlevel) + 1 #can be only "domain", "phylum" or None, but this way allows adding more levels in the future easier

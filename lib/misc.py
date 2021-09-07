@@ -2,13 +2,24 @@
 """ 
 miscellaneous basic functions required by multiple modules 
 """
+
+import os
+import sys
+
+def has_gzip_suffix(infilename):
+	gzip_suffixes = [".gz", ".gzip"]
+	for s in gzip_suffixes:
+		if infilename.endswith(s):
+			return True
+	return False
+
 def openfile(infilename, filemode = "rt"):
 	""" a convenience function for creating file handles for compressed as well as uncompressed text files, for reading or writing as needed
 	accepts a filename(required) and a filemode (default = "rt") argument.
 	filemode may be any of ["w", "wt", "r", "rt"]
 	automatically assumes gzip.compression if filename-suffix equals ".gz" 
 	"""
-	if infilename.endswith(".gz"):
+	if has_gzip_suffix(infilename):
 		import gzip
 		filehandle = gzip.open(infilename, filemode)
 	else:
@@ -25,13 +36,23 @@ def write_fasta(outrecords, outfilename):
 	SeqIO.write(outrecords, openfile(outfilename, "wt"), "fasta")
 	
 	
-def unixzcat(infilelist, outfilename): #my guess is, that this is probably much faster than doing it natively with python...
-	pass
-	#call zcat to concatenate all files in infilelist to outfilename
-	#check if successful
-	#delete files in infilelist
-	#compress outfile
-	#return outfilename
+def unixzcat(*infilelist, outfilename): #my guess is, that this is probably much faster than doing it natively with python...
+	import subprocess
+	for i in infilelist:
+		assert os.path.exists(i) and os.path.isfile(i), "\nError: \"{}\" doesn't exist or isn't a file".format(i)
+		assert has_gzip_suffix(i), "\nError: trying to run unixzcat on a file without \".gz\"-suffix: {}\n".format(i)
+	try:
+		zcat_cmd = ["zcat"] + list(infilelist)
+		# ~ print(" ".join(zcat_cmd))
+		zcat_proc = subprocess.run(zcat_cmd, stdout = subprocess.PIPE, stderr = subprocess.PIPE, text = True)
+		zcat_proc.check_returncode()
+	except Exception:
+		sys.stderr.write(zcat_proc.stderr)
+		raise Exception("\nERROR: Something went wrong while trying to run unixscat with the following files: {}...\n".format(str(infilelist)))
+	outfile=openfile(outfilename, "wt")
+	outfile.write(zcat_proc.stdout)
+	outfile.close()
+	return outfilename
 
 def untar(infilename, targetdir=".", filemode = None, removetar = False):
 	""" a convenience function for unpacking compressed and ancompressed tar files.
@@ -143,6 +164,18 @@ def to_json(data_object, jsonfilename):
 	outfile.close()
 	return jsonfilename
 
+def is_emptyfile(filename):
+	'''
+	Returns True if a file is empty
+	Returns False if a file is not empty
+	Returns None if a file named <filename> does not exist or isnt a file
+	''' 
+	if os.path.exists(filename) and os.path.isfile(filename):
+		if os.path.getsize(filename) == 0:
+			return True
+		return False
+	
+	
 def to_pickle(data_object, picklefilename):
 	try:
 		import cPickle as pickle #this way the faster cPickle gets used IF available, but the slower standard pickle gets used otherwise
