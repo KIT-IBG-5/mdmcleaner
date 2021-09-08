@@ -83,9 +83,9 @@ def write_refdb_inconsistency_report(magsag, inconsistencies, outfile):
 	import io
 	if len(inconsistencies) > 0:
 		header = "magsag\tcontig\t{}\n".format("\t".join([key for key in inconsistencies[list(inconsistencies.keys())[0]]]))
-	if isinstance(outfile, str):
-		outfile = openfile(outfile, "wt")
-		outfile.write(header)
+		if isinstance(outfile, str):
+			outfile = openfile(outfile, "wt")
+			outfile.write(header)
 	if isinstance(outfile, io.IOBase):
 		for i in inconsistencies:
 			line = "{}\t{}\t{}\n".format(magsag, i, "\t".join([str(v) for v in inconsistencies[i].values()]))
@@ -436,9 +436,10 @@ def main():
 			print(e)
 			traceback.print_exc()
 			errorlistfile.write(infasta + "\n")
-	overview_before.close()
-	overview_after.close()
-	refdb_inconsistency_report.close()
+	import io
+	for f in [overview_before, overview_after, refdb_inconsistency_report]:
+		if isinstance(f, io.IOBase):
+			f.close() #make sure whole buffer is written to files before script terminates!
 	print("finished")
 	print("==="*100)	
 

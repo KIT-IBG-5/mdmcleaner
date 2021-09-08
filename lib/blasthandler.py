@@ -319,7 +319,7 @@ class blastdata(object): #todo: define differently for protein or nucleotide bla
 			score = blastline["score"]
 			return {"subject": subject, "taxid": taxid, "domain": domain, "phylum": phylum, "identity" : identity, "score": score, "blastlineindex" : blastlineindex}
 		
-		outinfo = {"discrepancy_taxlevel" : None, "sm_inconsistencies_domain,phylum(+identity)": [], "sm_inconsistencies_details": [], "sm_taxclass_totalcounts": {}, "additional_weighted_lca_top_contradictions(+identity)": None}	
+		outinfo = {"markerlevel" : markerlevel, "cutoff" : cutoff, "discrepancy_taxlevel" : None, "sm_inconsistencies_domain,phylum(+identity)": [], "sm_inconsistencies_details": [], "sm_taxclass_totalcounts": {}, "additional_weighted_lca_top_contradictions(+identity)": None}	
 		singlemarkerlcadict = { mn: { "lca": None, "blastlines" : sorted(self.get_blastlines_for_query(mn), key = lambda x: -x["score"]), "info": {"best_hit" : None, "contradiction_level" : None, "best_contradiction" : None, "above_cutoff": False} }for mn in markernames if len(self.get_blastlines_for_query(mn)) > 0}   
 		tempsinglemarkerlcas = []
 		lowestcli = 999
