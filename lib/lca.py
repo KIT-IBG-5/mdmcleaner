@@ -139,44 +139,28 @@ def weighted_lca(taxdb, seqid = None, blasthitlist=None, fractioncutoff = 0.95, 
 	genus_identity_cutoff = genus_identity_cutoffs[taxlevel]
 	order_identity_cutoff = order_identity_cutoffs[taxlevel]
 	phylum_identity_cutoff = phylum_identity_cutoffs[taxlevel]
-	# ~ print("taxlevel {} --> appyling the following cutoffs: fractioncutoff: {}, species: {}, genus: {}".format(taxlevel, fractioncutoff, species_identity_cutoff, genus_identity_cutoff))
+	
 	tempdict = {}
 	for hit in blasthitlist:
-		# ~ print("+"*30)
-		# ~ print(hit)
-		# ~ print("+"*30)
+
 		taxpath = [ x[1] for x in taxdb.taxid2taxpath(hit.taxid) ] #todo: add a taxdb-function "simplepath", that only returns the taxids as list. Should speed things up a little?
 		parent = None
-		#print("*"*20)
-		#print(tempdict)
-		#print(taxpath)
+
 		for i in range(len(taxpath)):
 			if i == 7: #7 = species level
-				# ~ print("this was assigned to species level: {}".format(hit))
 				if hit.identity < species_identity_cutoff: #only assign up to species level, if identity is larger or equal to species_identity_cutoff (default 90% for proteins, 98% for rRNA)
-					# ~ print("identity too low --> ignoring")
 					break
-				# ~ print("seems ok")
 			if i == 6: #6 = genus level
-				# ~ print("this was assigned to genus level: {}".format(hit))
 				if hit.identity < genus_identity_cutoff: #only assign up to species level, if identity is larger or equal to species_identity_cutoff (default 90% for proteins, 98% for rRNA)
-					# ~ print("identity too low --> ignoring")
 					break
 			if i == 4: #4 = order level
-				# ~ print("this was assigned to order level: {}".format(hit))
 				if hit.identity < order_identity_cutoff: #only assign up to species level, if identity is larger or equal to species_identity_cutoff (default 90% for proteins, 98% for rRNA)
-					# ~ print("identity too low --> ignoring")
 					break
 			if i == 2: #2 = phylum level
-				# ~ print("this was assigned to phylum level: {}".format(hit))
 				if hit.identity < phylum_identity_cutoff: #only assign up to species level, if identity is larger or equal to species_identity_cutoff (default 90% for proteins, 98% for rRNA)
-					# ~ print("identity too low --> ignoring")
-					break		
-				# ~ print("seems ok")				
+					break					
 			if not i in tempdict:
 				tempdict[i] = {}
-			#print("  i={}".format(i))
-			#print("  tempdict[i]={}\n*********".format(tempdict[i])) 
 			taxid = taxpath[i]
 			if not taxid in tempdict[i]:
 				tempdict[i][taxid] = {"scores" : [hit.score], "identities" : [hit.identity], "parent" : parent}
@@ -191,8 +175,6 @@ def weighted_lca(taxdb, seqid = None, blasthitlist=None, fractioncutoff = 0.95, 
 	taxassignment = namedtuple("taxassignment", ["taxid", "average_score", "average_ident", "ambigeous"]) #todo: replace this with something that is more similar to a "hit tuple". mayble add ambifeous field to those?
 	ambigeous = False
 	for i in tempdict:#todo: consider using a dedicated object,rather than dictionary?
-		# ~ print("*"*60)
-		# ~ print("i = {}".format(i))
 		found_major_tax = False
 		currentlevel_taxa = list(tempdict[i].keys())
 		for tax in currentlevel_taxa:
@@ -201,39 +183,21 @@ def weighted_lca(taxdb, seqid = None, blasthitlist=None, fractioncutoff = 0.95, 
 				del(tempdict[i][tax])
 		if len(tempdict[i]) == 1:
 			taxid = list(tempdict[i].keys())[0]
-			#print("only ONE lineage on level {} --> {}  --> {}".format(i, list(tempdict[i].keys()), taxid))
 			taxass=taxassignment(taxid, sum(tempdict[i][taxid]["scores"])/len(tempdict[i][taxid]["scores"]), sum(tempdict[i][taxid]["identities"])/len(tempdict[i][taxid]["identities"]), ambigeous)
-			# ~ print(list(tempdict[i].keys()))
-			# ~ print("loop1")
-			# ~ print("appending this to level {}: {}".format(i, taxid))
-			# ~ print("-"*20)
-			# ~ print(taxass)
-			# ~ print("-"*20)
 			outtaxpath.append(taxass)
-			# ~ print(outtaxpath)
 			continue			
 		ambigeous = True
-		# ~ print("MULTIPLE LINEAGES FOUND on level {}!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!".format(i))
-		# ~ print(list(tempdict[i].keys()))
 		totalscoresum = sum( [ sum(tempdict[i][x]["scores"]) for x in tempdict[i] ] )
 		for tax in tempdict[i]:
 			if found_major_tax or sum(tempdict[i][tax]["scores"])/totalscoresum < fractioncutoff:
 				parentblacklist.append(tax)
 			elif sum(tempdict[i][tax]["scores"])/totalscoresum >= fractioncutoff:
-				taxass=taxassignment(tax, sum(tempdict[i][tax]["scores"])/len(tempdict[i][tax]["scores"]), sum(tempdict[i][tax]["identities"])/len(tempdict[i][tax]["identities"]), ambigeous)
-				# ~ print("loop2")
-				# ~ print("appending this to level {}: {}".format(i, tax))
-				# ~ print("+"*20)
-				# ~ print(taxass)
-				# ~ print("+"*20)		
+				taxass=taxassignment(tax, sum(tempdict[i][tax]["scores"])/len(tempdict[i][tax]["scores"]), sum(tempdict[i][tax]["identities"])/len(tempdict[i][tax]["identities"]), ambigeous)		
 				outtaxpath.append(taxass)
-				# ~ print(outtaxpath)
 				found_major_tax = True
+
 		if not found_major_tax:
-			# ~ print(i)
-			# ~ print(tempdict[i])
-			# ~ print(tempdict[i].items())
-			sorted_taxoptions = sorted(tempdict[i].items(), key = lambda x:sum(x[1]["scores"])/len(x[1]["scores"]))
+			sorted_taxoptions = sorted(tempdict[i].items(), key = lambda x:-sum(x[1]["scores"])/len(x[1]["scores"]))
 			top2_contras = [ t[0] for t in sorted_taxoptions[:2]] #dict.items() returns a list of key/value tuples
 			top2_contras_avidents = [ sum(t[1]["identities"])/len(t[1]["identities"]) for t in sorted_taxoptions[:2] ]
 			break #if there are multiple contradicting taxonomic assignments, and no weighted major taxon can be determined based on fractioncutoff, then stop here and return current taxon-level as LCA
