@@ -43,7 +43,7 @@ def contradicting_taxtuples(taxtuplelistA, taxtuplelistB, return_idents = False)
 	optionally also returns a tuple of the respective average identitied of each assignment on that level (or None, None if no contradiction is found) 
 	"""
 	#todo: either allow different kinds of inputs, or normalize lca/taxpath results (e.g. an lca-object)
-	#todo: IMPORTANT: for now this assumes only the 7 major taxlevels! make this more flexible for input that doe snot fit this criteria e.g. contains "subfamily")
+	#todo: IMPORTANT: for now this assumes only the 7 major taxlevels! make this more flexible for input that does not fit this criteria e.g. contains "subfamily")
 	if not None in [taxtuplelistA, taxtuplelistB]:
 		maxlevel = min(len(taxtuplelistA), len(taxtuplelistB))
 		for i in range(maxlevel):
@@ -57,7 +57,7 @@ def contradicting_taxtuples(taxtuplelistA, taxtuplelistB, return_idents = False)
 		return None, None
 	return None	
 
-def contradict_taxtuble_taxpath(taxtuplelist, majortaxdict, return_idents = False): #todo: this is very convoluted. standardize taxpath, lca and majrtaxdict data types (create a taxobject or so...)
+def contradict_taxtuple_taxpath(taxtuplelist, majortaxdict, return_idents = False): #todo: this is very convoluted. standardize taxpath, lca and majrtaxdict data types (create a taxobject or so...)
 	if not None in [taxtuplelist, majortaxdict]:
 		# ~ print("not None")
 		maxlevel = min(len(taxtuplelist), len(majortaxdict))

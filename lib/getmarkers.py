@@ -25,8 +25,8 @@ import re
 
 basescore = 6 #scores start out at 6
 maxscore = 12 #todo: this can change based on the scoring system. find a way to calculate this automatically, no matter how much the scoring system may change...
-ref_db_contam_cutoff_protein = 85
-ref_db_contam_cutoff_rRNA = 96
+ref_db_contam_cutoff_protein = 85 #todo: use marker-appropriate cutoffs on 4 levels: strong= species-cutoff; medium = genus-cutoff, weak = order-cutoff, fringle = phylum-cutoff
+ref_db_contam_cutoff_rRNA = 96 #todo: use marker-appropriate cutoffs on 4 levels: strong= species-cutoff; medium = genus-cutoff, weak = order-cutoff, fringle = phylum-cutoff
 #currently the marker-hmms only encompass universal SINGLE-COPY genes. It would be interesting to include the multicopy-universal genes as well! --> parse the COG-database for this...?
 
 libpath = os.path.dirname(os.path.realpath(__file__))
@@ -52,7 +52,7 @@ full_tRNA_species=[	"tRNA-Ala", "tRNA-Arg", "tRNA-Asn", "tRNA-Asp", "tRNA-Cys", 
 							"tRNA-Leu", "tRNA-Lys", "tRNA-Met", "tRNA-Phe", "tRNA-Pro", "tRNA-Ser", "tRNA-Thr", "tRNA-Trp", "tRNA-Tyr", "tRNA-Val", "tRNA-SeC"] #expected "full" set of tRNA species expeced for prototoph bacteria. For estimating completeness
 
 def _get_new_contigdict_entry(record): #todo change contiglen and totalprotcount to ints rather than lists!
-	return {"contiglen": len(record), "totalprotcount" : 0, "ssu_rRNA" : [], "ssu_rRNA_tax" : None, "lsu_rRNA" : [], "lsu_rRNA_tax":None, "tsu_rRNA" : [], "tRNAs": [],"prok_marker" : [], "prok_marker_tax" :None,  "bac_marker" : [], "arc_marker" : [], "totalprots" : [], "total_prots_tax": None, "toplevel_marker" : None, "toplevel_tax" : None, "toplevel_taxlevel" : None, "toplevel_ident": None, "ambigeous" : False, "consensus_level_diff": 0, "contradict_consensus": None, "contradict_consensus_evidence": 0, "contradictions_interlevel": [], "viral" : None, "refdb_contam" : False, "tax_score" : None, "trust_index" : None,"tax_note" : None, "ssu_rRNA_taxscore": None, "lsu_rRNA_taxscore": None, "prok_marker_taxscore":None, "total_prots_taxscore" : None}
+	return {"contiglen": len(record), "totalprotcount" : 0, "ssu_rRNA" : [], "ssu_rRNA_tax" : None, "lsu_rRNA" : [], "lsu_rRNA_tax":None, "tsu_rRNA" : [], "tRNAs": [],"prok_marker" : [], "prok_marker_tax" :None,  "bac_marker" : [], "arc_marker" : [], "totalprots" : [], "total_prots_tax": None, "toplevel_marker" : None, "toplevel_tax" : None, "toplevel_taxlevel" : None, "toplevel_ident": None, "ambigeous" : False, "consensus_level_diff": 0, "contradict_consensus": None, "contradict_consensus_evidence": 0, "contradictions_interlevel": [], "viral" : None, "refdb_ambig" : False, "tax_score" : None, "trust_index" : None,"tax_note" : None, "refdb_ambiguity_details" : None, "filterflag" : None}
 
 def split_fasta_for_parallelruns(infasta, minlength = 0, number_of_fractions = 2, outfilebasename = None):
 	"""
@@ -903,9 +903,7 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 			taxb = taxentryB[0]
 			checklevel=min([len(taxa), len(taxb)]) - 1
 			return taxa[checklevel] != taxb[checklevel]
-				
-			
-			
+					
 		import lca
 		print("determining major taxon")
 		markerranking = [ "ssu_rRNA_tax", "lsu_rRNA_tax", "prok_marker_tax", "total_prots_tax" ]
@@ -981,6 +979,65 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 		if self.consensus_tax != None:
 			return [ taxtuple[0] for taxtuple in self.consensus_tax ]
 
+
+	def calc_trust_scores(self, contigname):#todo: virals are not ignored here, but just at the filtering step. will get low trust regardless
+		"""
+		the taxpaths of the bin_consensus_tax and each contigs highest_ranking_tax are compared. 
+		
+			starting from a total_bonus_penalty of 0, for each matching rank beginning from domain (i.e. excluding "root"), a bonus is added according to the corresponding rankindex in "level_boni" (up to a maximum total of 15.875 for full identities up to species level)
+				--> example1: if two taxpaths match up to genus level, then the total_bonus_penalty becomes: 0.125 (domain) + 0.25 (phylum) + 0.5 (class) + 1.0 (order) + 2.0 (family) + 4.0 (genus) = 7.875
+				--> example2: if two taxpaths only match up to phylum level, then the total_bonus_penalty becomes: 0.125 (domain) + 0.25 (phylum) = 0.375
+			if the taxpaths do not contradict each other BUT are of unequal length, the a tenth of the corresponding level_penalty is substracted for each level that is annotated only in one taxpath
+				--> example1: if the consensus_taxpath is annotated only to genus level, but the contig-taxpath is annotated to species level, the species-level penalty divided by 10 is substracted from the total_bonus_penalty: 7.875 (total_match_bonus) - [0.125 (rank_penalty for species-level)/10) = 7.84375
+				--> example2: if the consensus is annotated to genus level, but the contig only to phylum level, the sum of level-penalties for each "missing" rank divided by 10 is substracted: 0.375 (total_match_bonus) - [0.125 (species) - 0.25 (genus) - 0.5 (family) - 1(order) -2(class)]/4 = 0.375 - 3.875/4 = 0.375 - 0.3875 = -0,0125
+			beginning from the first mismatching rank after domain, a penalty is substracted for each following rank annoated in the longer of the two taxpaths, according to the corresponding rankindex in "level_penalties"(up to a maximum total of 15.875 for mismatches at domain-level if one of the taxpaths is annotated to species level)
+				--> example3: if at least one of the taxpaths is annotated to genus level, but the paths differ at phylum level, then the total_bonus_penalty becomes: 0.125 (match at domain-level) - 4 (mismatch at phylum) -2 (mismatch at class) -1 (mismatch at order) -0.5 (mismatch at family) -0.25 (mismatch at genus) = 0.125 -  7.875 = -7.75
+				--> example4: if one taxpath is annotated to species level, but the other contradicts it at domain level, then the total_bonus_penalty becomes: 0 (no match-bonus) - 8 (mismatch at domain) - 4 (mismatch at phylum) -2 (mismatch at class) -1 (mismatch at order) -0.5 (mismatch at family) -0.25 (mismatch at genus) =0 - 15.875 = -15.875
+			the total_bonus_penalty is then multiplied by a factor depending on the marker_level used and the average blast_identities that yielded the contig LCA-annotation
+					example1: if the contig-annotation is based on 16S-rRNA gene sequences with ~92% blast-identity the total_bonus_penalty becomes: 7.84375 * 1 * 0.92 = 7.21625
+					example2: if the contig-annotation is based on total_protein-level with ~40% blast-identities, then the total_bonus_penalty becomes: -0,0125 * 0.7 * 0.4 = -0.0035
+			the contig_trust_index is then derived by adding the total_bonus_penalty to a base_level_score of 15.875 (the sum of possible boni) and normalizing to a range between 0-10 (by dividing by the maximum possible score, i.e. 2x the base_level_score, multiplying by 10 and rounding to the next full integer)
+					example1: the contig_trust becomes: (15.875 + 7.21625)/(2x15.875)*10 = 23.09125/31.75*10 = 7,272834646 = 7
+					example2: the contig_trust becomes: (15.875 -0.0035)//(2x15.875)*10 = 15.8715/31.75*10 = 4.998897638 = 5
+		these idices should serve as an indicator which contigs represent a high to medium risk for contamination, requiring validation-analyses if they were to be kept within the bin. 
+			trust values ranging from 6-10 represent increasing confidence, that the contig in question is correctly assigned to the correct taxon/bin and likely not a contamination
+			trust values of 5 indicate contigs for which neither contamination status nor correct assignment could be indicated. Such contigs should optimally be verified if possible
+			trust values below represent contigs which are likely misassigned. Such contigs should require some kind of justification or verification in order to retain them in the bin, and should be excluded otherwise...  
+		contigs that show reference-db ambiguities of the category "ref-db-contamination" typically retain a trust-score of 5, since despite the contamination affecting the database, additional validations are required to determine if it also affecte the bin itself (i.e. despite the contig representing a contamination in the reference-database, is it perhaps nonetheless correctly assigned in THIS bin?)  
+		"""
+		import lca
+		level_penalties = [8.0,4.0,2.0,1.0,0.5,0.25,0.125] #penalties for domain, phylum, class, order, family, genus & species differences, respectively (root is ignored. viral contigs get same penalty as eukaryotic contigs)
+		level_boni = reversed(level_boni)
+		base_level_score = sum(level_boni)
+		max_level_score = base_level_score*2
+		# ~ level_score_dict = { group[0]:{"penalty": group[1], "bonus":group[2]} for group in zip(lca.taxlevels[1:], level_scores, reversed(level_scores)) }#differing at domain level results in maximum penalty while agreeing and domain elvel results in minimum bonus
+		
+		markerlevel_factors = {	'ssu_rRNA_tax' : 1, \
+												'lsu_rRNA_tax' : 0.9, \
+												'prok_marker_tax' : 0.8, \
+												'total_prots_tax' : 0.7, \
+												None : 0 }	
+		
+		consensus_taxlevel = list(self.majortaxdict.keys())[-1] #TODO: these should be instance attributes
+		consensus_taxid = self.majortaxdict[consensus_taxlevel][0][-1] #TODO: these should be instance attributes
+		
+		
+		
+	def set_filterflags(self, *args, protblasts, nucblasts): #args are unpacked only to enforce keyword aguments for protblasta and nucblasts (to prevent accidentally passing them in the wrong order) 
+												
+		for contig in self.contigdict:
+			#first check for refdb-ambiguity
+			if self.contigdict[contig]["refdb_ambig"]:
+				if self.contigdict[contig]["toplevel_marker"] in ["ssu_rRNA_tax", "lsu_rRNA_tax", "tsu_rRNA_tax"]:
+					blastobj = nucblasts
+				elif self.contigdict[contig]["toplevel_marker"] in ["prok_marker_tax", "total_prots_tax"]:
+					blastobj = protblasts
+			
+			ambiguityinfo = self._check_contig_refdb_ambiguity(contig, blastobj, db)
+			self.contigdict[contig]["refdb_ambig"] = ambiguityinfo["amb_type"] #todo: consider making "amb_evidence" and amb_infotext" also part of each contigdict_entry
+			#TODO: finish this!
+			
+			
 	def calc_contig_scores(self, ignore_viral = True): #ignore_viral --> no penalty for contigs that differ from consensus but are marked "viral". Those might simply be prophages
 		"""
 		scores are calculated differently based on whether the contig-taxassignment matches the bin-consensus-taxon or not, or whether no taxon-info could be determined at all
@@ -994,6 +1051,7 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 		in both cases, non-ambigeous assignments increase or decrease the bonus/penalty by 1, respectively
 		possible taxon-scores range from -4 to 12. for calculating trustworthiness-score, tax-scores <0 are assumed as 0, leading to trusworthiness-scores ranging from 0-10 (0= probably contamination, 3 = suspiceous, 4 = unknown/slightly suspiceous,  5 = unkown, 6 = "probably trustworthy", 10 = highly trustworthy
 		"""
+		import pdb; pdb.set_trace()
 		import lca
 		def individual_scores(contig_entry): #todo: this is redundant (seperae calculatipn for toplevel_tax and for individual marker-levels (the latter were added as afterthought and too little time to integrate cleanly). move all taxscore calculations to a single subfunction
 			# ~ print(contig_entry)
@@ -1085,35 +1143,49 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 				ref_db_contam_cutoff = ref_db_contam_cutoff_rRNA
 			if self.contigdict[contig]["toplevel_taxlevel"] in ["root", "domain"] and self.contigdict[contig]["toplevel_ident"] >= ref_db_contam_cutoff:
 				print("possible indication for reference database cross-domain/phylum-contamination in {}! setting trustworthiness to 3!".format(contig))
-				self.contigdict[contig]["refdb_contam"] = True
+				self.contigdict[contig]["refdb_ambig"] = True
 				note += "; marked as possible ref-db contamination!"
 				self.contigdict[contig]["trust_index"] = 3
 			self.contigdict[contig]["tax_note"] = note
 
-	def doublecheck_refdb_contam(self, *args, nucblasts, protblasts, db): #todo: still under construction. one or more blastdata-objects should be passed. the correct one should then be selected 
+	def _check_contig_refdb_ambiguity(self, contig, blastobj, db):
+		import lca
+		# ~ print("check_contig_refdb_ambiguity")
+		markerlevel = self.contigdict[contig]["toplevel_marker"]
+		cutoffs = [ x[markerlevel] for x in [ lca.species_identity_cutoffs, lca.genus_identity_cutoffs, lca.order_identity_cutoffs ] ]
+		markername_dict = {	"ssu_rRNA_tax" : self.contigdict[contig]["ssu_rRNA"],\
+											"lsu_rRNA_tax" : self.contigdict[contig]["lsu_rRNA"],\
+											"prok_marker_tax" : self.contigdict[contig]["prok_marker"] + self.contigdict[contig]["arc_marker"] + self.contigdict[contig]["bac_marker"],\
+											"total_prots_tax": self.contigdict[contig]["totalprots"] }
+		markernames = markername_dict[markerlevel]
+		ambiguity_info = blastobj.get_contradicting_tophits(markernames, db, cutoffs, markerlevel) #todo:make that function in blasthandler accept multiple cutoffs!
+		return ambiguity_info #todo:  make that function in blasthandler categorize the ambiguity!
+
+	def doublecheck_refdb_ambig(self, *args, nucblasts, protblasts, db): #todo: still under construction. one or more blastdata-objects should be passed. the correct one should then be selected 
+		#TODO: DELETE THIS FUNCTIOn. only here as a placeholder to debug the above function, until the new "calc_trust_scores" function is finished (THAT should call the above function)!!
 		outinfo = {}
-		refdb_contams = self.get_refdbcontamination_contignames()
-		for contig in refdb_contams:
+		refdb_ambigs = self.get_refdbcontamination_contignames()
+		for contig in refdb_ambigs:
 			# ~ print("---" + contig + "---")
-			#first re-gather the appropriate markers and determine approriate blast-object to parse	
+			# ~ #first re-gather the appropriate markers and determine approriate blast-object to parse	
 			if self.contigdict[contig]["toplevel_marker"] == "ssu_rRNA_tax":
 				blastobj = nucblasts
-				markernames = self.contigdict[contig]["ssu_rRNA"]
-				cutoff = ref_db_contam_cutoff_rRNA
+				# ~ markernames = self.contigdict[contig]["ssu_rRNA"]
+				# ~ cutoff = ref_db_contam_cutoff_rRNA
 			elif self.contigdict[contig]["toplevel_marker"] == "lsu_rRNA_tax":
 				blastobj = nucblasts
-				markernames = self.contigdict[contig]["lsu_rRNA"]
-				cutoff = ref_db_contam_cutoff_rRNA
+				# ~ markernames = self.contigdict[contig]["lsu_rRNA"]
+				# ~ cutoff = ref_db_contam_cutoff_rRNA
 			elif self.contigdict[contig]["toplevel_marker"] == "prok_marker_tax":
 				blastobj = protblasts
-				markernames = self.contigdict[contig]["prok_marker"] + self.contigdict[contig]["arc_marker"] + self.contigdict[contig]["bac_marker"]
-				cutoff = ref_db_contam_cutoff_protein
+				# ~ markernames = self.contigdict[contig]["prok_marker"] + self.contigdict[contig]["arc_marker"] + self.contigdict[contig]["bac_marker"]
+				# ~ cutoff = ref_db_contam_cutoff_protein
 			elif self.contigdict[contig]["toplevel_marker"] == "total_prots_tax":
 				blastobj = protblasts
-				markernames = self.contigdict[contig]["totalprots"]
-				cutoff = ref_db_contam_cutoff_protein
-			contaminfo = blastobj.get_contradicting_tophits(markernames, db, cutoff, self.contigdict[contig]["toplevel_marker"]) #todo: currently returns only string (to add to note of contig in contigdict). maybe add option to add full dicts also?
-			self.contigdict[contig]["tax_note"] += "; refdb_inconsistency: {}".format(contaminfo) 
+				# ~ markernames = self.contigdict[contig]["totalprots"]
+				# ~ cutoff = ref_db_contam_cutoff_protein
+			contaminfo = self._check_contig_refdb_ambiguity(contig, blastobj, db)
+			self.contigdict[contig]["tax_note"] += "; refdb_inconsistency: {}".format(contaminfo) # currently adds the complete dictionary-form of the outinfo to tax_note. This should be condensed!
 			outinfo[contig] = contaminfo
 		return outinfo
 				

@@ -414,7 +414,7 @@ def main():
 			#						, those that are still not assignable (on domain-level): mark as potential Eukaryote contamination (based on relatively high coding density of prokaryotic genomes) 
 			bindata.calc_contig_scores()
 			# ~ import pdb; pdb.set_trace()
-			refdb_inconsistencies = bindata.doublecheck_refdb_contam(db=db, nucblasts = nucblasts, protblasts = protblasts)
+			refdb_inconsistencies = bindata.doublecheck_refdb_ambig(db=db, nucblasts = nucblasts, protblasts = protblasts)
 			refdb_inconsistency_report = write_refdb_inconsistency_report(bindata.bin_tempname, refdb_inconsistencies, refdb_inconsistency_report)
 			
 			bindata.print_contigdict(os.path.join(bindata.bin_resultfolder, "contigdict.tsv"))

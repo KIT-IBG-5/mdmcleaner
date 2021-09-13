@@ -296,31 +296,94 @@ class blastdata(object): #todo: define differently for protein or nucleotide bla
 		'''
 		return [ self.blastlinelist[x] for x in range(len(self.blastlinelist)) if self.blastlinelist[x]["contig"] == contigname ]		
 
-	def get_contradicting_tophits(self, markernames, db, cutoff, markerlevel): #only checking tax-classification contradictions on phylumlevel or below!
+	def get_contradicting_tophits(self, markernames, db, cutoffs, markerlevel): #only checking tax-classification contradictions on phylumlevel or below!
 		#todo: distinguish between:
-		#				- probable actual contaminations (in either refdb or sagmag)
-		#				- only weakly supported contradictions (should only happen in some cases where contradicitons scored JUST high enough to factor in the weighted LCA)
-		#				- likely known gtdb taxon-problems (Firmicutes_A, Firmicuted_B etc, also some stuff in archaea
-		#				- contradicting taxonomies silva/gtdb
+		#				- probable actual contaminations (in either refdb or sagmag) DONE
+		#				- only weakly supported contradictions (should only happen in some cases where contradicitons scored JUST high enough to factor in the weighted LCA) DONE
+		#				- likely known gtdb taxon-problems (Firmicutes_A, Firmicuted_B etc, also some stuff in archaea #scrapped that.
+		#				- contradicting taxonomies silva/gtdb (this would require recognizing whether an individual entry comes from silfǘa or gtdb)
 		#				- rRNA-based silva taxon not backed by genomic data in gtdb
 		# 			- keep a lookput for more...
 		
 		import lca, getdb
+		cutoff_taxlevels =  ["species", "genus", "order"]
+		
 		def get_besthit_info(db, blastline, blastlineindex):
 			subject = blastline["subject"]
 			taxid = blastline["taxid"]
-			domain, phylum = None, None
+			# ~ domain, phylum = None, None
 			taxpath = db.taxid2taxpath(taxid)
-			if len(taxpath) >= 2:
-				domain = db.taxid2taxpath(taxid)[1][0]
-				if len(taxpath) >= 3:
-					phylum = db.taxid2taxpath(taxid)[2][0]
+			domain = db.get_specific_taxlevel_subtaxid(taxid, "domain") #will be None, if taxpath does not include domain
+			phylum =  db.get_specific_taxlevel_subtaxid(taxid, "phylum") #will be None, if taxpath does not include phylum
 			identity = blastline["ident"]
 			score = blastline["score"]
 			return {"subject": subject, "taxid": taxid, "domain": domain, "phylum": phylum, "identity" : identity, "score": score, "blastlineindex" : blastlineindex}
-		
-		outinfo = {"markerlevel" : markerlevel, "cutoff" : cutoff, "discrepancy_taxlevel" : None, "sm_inconsistencies_domain,phylum(+identity)": [], "sm_inconsistencies_details": [], "sm_taxclass_totalcounts": {}, "additional_weighted_lca_top_contradictions(+identity)": None}	
-		singlemarkerlcadict = { mn: { "lca": None, "blastlines" : sorted(self.get_blastlines_for_query(mn), key = lambda x: -x["score"]), "info": {"best_hit" : None, "contradiction_level" : None, "best_contradiction" : None, "above_cutoff": False} }for mn in markernames if len(self.get_blastlines_for_query(mn)) > 0}   
+
+		def categorize(outinfo, singlemarkerlcadict):
+			#if there is an sm_contradiction and/or weighted_lca_contradiction: --> potential refdb-contamination
+			#		--> if contra-identity > species-cutoff --> HIGH indicator (filter out)
+			#		--> if species-cutoff > contra-identity > genus-cutoff --> moderate indicator (filter out)
+			#		--> if genus-cutoff > contraidentity  --> low indicator (filter out only, if best hit contradicts consenus_lcs)
+			#		otherwise: fringe case for current cutoff settings (most likely not a contamination after all, but taxon should be checked nethertheless. Filter out only if best hit contradicts consensus-LCA)
+			# if the marker is rRNA, and the blasthits include gtdb-annoations above phylum with high identity BUT equally good silva hits say "None" --> silva/gtdb-conflicting taxomony
+			#oterwise, if there is no contradiction, but the lca is still None: --> silva taxon with no representation in GTDB
+			amb_type = "" #can be potential refDB-contamination("high indication", "moderate indication", "fringe-case")on sm- and/or weighted-LCA level, silva-gtdb-ambiguity(-->should choose lower marker-level if possible) 
+			amb_evidence = ""
+			amb_infotext = ""
+			if outinfo["sm_representative_contradiction"] != None:
+				amb_infotext = "contradictions within single marker LCAs"	
+				if outinfo["sm_representative_contradiction"]["bestcontraident"] >= outinfo["cutoffs"][0]:
+					amb_type = "potential refDB-contamination [high indication sm-LCA level]"
+				elif outinfo["sm_representative_contradiction"]["bestcontraident"] >= outinfo["cutoffs"][1]:
+					amb_type = "potential refDB-contamination [moderate indication sm-LCA level]"
+				elif outinfo["sm_representative_contradiction"]["bestcontraident"] >= outinfo["cutoffs"][2]:
+					amb_type = "potential refDB-contamination [low indication sm-LCA level]"
+				else:
+					amb_type = "fringe case [sm-LCA level]" #todo: in these cases the script should check whether the best hit agrees with consenus-LCA. Yes --> keep contig, No --> put contig in "potential-refdb-contaminations"
+					amb_infotext +=  "; sm-LCA affected by few low-identity cross-phylum/domain hits"
+				
+				bh_evidence = "'{bhtaxid}'({bhdomphyl}; acc='{bhacc}'; ident={bhident}%)".format(bhtaxid=outinfo["sm_representative_contradiction"]["besthit_taxid"],\
+				bhdomphyl=outinfo["sm_representative_contradiction"]["besthitdomphyl"],bhacc=outinfo["sm_representative_contradiction"]["besthit_subject"], bhident=outinfo["sm_representative_contradiction"]["besthitident"])
+				bc_evidence = "'{bctaxid}'({bcdomphyl};acc='{bcacc}'; ident={bcident}%)".format(bctaxid=outinfo["sm_representative_contradiction"]["bestcontra_taxid"],bcdomphyl=outinfo["sm_representative_contradiction"]["bestcontradomphyl"],bcacc=outinfo["sm_representative_contradiction"]["bestcontra_subject"],\
+				bcident=outinfo["sm_representative_contradiction"]["bestcontraident"])
+				if outinfo["markerlevel"] in ["lsu_rRNA_tax", "ssu_rRNA_tax", "tsu_rRNA_tax"]:
+					bh_accsource = db._gtdb_refseq_or_silva(outinfo["sm_representative_contradiction"]["besthit_subject"])
+					bc_accsource = db._gtdb_refseq_or_silva(outinfo["sm_representative_contradiction"]["bestcontra_subject"])
+					if bh_accsource != bc_accsource:
+						amb_infotext += " and/or contradicting SILVA vs gtdb taxonomies"
+						bh_evidence = "{}; {}".format(bh_accsource, bh_evidence)
+						bc_evidence = "{}; {}".format(bc_accsource, bc_evidence)
+				amb_evidence += " sm_best hit={} ;; sm_best contradiction={}".format(bh_evidence, bc_evidence)
+
+			if outinfo["weighted_lca_top_contradictions"] != None: #todo: I know, I know! Is redundant! I don't have the time to optimize RN. Something for version 1.1...
+				amb_infotext+="; contradictions between individual LCAs (weighted LCA)"
+				if outinfo["weighted_lca_top_contradictions"]["bestcontraident"] >= outinfo["cutoffs"][0]:
+					amb_type += "potential refDB-contamination or chimeric-contig [high indication weighted-LCA level]"
+				elif outinfo["weighted_lca_top_contradictions"]["bestcontraident"] >= outinfo["cutoffs"][1]:
+					amb_type += "potential refDB-contamination or chimeric-contig [moderate indication weighted-LCA level]"
+				elif outinfo["weighted_lca_top_contradictions"]["bestcontraident"] >= outinfo["cutoffs"][2]:
+					amb_type += "potential refDB-contamination or chimeric-contig [low indication weighted-LCA level]"	
+				else:
+					amb_type = "fringe case [weighted-LCA level]" #todo: in these cases the script should check whether the best hit agrees with consenus-LCA. Yes --> keep contig, No --> put contig in "potential-refdb-contaminations"
+					amb_infotext +=  "; weighted LCA affected by few low-identity cross-phylum/domain hits"		
+				amb_evidence += 	" weighted_best_tax={}(identity={}%);;weighted_best_contradiction={}(identity={}%)".format(outinfo["weighted_lca_top_contradictions"]["besthit_taxid"], outinfo["weighted_lca_top_contradictions"]["besthitident"],outinfo["weighted_lca_top_contradictions"]["bestcontra_taxid"], outinfo["weighted_lca_top_contradictions"]["bestcontraident"])
+				
+			if outinfo["sm_representative_contradiction"] == outinfo["weighted_lca_top_contradictions"] == None:
+				best3hitlines =  singlemarkerlcadict[list(singlemarkerlcadict.keys())[0]]["blastlines"][:3]
+				if db.is_eukaryote(best3hitlines[0]["taxid"]):
+					amb_infotext = "probable eukaryotic contamination"
+				elif outinfo["markerlevel"] in ["ssu_rRNA_tax", "lsu_rRNA_tax", "tsu_rRNA_tax"]:
+					amb_type = "gtdb/silva database ambiguity" #todo: in such cases downstream check protein_based markers (marker_prots or totalprots) also
+					amb_infotext = "gtdb/silva database ambiguity (e.g. possibly a Silva-OTU with no sequenced genome representative in gtdb OR conflicting taxonomic systems between silva&gtdb)"
+				else:
+					amb_type = "wtf"
+					amb_infotext = "wtf" #todo: look for such cases and try to figure them out if they occur!
+				amb_evidence = "best three blast hits: {}".format("; ".join(["db={},acc={},inferred_gtdb_taxid={},ident={}".format(db._gtdb_refseq_or_silva(h["subject"]), h["subject"], h["taxid"], h["ident"]) for h in best3hitlines]))
+			#todo: maybe add a key "checktaxa" to outinfo, containing a list of taxa (sm- and weighted LCA best hits) to check against the consensus classification	
+			return amb_type, amb_evidence, amb_infotext
+				
+		outinfo = {"markerlevel" : markerlevel, "cutoffs" : cutoffs, "single_or_weighted_discrep": None, "discrepancy_taxlevel" : None, "amb_type" : None, "amb_infotext" : None, "amb_evidence": None, "sm_representative_contradiction" : None, "sm_contradiction_counts" : None,  "weighted_lca_top_contradictions": None}
+		singlemarkerlcadict = { mn: { "lca": None, "blastlines" : sorted(self.get_blastlines_for_query(mn), key = lambda x: -x["score"]), "info": {"best_hit" : None, "contradiction_level" : None, "best_contradiction" : None, "above_cutoff": None} }for mn in markernames if len(self.get_blastlines_for_query(mn)) > 0}   
 		tempsinglemarkerlcas = []
 		lowestcli = 999
 		for mn in singlemarkerlcadict:
@@ -333,7 +396,6 @@ class blastdata(object): #todo: define differently for protein or nucleotide bla
 			templca = templines[0]["taxid"]
 			currentline = 1
 			while currentline < len(templines):
-				# ~ print("getting templca {}  & {}".format(templca, templines[currentline]["taxid"]))
 				templca = db.get_strict_pairwise_lca(templca, templines[currentline]["taxid"])
 				templcataxlevel = db.taxid2taxlevel(templca)
 				if templcataxlevel not in lca.taxlevels[3:] + [ "ignored rank"]:  # refdb-inconsistency if lca is "root" (= "no rank" at the moment, unfortunately), "domain" (aka "superkingdom") or "phylum" (=lca.taxlevels[:3]) despite high average identities
@@ -342,9 +404,11 @@ class blastdata(object): #todo: define differently for protein or nucleotide bla
 						currentline += 1
 						continue
 					singlemarkerlcadict[mn]["info"]["best_contradiction"] = hitinfo
-					if templines[currentline]["ident"] >= cutoff:
-						singlemarkerlcadict[mn]["info"]["above_cutoff"] = True
-					contradictionlevelindex = list(getdb.rank2index.keys()).index(templcataxlevel) + 1 #can be only "domain", "phylum" or None, but this way allows adding more levels in the future easier
+					for tli in range(len(cutoff_taxlevels)):
+						if templines[currentline]["ident"] >= cutoffs[tli]:
+							singlemarkerlcadict[mn]["info"]["above_cutoff"] = cutoff_taxlevels[tli] #="species" if above species-cutoff (strong), "genus" if above genus cutoff(moderate), "order" if above order cutoff (weak), None if below order cutoff (fringe-case)
+							break
+					contradictionlevelindex = list(getdb.rank2index.keys()).index(templcataxlevel) + 1 #can be only "domain", "phylum" or None, but this way allows relatively easy adding more levels in the future
 					actual_contradictionlevel = lca.taxlevels[contradictionlevelindex]
 					singlemarkerlcadict[mn]["info"]["contradiction_level"] = actual_contradictionlevel
 					if contradictionlevelindex < lowestcli:
@@ -355,28 +419,61 @@ class blastdata(object): #todo: define differently for protein or nucleotide bla
 				currentline += 1
 		
 		tempsinglemarkerlcas = [ singlemarkerlcadict[mn]["lca"] for mn in singlemarkerlcadict if singlemarkerlcadict[mn]["lca"] != None ]
+		sm_contradiction_overview = {} #todo: not used much yet, but already coded in case further analyses should be added in the near future
+
 		for i in singlemarkerlcadict:
-			besthitdomphyl = "besthit={},{}".format(singlemarkerlcadict[i]["info"]["best_hit"]["domain"],singlemarkerlcadict[i]["info"]["best_hit"]["phylum"])
-			besthitident = "({}%)".format(singlemarkerlcadict[i]["info"]["best_hit"]["identity"])
-			bestcontradomphyl = "best_contradiction=None"
-			bestcontraident = ""
-			if singlemarkerlcadict[i]["info"]["best_contradiction"] != None:
-				bestcontradomphyl = ("best_contradiction={},{}".format(singlemarkerlcadict[i]["info"]["best_contradiction"]["domain"],singlemarkerlcadict[i]["info"]["best_contradiction"]["phylum"], singlemarkerlcadict[i]["info"]["best_contradiction"]["identity"]))
-				bestcontraident = "({}%)".format(singlemarkerlcadict[i]["info"]["best_contradiction"]["identity"])
-				outinfo["sm_inconsistencies_domain,phylum(+identity)"].append("{}: '{}{}, {}{}'".format(i, besthitdomphyl, besthitident, bestcontradomphyl, bestcontraident))
-				outinfo["sm_inconsistencies_details"].append(singlemarkerlcadict[i]["info"])
-			dmc_key = (besthitdomphyl, bestcontradomphyl)
-			if dmc_key in outinfo["sm_taxclass_totalcounts"]:
-				outinfo["sm_taxclass_totalcounts"][dmc_key] += 1
-			else:
-				outinfo["sm_taxclass_totalcounts"][dmc_key] = 1
+			tempdict = {}
+			if singlemarkerlcadict[i]["info"]["best_contradiction"] == None:
+				continue
+			
+			outinfo["single_or_weighted_discrep"] = "single"			
+			tempdict["besthit_taxid"] = singlemarkerlcadict[i]["info"]["best_hit"]["taxid"]
+			tempdict["besthit_subject"] = singlemarkerlcadict[i]["info"]["best_hit"]["taxid"]
+			tempdict["besthitdomphyl"] = "{},{}".format(singlemarkerlcadict[i]["info"]["best_hit"]["domain"],singlemarkerlcadict[i]["info"]["best_hit"]["phylum"])
+			tempdict["besthitident"] = singlemarkerlcadict[i]["info"]["best_hit"]["identity"]
+
+			tempdict["bestcontra_taxid"] = singlemarkerlcadict[i]["info"]["best_contradiction"]["taxid"]
+			tempdict["bestcontra_subject"] = singlemarkerlcadict[i]["info"]["best_contradiction"]["taxid"]			
+			tempdict["bestcontradomphyl"] = "{},{}".format(singlemarkerlcadict[i]["info"]["best_contradiction"]["domain"],singlemarkerlcadict[i]["info"]["best_contradiction"]["phylum"])
+			tempdict["bestcontraident"] = singlemarkerlcadict[i]["info"]["best_contradiction"]["identity"]
+			
+			tempdict["comparevalue"] = tempdict["besthitident"] + tempdict["bestcontraident"] # the marker with the highest overall identity of besthit + bestcontradiction combined is chosen as the representative. If two or more are tied, the one with the highest supportcount is chosen.
+			tempdict["supportcount"] = 1
+			obc_keytuple = tuple(sorted([tempdict["besthitdomphyl"],tempdict["bestcontradomphyl"]]))
+			
+			if obc_keytuple in sm_contradiction_overview: 
+				if sm_contradiction_overview[obc_keytuple]["comparevalue"] >= tempdict["comparevalue"]:
+					sm_contradiction_overview[obc_keytuple]["supportcount"] += 1
+					continue
+				else:
+					tempdict["supportcount"] += sm_contradiction_overview[obc_keytuple]["supportcount"]
+			sm_contradiction_overview[obc_keytuple] = tempdict
+			
+		if len(sm_contradiction_overview) > 0:
+			rep_key = sorted(list(sm_contradiction_overview.keys()), key=lambda x: (sm_contradiction_overview[x]["comparevalue"], sm_contradiction_overview[x]["supportcount"]))[0]
+			outinfo["sm_representative_contradiction"] = sm_contradiction_overview[rep_key]
+			outinfo["sm_contradiction_counts"] = sum([sm_contradiction_overview[x]["supportcount"] for x in sm_contradiction_overview])
 				
 		outtaxpath, top2_contras, top2_contras_avidents = lca.weighted_lca(db, blasthitlist=tempsinglemarkerlcas, taxlevel=markerlevel, return_contradicting_top2 = True)
 		
 		
 		if top2_contras != None:
-			outinfo["additional_weighted_lca_top_contradictions(+identity)"] = "{}({}\%) & {}({}\%)".format(top2_contras[0], top2_contras_avidents[0], top2_contras[1], top2_contras_avidents[1])
-
+			if outinfo["discrepancy_taxlevel"] == None:
+				outinfo["discrepancy_taxlevel"] = db.taxid2taxlevel(top2_contras[0])
+			if outinfo["single_or_weighted_discrep"] == "single":
+				outinfo["single_or_weighted_discrep"] = "single&weighted"
+			else:
+				outinfo["single_or_weighted_discrep"] = "weighted"
+			outinfo["weighted_lca_top_contradictions"] = {	"besthit_taxid" : top2_contras[0], "besthitident" : top2_contras_avidents[0],\
+															"bestcontra_taxid" : top2_contras[1], "bestcontraident" : top2_contras_avidents[1]} #had to correct sorting of taxoptions in weighted lca, but now the order is actually correct (besthit vs best contradiction)
+		
+		
+		amb_type, amb_evidence, amb_infotext = categorize(outinfo, singlemarkerlcadict)
+		outinfo["amb_type"] = amb_type
+		outinfo["amb_evidence"] = amb_evidence
+		outinfo["amb_infotext"] = amb_infotext
+		
+		# ~ import pdb; pdb.set_trace()
 		return outinfo
 				
 def read_blast_tsv(infilename, max_evalue = None, min_ident = None, dbobj = None, bindata_obj = None):
