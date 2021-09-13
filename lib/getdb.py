@@ -145,6 +145,8 @@ def _create_sorted_acc2taxid_lookup(acc2taxidfilelist, acc2taxid_outfilename): #
 class taxdb(object):
 	def __init__(self, acc2taxid_lookupfile, taxdbfile = None, lca_pathsfile = None): #todo: create and read a "config file" to get file-locations from
 		#self.taxdict = self.read_taxddbfile(taxdbfile) #todo: write tis!
+		
+		
 		self.acc2taxid_lookupfile = acc2taxid_lookupfile
 		self.acc_lookup_handle = misc.openfile(acc2taxid_lookupfile)
 		self.acc_lookup_handle_filesize = self.acc_lookup_handle.seek(0,2) #jump to end of file and give bytesize (alternative to "os.path.getsize()")
@@ -238,22 +240,56 @@ class taxdb(object):
 	
 	def isnot_bacteria(self, taxid): #todo. double check if this also still works when using ncbi data!
 		tp = self.taxid2taxpath(taxid)
-		if len(tp) >= 2 and tp[1][0] == "Bacteria":
+		if len(tp) >= 2 and tp[1][0] == "Bacteria": #todo: make sure this simplified index-based lookup still works if using taxpaths that include non-official ranks (but probably should, at least for "root" and "domain/superkingdom"-levels
 			return False
 		return True
 	
 	def isnot_archaea(self, taxid): #todo. double check if this also still works when using ncbi data!
 		tp = self.taxid2taxpath(taxid)
-		if len(tp) >= 2 and tp[1][0] == "Archaea":
+		if len(tp) >= 2 and tp[1][0] == "Archaea": #todo: make sure this simplified index-based lookup still works if using taxpaths that include non-official ranks (but probably should, at least for "root" and "domain/superkingdom"-levels
 			return False
 		return True	
 		
 	def is_viral(self, taxid): #todo. double check if this also still works when using ncbi data!
 		tp = self.taxid2taxpath(taxid)
-		if len(tp) >= 1 and tp[0][0] in ["Viruses", "Virus"]:
+		if len(tp) >= 1 and tp[0][0] in ["Viruses", "Virus"]: #todo: make sure this simplified index-based lookup still works if using taxpaths that include non-official ranks (but probably should, at least for "root" and "domain/superkingdom"-levels
 			return True
-		return False			
+		return False
 	
+	def is_eukaryote(self, taxid):
+		tp = self.taxid2taxpath(taxid)
+		if len(tp) >= 1 and tp[1][0] == "Eukaryota": #todo: make sure this simplified index-based lookup still works if using taxpaths that include non-official ranks (but probably should, at least for "root" and "domain/superkingdom"-levels
+			return True
+		return False	
+
+	def get_specific_taxlevel_subtaxid(self, taxid, taxlevel="domain", returnvalue="taxid"):
+		"""
+		accepts a taxid and a taxlevel (one of ["root", "domain", "phylum", "class", "order", "family", "genus", "species"]) as input.
+		looks up the taxpath for the given taxid and returns the ("sub-")taxid or taxname at the given taxlevel (default="domain"), if present.
+		If the taxpath does not contain the given taxlevel (e.g. when requesting a "subtaxid" at genus level, but giving a taxid of a phylum), None is returned
+		"""
+		import lca
+		assert taxlevel in lca.taxlevels, "\nERROR: taxlevel must be one of {}\n".format(lca.taxlevels[:2] + ["superkingdom"] + lca.taxlevels[2:])
+		assert returnvalue in ["taxid", "taxname"], "ERROR: returnvalue mist bei either \"taxid\" or \"taxname\"\n"
+		taxpath = self.taxid2taxpath(taxid)
+		if taxlevel == "domain":
+			taxlevel = "superkingdom"
+		if taxlevel == "root":
+			outtaxid = taxpath[0][1]
+			outtaxname = taxpath[0][0]
+		else:
+			for t in taxpath[1:]:
+				outtaxid = t[1]
+				outtaxname = t[0]
+				if self.taxid2taxlevel(outtaxid) == taxlevel:
+					break
+				outtaxid, outtaxname = None, None
+		if returnvalue == "taxid":
+			return outtaxid
+		elif returnvalue == "taxname":
+			return outtaxname
+		
+		
 	def taxid2taxname(self, taxid):
 		return self.taxdict[taxid]["taxname"]
 	
@@ -340,7 +376,24 @@ class taxdb(object):
 		"""
 		rankindex = self.taxdict[taxid]["rank"]
 		return index2rank[rankindex]
+
+	def _gtdb_refseq_or_silva(self, acc):
+		"""
+		determines which db an accession-nr was from (gtdb, silva or refseq), based on the mdmcleaner-internal formatting/style of the accession-nr
+		only tested for the gtdb-based workflow (which includes eukaryotic and viral protein sequences from RefSeq)
+		primarily used to determine gtdb/silva refDB.ambiguities within the mdmcleaner workflow.
+		accepts an accession-id as input, returns "silva" for SILVA-style accessions, "gtdb" for gtdb-style and "refseq_eurvircat" for refseq. returns None if none of the patterns match
+		"""
+		import re
+		slv_pattern = ("silva", "^\w+\.\d+\.\d+$")
+		gtdb_contig_pattern = ("gtdb", "^\w+\.\d+_\w+\.*\d+$")
+		gtdb_genome_pattern = ("gtdb", "^(RS|GB)_GC[AF]_\d+\.\d+$")
+		refseq_euvircat_pattern = ("refseq", "^[A-Z]{2}_\d+\.\d+$")
 		
+		for p in [slv_pattern, gtdb_contig_pattern, gtdb_genome_pattern, refseq_euvircat_pattern]:
+			if re.search(p[1], acc):
+				return p[0]
+				
 ################################################################		
 
 def _test_download3():
