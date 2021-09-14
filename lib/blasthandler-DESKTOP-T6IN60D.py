@@ -364,7 +364,7 @@ class blastdata(object): #todo: define differently for protein or nucleotide bla
 				elif outinfo["weighted_lca_top_contradictions"]["bestcontraident"] >= outinfo["cutoffs"][2]:
 					amb_type += "potential refDB-contamination or chimeric-contig [low indication weighted-LCA level]"	
 				else:
-					amb_type += "fringe case [weighted-LCA level]" #todo: in these cases the script should check whether the best hit agrees with consenus-LCA. Yes --> keep contig, No --> put contig in "potential-refdb-contaminations"
+					amb_type = "fringe case [weighted-LCA level]" #todo: in these cases the script should check whether the best hit agrees with consenus-LCA. Yes --> keep contig, No --> put contig in "potential-refdb-contaminations"
 					amb_infotext +=  "; weighted LCA affected by few low-identity cross-phylum/domain hits"		
 				amb_evidence += 	" weighted_best_tax={}(identity={}%);;weighted_best_contradiction={}(identity={}%)".format(outinfo["weighted_lca_top_contradictions"]["besthit_taxid"], outinfo["weighted_lca_top_contradictions"]["besthitident"],outinfo["weighted_lca_top_contradictions"]["bestcontra_taxid"], outinfo["weighted_lca_top_contradictions"]["bestcontraident"])
 				

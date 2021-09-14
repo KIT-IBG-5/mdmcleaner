@@ -1008,10 +1008,10 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 		# ~ level_score_dict = { group[0]:{"penalty": group[1], "bonus":group[2]} for group in zip(lca.taxlevels[1:], level_scores, reversed(level_scores)) }#differing at domain level results in maximum penalty while agreeing and domain elvel results in minimum bonus
 		
 		markerlevel_factors = {	'ssu_rRNA_tax' : 1, \
-								'lsu_rRNA_tax' : 0.9, \
-								'prok_marker_tax' : 0.8, \
-								'total_prots_tax' : 0.7, \
-								None : 0 }	
+												'lsu_rRNA_tax' : 0.9, \
+												'prok_marker_tax' : 0.8, \
+												'total_prots_tax' : 0.7, \
+												None : 0 }	
 		
 		
 		consensus_taxlevel = list(self.majortaxdict.keys())[-1] #TODO: these should be instance attributes
@@ -1062,44 +1062,36 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 	def check_and_set_filterflags(self, contig, filter_rankcutoff = "family", filter_viral = True, filter_unclassified = False): #args are unpacked only to enforce keyword aguments for protblasta and nucblasts (to prevent accidentally passing them in the wrong order) 
 		import re
 		import lca
-		def check_lower_ranking_protein_markers(contigentry, filterflag = "delete", altflag = "evaluate_low"):
-			for protmarker in ["prok_marker_tax", "total_prots_tax"]:
-				if self.contigdict[contig][protmarker] != None and (lca.contradicting_taxasstuples(self.contigdict[contig][protmarker], self.contigdict[contig]["toplevel_tax"]) and not lca.contradict_taxasstuple_majortaxdict(self.contigdict[contig][protmarker], self.majortaxdict)):
-				self.contigdict[contig]["info_flag"]["refdb_ambig"]
-				self.contigdict[contig]["refdb_ambig"] = "gtdb/silva database ambiguity"
-				self.contigdict[contig]["tax_note"] +=" but not on {}-level --> ambigeous gtdb-taxon"
-				filterflag = "evaluate_high"
-				break #only check the highest ranking protein-annotation...
-			return filterflag
-			
 		if self.contigdict[contig]["info_flag"] == "non-coding":
 			return "delete" #non-coding contigs are automatically assumed aéukaryotic contamination
-		if re.match("mismatch_[2-7]", self.contigdict[contig]["info_flag"]):
+		if re.match("mismatch_[2-7]", self.contigdict[contig]["info_flag"]) and self.contigdict[contig]["toplevel_marker"] in ["ssu_rRNA_tax", "lsu_rRNA_tax", "tsu_rRNA_tax"]:
 			mismatch_rankindex = re.match("mismatch_([2-7])").group(1)
 			rankcutoff_index = lca.taxlevels[1:].index(filter_rankcutoff)
 			if mismatch_rankindex >= rankcutoff_index:
 				filterflag = "delete"
-			if self.contigdict[contig]["toplevel_marker"] in ["ssu_rRNA_tax", "lsu_rRNA_tax", "tsu_rRNA_tax"]:
-				filterflag = check_lower_ranking_protein_markers(self.contigdict[contig], filterflag)
-
+			for protmarker in ["prok_marker_tax", "total_prots_tax"]:
+				if self.contigdict[contig][protmarker] != None and (lca.contradicting_taxasstuples(self.contigdict[contig][protmarker], self.contigdict[contig]["toplevel_tax"]) and not lca.contradict_taxasstuple_majortaxdict(self.contigdict[contig][protmarker], self.majortaxdict)):
+					self.contigdict[contig]["info_flag"]["refdb_ambig"]
+					self.contigdict[contig]["refdb_ambig"] = "gtdb/silva database ambiguity"
+					self.contigdict[contig]["tax_note"] +=" but not on {}-level --> ambigeous gtdb-taxon"
+					filterflag = "evaluate_high"
+					break #only check the highest ranking protein-annotation...
 		elif self.contigdict[contig]["refdb_ambig"] and "fringe case" in self.contigdict[contig]["refdb_ambig"] and not "potential refDB-contamination" in self.contigdict[contig]["refdb_ambig"]:
 			if self.contigdict[contig]["contradict_consensus"] == None:
 				filterflag = "keep"
 			else:
 				filterflag = "evaluate_low"
-		elif self.contigdict[contig]["refdb_ambig"] and "potential refDB-contamination [high indication" in self.contigdict[contig]["refdb_ambig"]:
+		elif self.contigdict[contig]["refdb_ambig"] and "potential refDB-contamination [high indication" in self.contigdict[contig]:
 			filterflag = "evaluate_high"
-		elif self.contigdict[contig]["refdb_ambig"] and "potential refDB-contamination" in self.contigdict[contig]["refdb_ambig"]:
+		elif self.contigdict[contig]["refdb_ambig"] and "potential refDB-contamination" in self.contigdict[contig]:
 			filterflag = "evaluate_low"
-		elif self.contigdict[contig]["refdb_ambig"]	and self.contigdict[contig]["refdb_ambig"] == "gtdb/silva database ambiguity":
-			filterflag = check_lower_ranking_protein_markers(self.contigdict[contig], "evaluate_high", "evaluate_low")
-		
-		return filterflag	 
-		# should be divided into: include, evaluate_low_suspicion, evaluate_high_suspicion, delete							
+					
+					
+		pass # should be divided into: include, evaluate_low_suspicion, evaluate_high_suspicion, delete							
 		#todo: DONE if infoflag in mismatch_2-7 and markertype in ["ssu_RNA_tax", "lsu_rRNA_tax"] --> check also protein_annotations, put into  evaluate_low(or high?)_suspicion if those match majority_tax
 		#			DONE elif infoflag in [unclassified, viral, mismatch_3-7] --> check user_input (delete or include)
-		# 		DONE if infoflag = refdb_contam_fringe --> check if not contradicting (delete or low_suspicion)
-		#		DONE	if infoflag = gtdb_silva --> check if not contradicting, and also check protein_markers (high_suspicion, low_suspicion)
+		# 		if infoflag = refdb_contam_fringe --> check if not contradicting (delete or low_suspicion)
+		#			if infoflag = gtdb_silva --> check if not contradicting, and also check protein_markers (high_suspicion, low_suspicion)
 		
 	def evaluate_and_flag_all_contigs(self, *args, db, protblasts, nucblasts, filter_rankcutoff = "family", filter_viral = True, filter_unclassified = False): #args are unpacked only to enforce keyword aguments for protblasta and nucblasts (to prevent accidentally passing them in the wrong order) 
 		ref_db_ambiguity_overview = {}
