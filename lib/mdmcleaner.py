@@ -412,6 +412,7 @@ def main():
 			
 			#    					, those that still have no hit or have no RNAs --> blastx against protein-db
 			#						, those that are still not assignable (on domain-level): mark as potential Eukaryote contamination (based on relatively high coding density of prokaryotic genomes) 
+			# ~ import pdb; pdb.set_trace()
 			bindata.calc_contig_scores()
 			# ~ import pdb; pdb.set_trace()
 			refdb_inconsistencies = bindata.doublecheck_refdb_ambig(db=db, nucblasts = nucblasts, protblasts = protblasts)

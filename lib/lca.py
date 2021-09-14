@@ -5,7 +5,7 @@ import misc
 from misc import openfile
 
 taxlevels = ["root", "domain", "phylum", "class", "order", "family", "genus", "species"]
-taxtuple = namedtuple("taxtuple", "seqid taxid identity score") #use exact same syntax as for input, to enable lca of lca annotations
+taxasstuple = namedtuple("taxasstuple", "seqid taxid identity score") #use exact same syntax as for input, to enable lca of lca annotations
 species_identity_cutoffs = {	"ssu_rRNA_tax" : 98, \
 												"lsu_rRNA_tax" : 96, \
 												"total_prots_tax" : 85, \
@@ -33,59 +33,51 @@ ALl these functions require an taxdb_object as input.
 taxdb-objects already incude a basic strict pairwise lca function. This module provides additional functions for achieving weighted lca annotations for sets of taxids > 2.
 """
 
-def contradicting_taxtuples(taxtuplelistA, taxtuplelistB, return_idents = False):
+def contradicting_taxasstuples(taxasstuplelistA, taxasstuplelistB, return_idents = False):
 	"""
 	checks if a path matches or not
-	inputs are lists of taxtuples, as returned by weighted_lca
+	inputs are lists of taxasstuples, as returned by weighted_lca
 	if it does not: it returns the lowest level of mismatch ("e.g. "phylum")
-	levels without taxassignment (None) in one of the taxtuplelists are ignored
+	levels without taxassignment (None) in one of the taxasstuplelists are ignored
 	returns None if now contradiction is found
 	optionally also returns a tuple of the respective average identitied of each assignment on that level (or None, None if no contradiction is found) 
 	"""
 	#todo: either allow different kinds of inputs, or normalize lca/taxpath results (e.g. an lca-object)
 	#todo: IMPORTANT: for now this assumes only the 7 major taxlevels! make this more flexible for input that does not fit this criteria e.g. contains "subfamily")
-	if not None in [taxtuplelistA, taxtuplelistB]:
-		maxlevel = min(len(taxtuplelistA), len(taxtuplelistB))
+	if not None in [taxasstuplelistA, taxasstuplelistB]:
+		maxlevel = min(len(taxasstuplelistA), len(taxasstuplelistB))
 		for i in range(maxlevel):
 			levelname = taxlevels[i]
-			if taxtuplelistA[i].taxid != taxtuplelistB[i].taxid:
-				# ~ print("contradiction! {} != {}".format(taxtuplelistA[i].taxid, taxtuplelistB[i].taxid))
+			if taxasstuplelistA[i].taxid != taxasstuplelistB[i].taxid:
+				# ~ print("contradiction! {} != {}".format(taxasstuplelistA[i].taxid, taxasstuplelistB[i].taxid))
 				if return_idents:
-					return levelname, (taxtuplelistA[i].average_ident, taxtuplelistB[i].average_ident)
+					return levelname, (taxasstuplelistA[i].average_ident, taxasstuplelistB[i].average_ident)
 				return levelname
 	if return_idents:
 		return None, None
 	return None	
+	
+def contradict_taxasstuple_majortaxdict(taxasstuplelist, majortaxdict, return_idents = False): #todo: this is very convoluted. standardize taxpath, lca and majrtaxdict data types (create a taxobject or so...)
+	"""
+	Checks for contradictions between an input list of taxasstuples (taxasstuples are e.g. created by strict_lca())
+	Returns the contradicting taxlevel and optionally also the average identity at that level . Returns None if no contradiction is found
+	"""
+	if not None in [taxasstuplelist, majortaxdict]:
 
-def contradict_taxtuple_taxpath(taxtuplelist, majortaxdict, return_idents = False): #todo: this is very convoluted. standardize taxpath, lca and majrtaxdict data types (create a taxobject or so...)
-	if not None in [taxtuplelist, majortaxdict]:
-		# ~ print("not None")
-		maxlevel = min(len(taxtuplelist), len(majortaxdict))
-		# ~ print(maxlevel)
+		maxlevel = min(len(taxasstuplelist), len(majortaxdict))
+
 		for i in range(maxlevel):
-			# ~ print("{} = {}".format(i, taxtuplelist[i]))
-			# ~ sys.stdout.flush()
+
 			levelname = taxlevels[i]
-			if taxtuplelist[i] is None or majortaxdict[levelname] is None: #todo: apparently should not occur. probably better to fix it in the barrnap- and majortaxdict functions of getmarkers.py, or if that fails in the previous maxlen-check (add a list comprehension that removes all entires with value None). this here is just a workaround...
+			if taxasstuplelist[i] is None or majortaxdict[levelname] is None: #todo: apparently should not occur. probably better to fix it in the barrnap- and majortaxdict functions of getmarkers.py, or if that fails in the previous maxlen-check (add a list comprehension that removes all entires with value None). this here is just a workaround...
 				break
-			# ~ print (taxtuplelist[i].taxid)
-			# ~ print(levelname)
-			# ~ print(majortaxdict[levelname])
-			# ~ print(majortaxdict[levelname][0])
-			# ~ print(majortaxdict[levelname][0][i])
 						
-			if taxtuplelist[i].taxid != majortaxdict[levelname][0][i]:
-				# ~ print(taxtuplelist)
-				# ~ print(len(taxtuplelist)
-				# ~ print(majortaxdict[0])
-				# ~ print(len(majortaxdict[0]))
-				# ~ print("contradiction! {} != {}".format(taxtuplelist[i].taxid, majortaxdict[levelname][0][i]))
-				# ~ print("returning {}, {}".format(levelname, taxtuplelist[i].average_ident))
+			if taxasstuplelist[i].taxid != majortaxdict[levelname][0][i]:
 				if return_idents:
-					return levelname, taxtuplelist[i].average_ident
+					return levelname, taxasstuplelist[i].average_ident
 				return levelname
 			sys.stdout.flush()
-	# ~ print("returning None")
+			
 	if return_idents:
 		return None, None
 	return None
@@ -109,7 +101,7 @@ def strict_lca(taxdb, seqid = None, blasthitlist=None, threads=1):
 	# ~ print(interim_taxid)
 	# ~ print("============")
 	# ~ import pdb; pdb.set_trace()
-	return taxtuple(seqid = seqid, taxid = interim_taxid, identity = interim_id, score = interim_score) 
+	return taxasstuple(seqid = seqid, taxid = interim_taxid, identity = interim_id, score = interim_score) 
 	# ~ return "fuck"
 	
 def weighted_lca(taxdb, seqid = None, blasthitlist=None, fractioncutoff = 0.95, taxlevel="total_prots_tax", threads=1, return_contradicting_top2 = False):
@@ -151,13 +143,13 @@ def weighted_lca(taxdb, seqid = None, blasthitlist=None, fractioncutoff = 0.95, 
 				if hit.identity < species_identity_cutoff: #only assign up to species level, if identity is larger or equal to species_identity_cutoff (default 90% for proteins, 98% for rRNA)
 					break
 			if i == 6: #6 = genus level
-				if hit.identity < genus_identity_cutoff: #only assign up to species level, if identity is larger or equal to species_identity_cutoff (default 90% for proteins, 98% for rRNA)
+				if hit.identity < genus_identity_cutoff: #only assign up to species level, if identity is larger or equal to genus_identity_cutoff (default 60% for proteins, 92% for rRNA)
 					break
 			if i == 4: #4 = order level
-				if hit.identity < order_identity_cutoff: #only assign up to species level, if identity is larger or equal to species_identity_cutoff (default 90% for proteins, 98% for rRNA)
+				if hit.identity < order_identity_cutoff: #only assign up to species level, if identity is larger or equal to order_identity_cutoff (default 55% for proteins, 87% for rRNA)
 					break
 			if i == 2: #2 = phylum level
-				if hit.identity < phylum_identity_cutoff: #only assign up to species level, if identity is larger or equal to species_identity_cutoff (default 90% for proteins, 98% for rRNA)
+				if hit.identity < phylum_identity_cutoff: #only assign up to species level, if identity is larger or equal to species_identity_cutoff (default 45% for proteins, 77% for rRNA)
 					break					
 			if not i in tempdict:
 				tempdict[i] = {}

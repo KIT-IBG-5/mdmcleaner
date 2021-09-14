@@ -813,14 +813,14 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 		assert contigname in self.contigdict, "Protein id \"{}\" should correspond to a contig \"{}\", but no such contig in bindata!".format(protid, contigname)
 		return contigname
 	
-	def pickleyourself(self):
-		pass
+	# ~ def pickleyourself(self):
+		# ~ pass
 		
-	def unpickleyourself(self):
-		pass	
+	# ~ def unpickleyourself(self):
+		# ~ pass	
 		
-	def get_contig2prot_dict(self): #todo: check if actually needed usful in any case... seems uneccessary as long as proteins can be assigned to contigs based on prodigal naming scheme. But MAY be useful in the futire, if planned to allow including ready made (e.g. Prokka) annotations?
-		pass #todo: make this
+	# ~ def get_contig2prot_dict(self): #todo: check if actually needed usful in any case... seems uneccessary as long as proteins can be assigned to contigs based on prodigal naming scheme. But MAY be useful in the futire, if planned to allow including ready made (e.g. Prokka) annotations?
+		# ~ pass #todo: make this
 	
 	def get_prot2contig_dict(self): #todo: check if actually needed usful in any case... seems uneccessary as long as proteins can be assigned to contigs based on prodigal naming scheme. But MAY be useful in the futire, if planned to allow including ready made (e.g. Prokka) annotations?
 		prot2contigdict = {}
@@ -829,8 +829,8 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 				prot2contigdict[protein] = contig
 		return prot2contigdict
 	
-	def get_prot2marker_dict(self):
-		pass #todo: make this
+	# ~ def get_prot2marker_dict(self):
+		# ~ pass #todo: make this
 
 	# ~ def add_lca2markerdict(self, blastdata,db, threads=1): #attempt to enable multithreading here. does not work, because starmap needs to pickle shared objects, and db is not pickable! todo: find a way to make db pickable!
 		# ~ import time
@@ -922,17 +922,10 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 						self.contigdict[contig]["toplevel_ident"] = topleveltax[-1].average_ident
 						self.contigdict[contig]["toplevel_taxlevel"] = lca.taxlevels[len(topleveltax)-1]
 					else:
-						contradiction, contradiction_evidence = lca.contradicting_taxtuples(self.contigdict[contig][m], topleveltax, return_idents = True)
+						contradiction, contradiction_evidence = lca.contradicting_taxasstuples(self.contigdict[contig][m], topleveltax, return_idents = True)
 						if contradiction != None:
 							self.contigdict[contig]["contradictions_interlevel"].append(contradiction_evidence[0])
 			if topleveltax != None: #mark viral contigs, in case theys should be considered specially later (cases were value remains at default "None" are not classified, therfore not sure if viral or not)
-				# ~ print("!"*40)
-				# ~ print(topleveltax)
-				# ~ print("--")
-				# ~ print(topleveltax[0])
-				# ~ print("--")
-				# ~ print(topleveltax[0].taxid)
-				# ~ print("!"*40)
 				if db.is_viral(topleveltax[0].taxid):
 					self.contigdict[contig]["viral"] = True
 				else:
@@ -967,7 +960,7 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 			self.consensus_tax = db.taxid2taxpath(last_tax_entry[0][-1])
 		
 		for contig in self.contigdict:
-			contradiction, contradiction_evidence = lca.contradict_taxtuble_taxpath(self.contigdict[contig]["toplevel_tax"], self.majortaxdict, return_idents = True) #check each contigs if contradicts majortax
+			contradiction, contradiction_evidence = lca.contradict_taxasstuple_majortaxdict(self.contigdict[contig]["toplevel_tax"], self.majortaxdict, return_idents = True) #check each contigs if contradicts majortax
 			if contradiction:
 				self.contigdict[contig]["contradict_consensus"] = contradiction
 				self.contigdict[contig]["contradict_consensus_evidence"] = contradiction_evidence 
@@ -980,7 +973,7 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 			return [ taxtuple[0] for taxtuple in self.consensus_tax ]
 
 
-	def calc_trust_scores(self, contigname):#todo: virals are not ignored here, but just at the filtering step. will get low trust regardless
+	def calc_trust_scores(self, contigname, db):#todo: virals are not ignored here, but just at the filtering step. will get low trust regardless
 		"""
 		the taxpaths of the bin_consensus_tax and each contigs highest_ranking_tax are compared. 
 		
@@ -1018,8 +1011,13 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 												'total_prots_tax' : 0.7, \
 												None : 0 }	
 		
-		consensus_taxlevel = list(self.majortaxdict.keys())[-1] #TODO: these should be instance attributes
-		consensus_taxid = self.majortaxdict[consensus_taxlevel][0][-1] #TODO: these should be instance attributes
+		# ~ consensus_taxlevel = list(self.majortaxdict.keys())[-1] #TODO: these should be instance attributes
+		# ~ consensus_taxid = self.majortaxdict[consensus_taxlevel][0][-1] #TODO: these should be instance attributes
+		contig_toptaxasstuplelist = self.contigdict[contig]["toplevel_tax"]
+		# ~ contig_toptaxid =  contig_toptaxasstuplelist[-1].taxid
+		# ~ contig_toptaxpath = db.taxid2taxpath(contig_toptaxid)
+		contig_topmarkerlevel = self.contigdict[contig]["toplevel_marker"]
+		
 		
 		
 		
@@ -1051,7 +1049,7 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 		in both cases, non-ambigeous assignments increase or decrease the bonus/penalty by 1, respectively
 		possible taxon-scores range from -4 to 12. for calculating trustworthiness-score, tax-scores <0 are assumed as 0, leading to trusworthiness-scores ranging from 0-10 (0= probably contamination, 3 = suspiceous, 4 = unknown/slightly suspiceous,  5 = unkown, 6 = "probably trustworthy", 10 = highly trustworthy
 		"""
-		import pdb; pdb.set_trace()
+		# ~ import pdb; pdb.set_trace()
 		import lca
 		def individual_scores(contig_entry): #todo: this is redundant (seperae calculatipn for toplevel_tax and for individual marker-levels (the latter were added as afterthought and too little time to integrate cleanly). move all taxscore calculations to a single subfunction
 			# ~ print(contig_entry)
@@ -1071,7 +1069,7 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 				# ~ print("*"*40)
 				# ~ print()
 				sys.stdout.flush()
-				contradiction, contradiction_evidence = lca.contradict_taxtuble_taxpath(contig_entry[markerlevel], self.majortaxdict, return_idents = True)
+				contradiction, contradiction_evidence = lca.contradict_taxasstuple_majortaxdict(contig_entry[markerlevel], self.majortaxdict, return_idents = True)
 				if not contradiction: #if matches consensus-tax, +bonus based on which marker level was used, what the identity was and whether the lca was ambigeous or not
 					modificatordict[markerlevel] = (markerboni[markerlevel] * (contig_entry[markerlevel][-1].average_ident/100)) - (0.2 * max([0, len(contig_entry[markerlevel])-len(self.majortaxdict)])) + (not contig_entry[markerlevel][-1].ambigeous)
 				elif contradiction:

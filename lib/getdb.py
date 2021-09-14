@@ -368,7 +368,9 @@ class taxdb(object):
 		if fullpath:
 			return list(reversed(taxpath))
 		else:
-			return list(reversed([ t for t in taxpath if t[2] > 0 ])) #only ranks with indices larger than zero == the 7 official ranks
+			return list(reversed([ t for t in taxpath if t[2] > 0 ])) #only ranks with indices larger zero == the 7 official ranks
+
+
 			
 	def taxid2taxlevel(self, taxid):
 		"""
@@ -377,6 +379,38 @@ class taxdb(object):
 		rankindex = self.taxdict[taxid]["rank"]
 		return index2rank[rankindex]
 
+	def taxids2contradicting_taxpaths(self, taxA, taxB):
+		"""
+		takes two taxids, and checks if their taxpaths contradict each other
+		if the taxpaths contradict, it returns the major contradicting taxlevel/rank, or it returns "minor rank below <last matching official taxlevel>" if contradicting at minor rank
+		returns None if no contradiction is found.
+		unequal lengths of taxpaths are NOT considered a contradicion (taxpaths will only be compared up to the shorter length of the two taxpaths)
+		"""
+		taxpathA = self.taxid2taxpath(taxA)
+		taxpathB = self.taxid2taxpath(taxB)
+		return self.contradicting_taxpaths(taxpathA, taxpathB)
+
+	def contradicting_taxpaths(self, taxpathA, taxpathB):
+		"""
+		takes two taxpaths and checks for contradictions
+		if the taxpaths contradict, it returns the major contradicting taxlevel/rank, or it returns "minor rank below <last matching official taxlevel>" if contradicting at minor rank
+		returns None if no contradiction is found.
+		unequal lengths of taxpaths are NOT considered a contradicion (taxpaths will only be compared up to the shorter length of the two taxpaths)
+		"""
+		found_contradiction = False
+		last_common_rankindex = None
+		for ta, tb in zip(taxpathA, taxpathB):
+			if ta != tb:
+				found_contradiction = True
+				if ta[2] < 0 and tb[2] < 0: 
+					continue #if contradicting taxlevel is an minor rank, such as "subfamily"
+				else:
+					return index2rank(min([ x for x in [ta[2], tb[2]] if x >= 0 ])) 
+			else:
+				last_common_rankindex = ta[2]
+		if found_contradiction:
+			return "minor rank below {}".format(index2rank(last_common_rankindex))
+		
 	def _gtdb_refseq_or_silva(self, acc):
 		"""
 		determines which db an accession-nr was from (gtdb, silva or refseq), based on the mdmcleaner-internal formatting/style of the accession-nr
