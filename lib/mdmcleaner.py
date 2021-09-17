@@ -10,6 +10,7 @@ import getmarkers
 import blasthandler
 import pprint
 import lca
+import reporting
 
 from _version import __version__
 
@@ -79,19 +80,19 @@ def check_progressdump(outfolder, infastas):
 		return getdb.jsonfile2dict(progressfile)
 	return { os.path.basename(i) : None for i in infastas} 
 
-def write_refdb_inconsistency_report(magsag, inconsistencies, outfile):
-	import io
-	if len(inconsistencies) > 0:
-		header = "magsag\tcontig\t{}\n".format("\t".join([key for key in inconsistencies[list(inconsistencies.keys())[0]]]))
-		if isinstance(outfile, str):
-			outfile = openfile(outfile, "wt")
-			outfile.write(header)
-	if isinstance(outfile, io.IOBase):
-		for i in inconsistencies:
-			line = "{}\t{}\t{}\n".format(magsag, i, "\t".join([str(v) for v in inconsistencies[i].values()]))
-			outfile.write(line)
+# ~ def write_refdb_inconsistency_report(magsag, inconsistencies, outfile): #moved to reports.py
+	# ~ import io
+	# ~ if len(inconsistencies) > 0:
+		# ~ header = "magsag\tcontig\t{}\n".format("\t".join([key for key in inconsistencies[list(inconsistencies.keys())[0]]]))
+		# ~ if isinstance(outfile, str):
+			# ~ outfile = openfile(outfile, "wt")
+			# ~ outfile.write(header)
+	# ~ if isinstance(outfile, io.IOBase):
+		# ~ for i in inconsistencies:
+			# ~ line = "{}\t{}\t{}\n".format(magsag, i, "\t".join([str(v) for v in inconsistencies[i].values()]))
+			# ~ outfile.write(line)
 	# ~ import pdb; pdb.set_trace()
-	return outfile
+	# ~ return outfile
 	
 def gather_extended_bin_metrics(bindata, outfile, cutoff=5): #todo: make a simple_binmetrics function
 	def write_dictlines(indict, outfile):
@@ -125,8 +126,8 @@ def gather_extended_bin_metrics(bindata, outfile, cutoff=5): #todo: make a simpl
 		fraction_trustedbp = sum([ bindata.contigdict[contig]["contiglen"] for contig in bindata.get_trusted_contignames() ])/totalbinbp
 		fraction_unknownbp = sum([ bindata.contigdict[contig]["contiglen"] for contig in bindata.get_contignames_with_trustscore(5) ])/totalbinbp
 		fraction_untrustedbp = sum([ bindata.contigdict[contig]["contiglen"] for contig in bindata.get_untrusted_contignames() ])/totalbinbp
-		bin_trust = bindata.trust_index_from_tax_score(statistics.mean( [ bindata.contigdict[contig]["tax_score"] for contig in bindata.contigdict]))
-		bin_trust_ignoring_viral = bindata.trust_index_from_tax_score(statistics.mean( [ bindata.contigdict[contig]["tax_score"] for contig in bindata.contigdict if not bindata.contigdict[contig]["viral"]] ))
+		bin_trust = statistics.mean( [ bindata.contigdict[contig]["trust_index"] for contig in bindata.contigdict])
+		bin_trust_ignoring_viral = statistics.mean( [ bindata.contigdict[contig]["trust_index"] for contig in bindata.contigdict if not bindata.contigdict[contig]["viral"]] )
 		fraction_different_species = sum([ bindata.contigdict[contig]["contiglen"] for contig in bindata.contigdict if bindata.contigdict[contig]["contradict_consensus"] == "species"])/totalbinbp
 		fraction_different_genus = sum([ bindata.contigdict[contig]["contiglen"] for contig in bindata.contigdict if bindata.contigdict[contig]["contradict_consensus"] == "genus"])/totalbinbp
 		fraction_different_family = sum([ bindata.contigdict[contig]["contiglen"] for contig in bindata.contigdict if bindata.contigdict[contig]["contradict_consensus"] == "family"])/totalbinbp
@@ -134,7 +135,7 @@ def gather_extended_bin_metrics(bindata, outfile, cutoff=5): #todo: make a simpl
 		fraction_different_class = sum([ bindata.contigdict[contig]["contiglen"] for contig in bindata.contigdict if bindata.contigdict[contig]["contradict_consensus"] == "class"])/totalbinbp
 		fraction_different_phylum = sum([ bindata.contigdict[contig]["contiglen"] for contig in bindata.contigdict if bindata.contigdict[contig]["contradict_consensus"] == "phylum"])/totalbinbp
 		fraction_different_domain = sum([ bindata.contigdict[contig]["contiglen"] for contig in bindata.contigdict if bindata.contigdict[contig]["contradict_consensus"] == "domain"])/totalbinbp
-		fraction_refdb_contamination = bindata.get_fraction_refdbcontamination()
+		fraction_refdb_contamination = bindata.get_fraction_refdbambiguity()
 		fraction_nocoding = bindata.get_fraction_nocoding()
 		fraction_viral = sum([ bindata.contigdict[contig]["contiglen"] for contig in bindata.contigdict if bindata.contigdict[contig]["viral"]])/totalbinbp
 		fraction_trust0 = sum([ bindata.contigdict[contig]["contiglen"] for contig in bindata.get_contignames_with_trustscore(0) ])/totalbinbp
@@ -412,12 +413,13 @@ def main():
 			
 			#    					, those that still have no hit or have no RNAs --> blastx against protein-db
 			#						, those that are still not assignable (on domain-level): mark as potential Eukaryote contamination (based on relatively high coding density of prokaryotic genomes) 
-			import pdb; pdb.set_trace()
-			bindata.calc_contig_scores()
 			# ~ import pdb; pdb.set_trace()
-			refdb_inconsistencies = bindata.doublecheck_refdb_ambig(db=db, nucblasts = nucblasts, protblasts = protblasts)
-			refdb_inconsistency_report = write_refdb_inconsistency_report(bindata.bin_tempname, refdb_inconsistencies, refdb_inconsistency_report)
-			
+			bindata.evaluate_and_flag_all_contigs(db=db, protblasts=protblasts, nucblasts=nucblasts)
+			# ~ bindata.calc_contig_scores()
+			# ~ import pdb; pdb.set_trace()
+			#refdb_inconsistencies = bindata.doublecheck_refdb_ambig(db=db, nucblasts = nucblasts, protblasts = protblasts)
+			refdb_ambiguity_report = reporting.write_refdb_ambiguity_report(bindata.bin_tempname, bindata.ref_db_ambiguity_overview, refdb_inconsistency_report)
+			# todo_write refb_inconsistency_report
 			bindata.print_contigdict(os.path.join(bindata.bin_resultfolder, "contigdict.tsv"))
 			sys.stdout.flush()
 			sys.stderr.flush()

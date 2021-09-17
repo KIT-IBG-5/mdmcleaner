@@ -342,9 +342,9 @@ class blastdata(object): #todo: define differently for protein or nucleotide bla
 					amb_type = "fringe case [sm-LCA level]" #todo: in these cases the script should check whether the best hit agrees with consenus-LCA. Yes --> keep contig, No --> put contig in "potential-refdb-contaminations"
 					amb_infotext +=  "; sm-LCA affected by few low-identity cross-phylum/domain hits"
 				
-				bh_evidence = "'{bhtaxid}'({bhdomphyl}; acc='{bhacc}'; ident={bhident}%)".format(bhtaxid=outinfo["sm_representative_contradiction"]["besthit_taxid"],\
+				bh_evidence = "'{bhtaxid}'({bhdomphyl}; acc='{bhacc}'; ident={bhident:.2f}%)".format(bhtaxid=outinfo["sm_representative_contradiction"]["besthit_taxid"],\
 				bhdomphyl=outinfo["sm_representative_contradiction"]["besthitdomphyl"],bhacc=outinfo["sm_representative_contradiction"]["besthit_subject"], bhident=outinfo["sm_representative_contradiction"]["besthitident"])
-				bc_evidence = "'{bctaxid}'({bcdomphyl};acc='{bcacc}'; ident={bcident}%)".format(bctaxid=outinfo["sm_representative_contradiction"]["bestcontra_taxid"],bcdomphyl=outinfo["sm_representative_contradiction"]["bestcontradomphyl"],bcacc=outinfo["sm_representative_contradiction"]["bestcontra_subject"],\
+				bc_evidence = "'{bctaxid}'({bcdomphyl};acc='{bcacc}'; ident={bcident:.2f}%)".format(bctaxid=outinfo["sm_representative_contradiction"]["bestcontra_taxid"],bcdomphyl=outinfo["sm_representative_contradiction"]["bestcontradomphyl"],bcacc=outinfo["sm_representative_contradiction"]["bestcontra_subject"],\
 				bcident=outinfo["sm_representative_contradiction"]["bestcontraident"])
 				if outinfo["markerlevel"] in ["lsu_rRNA_tax", "ssu_rRNA_tax", "tsu_rRNA_tax"]:
 					bh_accsource = db._gtdb_refseq_or_silva(outinfo["sm_representative_contradiction"]["besthit_subject"])
@@ -366,7 +366,7 @@ class blastdata(object): #todo: define differently for protein or nucleotide bla
 				else:
 					amb_type += "fringe case [weighted-LCA level]" #todo: in these cases the script should check whether the best hit agrees with consenus-LCA. Yes --> keep contig, No --> put contig in "potential-refdb-contaminations"
 					amb_infotext +=  "; weighted LCA affected by few low-identity cross-phylum/domain hits"		
-				amb_evidence += 	" weighted_best_tax={}(identity={}%);;weighted_best_contradiction={}(identity={}%)".format(outinfo["weighted_lca_top_contradictions"]["besthit_taxid"], outinfo["weighted_lca_top_contradictions"]["besthitident"],outinfo["weighted_lca_top_contradictions"]["bestcontra_taxid"], outinfo["weighted_lca_top_contradictions"]["bestcontraident"])
+				amb_evidence += 	" weighted_best_tax={}(identity={:.2f}%);;weighted_best_contradiction={}(identity={:.2f}%)".format(outinfo["weighted_lca_top_contradictions"]["besthit_taxid"], outinfo["weighted_lca_top_contradictions"]["besthitident"],outinfo["weighted_lca_top_contradictions"]["bestcontra_taxid"], outinfo["weighted_lca_top_contradictions"]["bestcontraident"])
 				
 			if outinfo["sm_representative_contradiction"] == outinfo["weighted_lca_top_contradictions"] == None:
 				best3hitlines =  singlemarkerlcadict[list(singlemarkerlcadict.keys())[0]]["blastlines"][:3]
@@ -378,7 +378,7 @@ class blastdata(object): #todo: define differently for protein or nucleotide bla
 				else:
 					amb_type = "wtf"
 					amb_infotext = "wtf" #todo: look for such cases and try to figure them out if they occur!
-				amb_evidence = "best three blast hits: {}".format("; ".join(["db={},acc={},inferred_gtdb_taxid={},ident={}".format(db._gtdb_refseq_or_silva(h["subject"]), h["subject"], h["taxid"], h["ident"]) for h in best3hitlines]))
+				amb_evidence = "best three blast hits: {}".format("; ".join(["db={},acc={},inferred_gtdb_taxid={},ident={:.2f}".format(db._gtdb_refseq_or_silva(h["subject"]), h["subject"], h["taxid"], h["ident"]) for h in best3hitlines]))
 			#todo: maybe add a key "checktaxa" to outinfo, containing a list of taxa (sm- and weighted LCA best hits) to check against the consensus classification	
 			return amb_type, amb_evidence, amb_infotext
 				

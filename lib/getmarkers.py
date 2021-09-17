@@ -52,7 +52,7 @@ full_tRNA_species=[	"tRNA-Ala", "tRNA-Arg", "tRNA-Asn", "tRNA-Asp", "tRNA-Cys", 
 							"tRNA-Leu", "tRNA-Lys", "tRNA-Met", "tRNA-Phe", "tRNA-Pro", "tRNA-Ser", "tRNA-Thr", "tRNA-Trp", "tRNA-Tyr", "tRNA-Val", "tRNA-SeC"] #expected "full" set of tRNA species expeced for prototoph bacteria. For estimating completeness
 
 def _get_new_contigdict_entry(record): #todo change contiglen and totalprotcount to ints rather than lists!
-	return {"contiglen": len(record), "totalprotcount" : 0, "ssu_rRNA" : [], "ssu_rRNA_tax" : None, "lsu_rRNA" : [], "lsu_rRNA_tax":None, "tsu_rRNA" : [], "tRNAs": [],"prok_marker" : [], "prok_marker_tax" :None,  "bac_marker" : [], "arc_marker" : [], "totalprots" : [], "total_prots_tax": None, "toplevel_marker" : None, "toplevel_tax" : None, "toplevel_taxlevel" : None, "toplevel_ident": None, "ambigeous" : False, "consensus_level_diff": 0, "contradict_consensus": None, "contradict_consensus_evidence": 0, "contradictions_interlevel": [], "viral" : None, "refdb_ambig" : False, "refdb_ambig_infotext": None, "refdb_ambig_evidence": None, "tax_score" : None, "trust_index" : None,"tax_note" : None, "non-coding" : False, "filterflag" : None}
+	return {"contiglen": len(record), "totalprotcount" : 0, "ssu_rRNA" : [], "ssu_rRNA_tax" : None, "lsu_rRNA" : [], "lsu_rRNA_tax":None, "tsu_rRNA" : [], "tRNAs": [],"prok_marker" : [], "prok_marker_tax" :None,  "bac_marker" : [], "arc_marker" : [], "totalprots" : [], "total_prots_tax": None, "toplevel_marker" : None, "toplevel_tax" : None, "toplevel_taxlevel" : None, "toplevel_ident": None, "ambigeous" : False, "consensus_level_diff": 0, "contradict_consensus": None, "contradict_consensus_evidence": 0, "contradictions_interlevel": [], "viral" : None, "refdb_ambig" : False, "refdb_ambig_infotext": "", "refdb_ambig_evidence": "", "tax_score" : None, "trust_index" : None,"tax_note" : "", "non-coding" : False, "info_flag" : None, "filterflag" : None}
 
 def split_fasta_for_parallelruns(infasta, minlength = 0, number_of_fractions = 2, outfilebasename = None):
 	"""
@@ -96,7 +96,7 @@ def split_fasta_for_parallelruns(infasta, minlength = 0, number_of_fractions = 2
 		for i in range(len(outlist)):
 			outfilenamelist.append("{}_temp_fraction_{}.fasta".format(outfilebasename, i))
 			with openfile(outfilenamelist[-1], "wt") as outfile:
-				print("writing to {}".format(outfile.name))
+				sys.stderr.write("\nwriting to {}\n".format(outfile.name))
 				SeqIO.write(outlist[i], outfile, "fasta")
 		return outfilenamelist, contigdict
 
@@ -144,7 +144,7 @@ def _get_trnas_single(infasta,  aragorn="aragorn", threads=1):
 		sys.stderr.write(aragorn_proc.stderr)
 		raise Exception("\nERROR: Something went wrong while trying to call Aragorn...\n")
 	outlinelist = aragorn_proc.stdout.split("\n")
-	print("will return outlinelist now")
+	# ~ print("will return outlinelist now")
 	return  outlinelist
 
 def get_trnas(*subfastas, outdirectory = ".", aragorn = "aragorn", threads = 1):
@@ -156,7 +156,7 @@ def get_trnas(*subfastas, outdirectory = ".", aragorn = "aragorn", threads = 1):
 	"""
 	#TODO: create another function "extract_trnas" that can extract the exact trna seqeucne based on the respective coordinates, for blasting against the nucleotide-dbs
 	from itertools import chain
-	print("starting trna scan")
+	sys.stderr.write("starting trna scan\n")
 	tempfilelist = []
 	subfastas=list(subfastas)
 	for i in range(len(subfastas)):
@@ -167,11 +167,11 @@ def get_trnas(*subfastas, outdirectory = ".", aragorn = "aragorn", threads = 1):
 			tempfilelist.append(tempfilename)
 	commandlist = [("getmarkers", "_get_trnas_single", {"infasta" : subfasta}) for subfasta in subfastas]
 	outstringlistlist =misc.run_multiple_functions_parallel(commandlist, threads)
-	print("should be finished now!")
+	# ~ print("should be finished now!")
 	sys.stdout.flush()
 	sys.stderr.flush()
 	outlist = _parse_aragorn_output(list(chain(*outstringlistlist)))
-	print("finished parsing trna results")
+	# ~ print("finished parsing trna results")
 	sys.stdout.flush()
 	sys.stderr.flush()
 	for t in tempfilelist:
@@ -180,7 +180,7 @@ def get_trnas(*subfastas, outdirectory = ".", aragorn = "aragorn", threads = 1):
 	
 def _parse_aragorn_output(outstringlist):
 	import re
-	print("started parsing")
+	# ~ print("started parsing")
 	sys.stdout.flush()
 	sys.stderr.flush()
 	trnapattern = " (tRNA-\w+)\s+(c?\[\d+,\d+\])"
@@ -483,7 +483,7 @@ def get_markerprotnames(proteinfastafile, cutoff_dict = cutofftablefile, hmmsear
 
 def deduplicate_markerprots(list_of_markerdicts): # For proteins with hits to different models, just keep the hit with the highest score. This function is a highly convoluted way to do this, but it is late and my brain is tired
 	#todo: turn list of markerdicts into dict of markerdicts or an own class
-	print("before deduplicating: {}".format(", ".join([str(len(x)) for x in list_of_markerdicts])))
+	# ~ print("before deduplicating: {}".format(", ".join([str(len(x)) for x in list_of_markerdicts])))
 	keys = set([ key for md in list_of_markerdicts for key in md ])
 	for key in keys:
 		a, b = 0, 1
@@ -504,7 +504,7 @@ def deduplicate_markerprots(list_of_markerdicts): # For proteins with hits to di
 					# ~ print("------------------")
 			a += 1
 			b += 1
-	print("after deduplicating {}".format(", ".join([str(len(x)) for x in list_of_markerdicts])))
+	# ~ print("after deduplicating {}".format(", ".join([str(len(x)) for x in list_of_markerdicts])))
 	# ~ import pdb; pdb.set_trace()
 	return list_of_markerdicts
 			
@@ -686,6 +686,7 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 		self.pickle_progressfile = os.path.join(self.bin_resultfolder, "bindata_progress.pickle") #todo: change to better system
 		self.trna_jsonfile = os.path.join(self.bin_resultfolder, "bindata_progress.json.gz") #todo: REALLY start implementing a better system!
 		self.trnafastafile = os.path.join(self.bin_resultfolder, self.bin_tempname + "_tRNAs.fasta.gz")
+		self.ref_db_ambiguity_overview = {}
 		for d in [self.outbasedir, self.bin_resultfolder]:
 			if not os.path.exists(d):
 				print("creating {}".format(d))
@@ -699,9 +700,6 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 
 		
 	    #todo: simplify all those dicts
-	    # todo the contigdict is probably not necessary in that form...
-	    # todo: one function mapping protein-ids to contigs (just based on prodigal-nomenclature) --> DONE
-	    #	todo: a new dict mapping gene/protein-ids to markers ["ssu", "lsu", "prok", "bact", "arch", "total"] --> DONE
 	    # todo: inititate all dicts/variables set in _get_all_markers as None here, so that an overview remains possible
 	     
 	def _get_all_markers(self, threads, mincontiglength, cutofftable, from_json = True): #todo: split into a.) get totalprots b.) get_markerprots c.) get rRNA genes! #todo: delete the "from_json argument or set default to False
@@ -1002,7 +1000,7 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 		import lca
 		levels = ["domain", "phylum", "class", "order", "family", "genus", "species"]
 		level_penalties = [8.0,4.0,2.0,1.0,0.5,0.25,0.125] #penalties for domain, phylum, class, order, family, genus & species differences, respectively (root is ignored. viral contigs get same penalty as eukaryotic contigs)
-		level_boni = reversed(level_boni)
+		level_boni = list(reversed(level_penalties))
 		base_level_score = sum(level_boni)
 		max_level_score = base_level_score*2
 		# ~ level_score_dict = { group[0]:{"penalty": group[1], "bonus":group[2]} for group in zip(lca.taxlevels[1:], level_scores, reversed(level_scores)) }#differing at domain level results in maximum penalty while agreeing and domain elvel results in minimum bonus
@@ -1020,7 +1018,7 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 		
 		contig_toptaxasstuplelist = self.contigdict[contig]["toplevel_tax"]
 		if contig_toptaxasstuplelist == None:
-			if sum([len(contigdict[x]) for x in [ "ssu_rRNA", "lsu_rRNA", "tsu_rRNA", "tRNAs", "prok_marker", "bac_marker", "arc_marker", "totalprots"]]) == 0:
+			if sum([len(self.contigdict[contig][x]) for x in [ "ssu_rRNA", "lsu_rRNA", "tsu_rRNA", "tRNAs", "prok_marker", "bac_marker", "arc_marker", "totalprots"]]) == 0:
 				self.contigdict[contig]["tax_note"] += "ATTENTION: contig contains no detectable coding features --> automatically assumed eukaryotic!"
 				self.contigdict[contig]["info_flag"] = "non-coding"
 				return 3
@@ -1038,18 +1036,22 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 		contig_toplevelcontradiction_evidence = self.contigdict[contig]["contradict_consensus"]
 		
 		total_bonus_penalty = 0
-		max_levelindex = max([len(contig_toptaxpath), len(consensus_taxpath)])
-		min_levelindex = min([len(contig_toptaxpath), len(consensus_taxpath)])
+		max_levelindex = max([0, max([len(contig_toptaxpath), len(consensus_taxpath)])-1])
+		min_levelindex = max([0, min([len(contig_toptaxpath), len(consensus_taxpath)])-1])
 		if contig_toplevelcontradiction_taxrank:
-			self.contigdict[contig]["tax_note"] += "ATTENTION: contig-classification '{}' ({}% blast-ident) contradicts majority-classification '{}' at rank '{}' on '{}'-level".format(contig_toptaxid, contig_toptaxident, consensus_taxid, contig_toplevelcontradiction_taxrank, contig_toptaxmarkerlevel)
+			self.contigdict[contig]["tax_note"] += "ATTENTION: contig-classification '{}' ({:.2f}% blast-ident) contradicts majority-classification '{}' at rank '{}' on '{}'-level".format(contig_toptaxid, contig_toptaxident, consensus_taxid, contig_toplevelcontradiction_taxrank, contig_toptaxmarkerlevel)
 			contradiction_levelindex = levels.index(contig_toplevelcontradiction_taxrank)
-			if db.isviral(contig_toptaxid):
+			if db.is_viral(contig_toptaxid):
 				self.contigdict[contig]["info_flag"] = "viral"
 			else:
 				self.contigdict[contig]["info_flag"] = "mismatch_{}".format(contradiction_levelindex)
 			total_bonus_penalty -= sum(level_penalties[contradiction_levelindex:max_levelindex])
 		else:
-			self.contigdict[contig]["tax_note"] += "contig-classification '{}'({}% blast-ident) matches majority-classification '{}' upto rank {} on '{}'-level".format(contig_toptaxid, contig_toptaxident, consensus_taxid, levels[min_levelindex], contig_toptaxmarkerlevel)
+			# ~ print("hwhat is going on!")
+			# ~ print(min_levelindex)
+			# ~ print(levels)
+			# ~ print(levels[min_levelindex])
+			self.contigdict[contig]["tax_note"] += "contig-classification '{}'({:.2f}% blast-ident) matches majority-classification '{}' upto rank {} on '{}'-level".format(contig_toptaxid, contig_toptaxident, consensus_taxid, levels[min_levelindex], contig_toptaxmarkerlevel)
 			total_bonus_penalty += sum(level_boni[:min_levelindex])
 			total_bonus_penalty -= sum(level_penalties[min_levelindex:max_levelindex])/10
 			self.contigdict[contig]["tax_note"] 
@@ -1065,23 +1067,28 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 		def check_lower_ranking_protein_markers(contigentry, filterflag = "delete", altflag = "evaluate_low"):
 			for protmarker in ["prok_marker_tax", "total_prots_tax"]:
 				if self.contigdict[contig][protmarker] != None and (lca.contradicting_taxasstuples(self.contigdict[contig][protmarker], self.contigdict[contig]["toplevel_tax"]) and not lca.contradict_taxasstuple_majortaxdict(self.contigdict[contig][protmarker], self.majortaxdict)):
-				self.contigdict[contig]["info_flag"]["refdb_ambig"]
-				self.contigdict[contig]["refdb_ambig"] = "gtdb/silva database ambiguity"
-				self.contigdict[contig]["tax_note"] +=" but not on {}-level --> ambigeous gtdb-taxon"
+					self.contigdict[contig]["info_flag"] = "refdb_ambig"
+					self.contigdict[contig]["refdb_ambig"] = "gtdb/silva database ambiguity"
+					self.contigdict[contig]["ambig_info"] +="ambigeous gtdb-taxon (taxonomy conflict on rRNA level, but not on protein level)"
+					self.contigdict[contig]["tax_note"] +=" but not on {}-level --> ambigeous gtdb-taxon".format(protmarker)
 				filterflag = "evaluate_high"
 				break #only check the highest ranking protein-annotation...
 			return filterflag
-			
+		filterflag = "keep"	
 		if self.contigdict[contig]["info_flag"] == "non-coding":
 			return "delete" #non-coding contigs are automatically assumed aéukaryotic contamination
-		if re.match("mismatch_[2-7]", self.contigdict[contig]["info_flag"]):
-			mismatch_rankindex = re.match("mismatch_([2-7])").group(1)
+		if self.contigdict[contig]["info_flag"] and re.match("mismatch_[1-7]", self.contigdict[contig]["info_flag"]):
+			# ~ print("MISMATCHING {}".format(self.contigdict[contig]["info_flag"]))
+			mismatch_rankindex = int(re.match("mismatch_([1-7])", self.contigdict[contig]["info_flag"]).group(1))
 			rankcutoff_index = lca.taxlevels[1:].index(filter_rankcutoff)
-			if mismatch_rankindex >= rankcutoff_index:
+			if mismatch_rankindex <= rankcutoff_index:
+				# ~ print("i should delete that!!!")
 				filterflag = "delete"
 			if self.contigdict[contig]["toplevel_marker"] in ["ssu_rRNA_tax", "lsu_rRNA_tax", "tsu_rRNA_tax"]:
+				# ~ print("or should I?????")
 				filterflag = check_lower_ranking_protein_markers(self.contigdict[contig], filterflag)
-
+				# ~ print(filterflag)
+				# ~ print("-----")
 		elif self.contigdict[contig]["refdb_ambig"] and "fringe case" in self.contigdict[contig]["refdb_ambig"] and not "potential refDB-contamination" in self.contigdict[contig]["refdb_ambig"]:
 			if self.contigdict[contig]["contradict_consensus"] == None:
 				filterflag = "keep"
@@ -1091,32 +1098,42 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 			filterflag = "evaluate_high"
 		elif self.contigdict[contig]["refdb_ambig"] and "potential refDB-contamination" in self.contigdict[contig]["refdb_ambig"]:
 			filterflag = "evaluate_low"
-		elif self.contigdict[contig]["refdb_ambig"]	and self.contigdict[contig]["refdb_ambig"] == "gtdb/silva database ambiguity":
+		elif self.contigdict[contig]["refdb_ambig"]	and self.contigdict[contig]["refdb_ambig"] == "gtdb/silva database ambiguity":	
 			filterflag = check_lower_ranking_protein_markers(self.contigdict[contig], "evaluate_high", "evaluate_low")
-		
+			self.contigdict[contig]["ambig_info"] +=" but not on {}-level --> ambigeous gtdb-taxon".format(protmarker)
 		return filterflag	 
-		# should be divided into: include, evaluate_low_suspicion, evaluate_high_suspicion, delete							
-		#todo: DONE if infoflag in mismatch_2-7 and markertype in ["ssu_RNA_tax", "lsu_rRNA_tax"] --> check also protein_annotations, put into  evaluate_low(or high?)_suspicion if those match majority_tax
-		#			DONE elif infoflag in [unclassified, viral, mismatch_3-7] --> check user_input (delete or include)
-		# 		DONE if infoflag = refdb_contam_fringe --> check if not contradicting (delete or low_suspicion)
-		#		DONE	if infoflag = gtdb_silva --> check if not contradicting, and also check protein_markers (high_suspicion, low_suspicion)
+		#TODO: check how well the tax_notes are filled
 		
 	def evaluate_and_flag_all_contigs(self, *args, db, protblasts, nucblasts, filter_rankcutoff = "family", filter_viral = True, filter_unclassified = False): #args are unpacked only to enforce keyword aguments for protblasta and nucblasts (to prevent accidentally passing them in the wrong order) 
-		ref_db_ambiguity_overview = {}
+		# ~ print("EEEEVALUATiNG...")
 		for contig in self.contigdict:
-			self.contigdict[contig]["trust_index"] = calc_contig_trust_score(contig, db)
+			self._mark_ref_db_ambiguity(contig)
+			# ~ if contig == "PGYB01000035.1": #todo: only for debugging
+				# ~ print("-------{}---------__".format(contig)) #todo: only for debugging
+				# ~ import pdb; pdb.set_trace() #todo: only for debugging
+			self.contigdict[contig]["trust_index"] = self.calc_contig_trust_score(contig, db)
 			if self.contigdict[contig]["refdb_ambig"]:
 				if self.contigdict[contig]["toplevel_marker"] in ["ssu_rRNA_tax", "lsu_rRNA_tax", "tsu_rRNA_tax"]:
 					blastobj = nucblasts
 				elif self.contigdict[contig]["toplevel_marker"] in ["prok_marker_tax", "total_prots_tax"]:
 					blastobj = protblasts
 				ambiguityinfo = self._check_contig_refdb_ambiguity(contig, blastobj, db)
-				ref_db_ambiguity_overview[contig] = ambiguityinfo
+				self.ref_db_ambiguity_overview[contig] = ambiguityinfo
 				self.contigdict[contig]["refdb_ambig"] = ambiguityinfo["amb_type"]
 				self.contigdict[contig]["refdb_ambig_infotext"] = ambiguityinfo["amb_infotext"]
 				self.contigdict[contig]["refdb_ambig_evidence"] = ambiguityinfo["amb_evidence"]
 			self.contigdict[contig]["filterflag"] = self.check_and_set_filterflags(contig, filter_rankcutoff = filter_rankcutoff, filter_viral = filter_viral, filter_unclassified = filter_unclassified) 
-
+			# ~ import pdb; pdb.set_trace()
+			
+	def _mark_ref_db_ambiguity(self, contig):
+		import lca
+		markerlevel = self.contigdict[contig]["toplevel_marker"]
+		if markerlevel:
+			species_cutoff = lca.species_identity_cutoffs[markerlevel]
+			if self.contigdict[contig]["toplevel_taxlevel"] in ["root", "domain"] and self.contigdict[contig]["toplevel_ident"] >= species_cutoff:
+				self.contigdict[contig]["refdb_ambig"] == True
+				self.contigdict[contig]["tax_note"] += " potential cross-domain/phylum refDB-ambiguity; "
+		
 	def _check_contig_refdb_ambiguity(self, contig, blastobj, db):
 		import lca
 		# ~ print("check_contig_refdb_ambiguity")
@@ -1205,11 +1222,11 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 	def get_total_size(self):
 		return sum([ self.contigdict[contig]["contiglen"] for contig in self.contigdict ])
 	
-	def get_refdbcontamination_contignames(self):
+	def get_refdbambiguity_contignames(self):
 		return [ contig for contig in self.contigdict if "ref-db contamination" in self.contigdict[contig]["tax_note"] ]
 		
-	def get_fraction_refdbcontamination(self):
-		return sum([ self.contigdict[contig]["contiglen"] for contig in self.get_refdbcontamination_contignames() ]) / self.get_total_size()
+	def get_fraction_refdbambiguity(self):
+		return sum([ self.contigdict[contig]["contiglen"] for contig in self.get_refdbambiguity_contignames() ]) / self.get_total_size()
 
 	def get_nocoding_contignames(self):
 		return [ contig for contig in self.contigdict if " lack of coding regions" in self.contigdict[contig]["tax_note"] ]
@@ -1233,7 +1250,7 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 		return start, stop, direction
 	
 	def get_trna_sequences_from_contigs(self, trna_namelist):
-		print("getting trna sequences")
+		sys.stderr.write("\ngetting trna sequences\n")
 		trna_namelist = sorted(trna_namelist)
 		# ~ print(trna_namelist)
 		contignamelist = list(set([self.marker2contig(trna_name) for trna_name in trna_namelist]))
