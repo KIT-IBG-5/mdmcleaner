@@ -386,6 +386,7 @@ class blastdata(object): #todo: define differently for protein or nucleotide bla
 				best3hitlines =  hitlines[:3]
 				if db.is_eukaryote(best3hitlines[0]["taxid"]):
 					amb_infotext = "probable eukaryotic contamination"
+					amb_type = False
 				elif outinfo["markerlevel"] in ["ssu_rRNA_tax", "lsu_rRNA_tax", "tsu_rRNA_tax"]:
 					best_gtdb_hit = None
 					best_gtdb_hits = [bl for bl in hitlines if db._gtdb_refseq_or_silva(bl["subject"]) == "gtdb"]

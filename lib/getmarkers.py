@@ -1234,7 +1234,7 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 		return sum([ self.contigdict[contig]["contiglen"] for contig in self.contigdict ])
 	
 	def get_refdbambiguity_contignames(self):
-		return [ contig for contig in self.contigdict if "ref-db contamination" in self.contigdict[contig]["tax_note"] ]
+		return [ contig for contig in self.contigdict if self.contigdict["refdb_ambig"] != False ]
 		
 	def get_fraction_refdbambiguity(self):
 		return sum([ self.contigdict[contig]["contiglen"] for contig in self.get_refdbambiguity_contignames() ]) / self.get_total_size()
