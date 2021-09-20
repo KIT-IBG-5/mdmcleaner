@@ -9,16 +9,26 @@ def write_refdb_ambiguity_report(magsag, ambiguities, outfile):
 	import io
 	output = ""
 	if len(ambiguities) > 0:
-		header = dict2tsvline(indictionary, lineprefix = "magsag\t", key_header = "contig", onlyheader=True)
+		header = misc.dict2tsvline(ambiguities, lineprefix = "magsag\t", key_header = "contig", onlyheader=True)
 		if isinstance(outfile, str):
-			output += header
+			print("isastering")
 			outfile = openfile(outfile, "wt")
+			output += header
 			# ~ outfile.write(header)
 		if isinstance(outfile, io.IOBase):
-			for i in ambiguities:
-				output += dict2tsvline(indictionary, lineprefix = "{}\t".format(magsag), key_header = "contig", onlyheader=True)
-				line = "{}\t{}\t{}\n".format(magsag, i, "\t".join([str(v) for v in ambiguities[i].values()]))
-				outfile.write(line)
+			print("isafile")
+			# ~ print("00000000000000000==")
+			# ~ print(ambiguities)
+			# ~ print("--")
+			# ~ print(output)
+			# ~ print("=====================")
+			output += misc.dict2tsvline(ambiguities, lineprefix = "{}\t".format(magsag), key_header = "contig", onlyheader=False)
+			# ~ line = "{}\t{}\t{}\n".format(magsag, i, "\t".join([str(v) for v in ambiguities[i].values()]))
+		# ~ print("huhu")
+		# ~ print(output)
+		# ~ print("----")
+		outfile.write(output)
+		# ~ print(outfile)
 		# ~ import pdb; pdb.set_trace()
 	return outfile
 

@@ -80,7 +80,7 @@ def check_progressdump(outfolder, infastas):
 		return getdb.jsonfile2dict(progressfile)
 	return { os.path.basename(i) : None for i in infastas} 
 
-# ~ def write_refdb_inconsistency_report(magsag, inconsistencies, outfile): #moved to reports.py
+# ~ def write_refdb_ambiguity_report(magsag, inconsistencies, outfile): #moved to reports.py
 	# ~ import io
 	# ~ if len(inconsistencies) > 0:
 		# ~ header = "magsag\tcontig\t{}\n".format("\t".join([key for key in inconsistencies[list(inconsistencies.keys())[0]]]))
@@ -268,7 +268,7 @@ def main():
 	# ~ import pdb; pdb.set_trace()
 	overview_before = args.overview_basename + "_all_before_cleanup.tsv"
 	overview_after = args.overview_basename + "_all_after_cleanup.tsv"
-	refdb_inconsistency_report = args.overview_basename + "_refdb_inconsistencies.tsv"
+	refdb_ambiguity_report = args.overview_basename + "_refdb_ambiguities.tsv"
 	for infasta in args.input_fastas:
 		try:
 			sys.stdout.flush()
@@ -281,7 +281,7 @@ def main():
 			############### getting markers
 			bindata = getmarkers.bindata(contigfile=infasta, threads=configs["threads"])
 			nucblastjsonfilename = os.path.join(bindata.bin_resultfolder, "nucblasts.json.gz")
-			protblastjsonfilename = os.path.join(bindata.bin_resultfolder, "protblasts.json")
+			protblastjsonfilename = os.path.join(bindata.bin_resultfolder, "protblasts.json") #todo: why is this not compressed? Fix!
 			#import pdb; pdb.set_trace()
 
 			############### getting blast data for markers
@@ -418,7 +418,7 @@ def main():
 			# ~ bindata.calc_contig_scores()
 			# ~ import pdb; pdb.set_trace()
 			#refdb_inconsistencies = bindata.doublecheck_refdb_ambig(db=db, nucblasts = nucblasts, protblasts = protblasts)
-			refdb_ambiguity_report = reporting.write_refdb_ambiguity_report(bindata.bin_tempname, bindata.ref_db_ambiguity_overview, refdb_inconsistency_report)
+			refdb_ambiguity_report = reporting.write_refdb_ambiguity_report(bindata.bin_tempname, bindata.ref_db_ambiguity_overview, refdb_ambiguity_report)
 			# todo_write refb_inconsistency_report
 			bindata.print_contigdict(os.path.join(bindata.bin_resultfolder, "contigdict.tsv"))
 			sys.stdout.flush()
@@ -426,12 +426,12 @@ def main():
 			test_1(bindata, os.path.join(bindata.bin_resultfolder, "testcontigmarkersnew_beforecleanup.tsv"))
 			overview_before = gather_extended_bin_metrics(bindata, outfile=overview_before, cutoff=5)
 			# ~ import pdb; pdb.set_trace()
-			bindata.clean_yourself() #todo: mdmcleaner runs into error if all contigs are removed fix this
+			# ~ bindata.clean_yourself() #todo: mdmcleaner runs into error if all contigs are removed fix this
 			# ~ import pdb; pdb.set_trace()
-			test_1(bindata, os.path.join(bindata.bin_resultfolder, "testcontigmarkersnew_aftercleanup.tsv"))
-			misc.write_fasta(bindata.get_contig_records(), os.path.join(bindata.bin_resultfolder, bindata.bin_tempname + "after_cleanup.fasta.gz"))
+			# ~ test_1(bindata, os.path.join(bindata.bin_resultfolder, "testcontigmarkersnew_aftercleanup.tsv"))
+			# ~ misc.write_fasta(bindata.get_contig_records(), os.path.join(bindata.bin_resultfolder, bindata.bin_tempname + "after_cleanup.fasta.gz"))
 			# ~ import pdb; pdb.set_trace()
-			overview_after = gather_extended_bin_metrics(bindata, outfile=overview_after, cutoff=5)
+			# ~ overview_after = gather_extended_bin_metrics(bindata, outfile=overview_after, cutoff=5)
 			# ~ import pdb; pdb.set_trace()
 			
 		except Exception as e:
@@ -440,7 +440,7 @@ def main():
 			traceback.print_exc()
 			errorlistfile.write(infasta + "\n")
 	import io
-	for f in [overview_before, overview_after, refdb_inconsistency_report]:
+	for f in [overview_before, overview_after, refdb_ambiguity_report]:
 		if isinstance(f, io.IOBase):
 			f.close() #make sure whole buffer is written to files before script terminates!
 	print("finished")

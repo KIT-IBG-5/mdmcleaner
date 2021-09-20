@@ -1012,9 +1012,13 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 								None : 0 }	
 		
 		
-		consensus_taxlevel = list(self.majortaxdict.keys())[-1] #TODO: these should be instance attributes
+		# ~ print(self.majortaxdict)
+		consensus_taxlevel = [ key for key in self.majortaxdict.keys() if self.majortaxdict[key] != None][-1] #TODO: these should be instance attributes
+		# ~ print(consensus_taxlevel)
 		consensus_taxid = self.majortaxdict[consensus_taxlevel][0][-1] #TODO: these should be instance attributes
+		# ~ print(consensus_taxid)
 		consensus_taxpath = db.taxid2taxpath(consensus_taxid)[1:] #root is skipped
+		# ~ print(consensus_taxpath)
 		
 		contig_toptaxasstuplelist = self.contigdict[contig]["toplevel_tax"]
 		if contig_toptaxasstuplelist == None:
@@ -1069,11 +1073,12 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 				if self.contigdict[contig][protmarker] != None and (lca.contradicting_taxasstuples(self.contigdict[contig][protmarker], self.contigdict[contig]["toplevel_tax"]) and not lca.contradict_taxasstuple_majortaxdict(self.contigdict[contig][protmarker], self.majortaxdict)):
 					self.contigdict[contig]["info_flag"] = "refdb_ambig"
 					self.contigdict[contig]["refdb_ambig"] = "gtdb/silva database ambiguity"
-					self.contigdict[contig]["ambig_info"] +="ambigeous gtdb-taxon (taxonomy conflict on rRNA level, but not on protein level)"
-					self.contigdict[contig]["tax_note"] +=" but not on {}-level --> ambigeous gtdb-taxon".format(protmarker)
-				filterflag = "evaluate_high"
+					self.contigdict[contig]["refdb_ambig_infotext"] +="ambigeous gtdb-taxon (taxonomy conflict on rRNA level, but not on protein level)"
+					self.contigdict[contig]["tax_note"] +=" but agrees with majority classification on {}-level --> ambigeous taxon placement".format(protmarker)
+				filterflag = altflag
 				break #only check the highest ranking protein-annotation...
-			return filterflag
+			return filterflag, protmarker
+			
 		filterflag = "keep"	
 		if self.contigdict[contig]["info_flag"] == "non-coding":
 			return "delete" #non-coding contigs are automatically assumed aéukaryotic contamination
@@ -1086,7 +1091,7 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 				filterflag = "delete"
 			if self.contigdict[contig]["toplevel_marker"] in ["ssu_rRNA_tax", "lsu_rRNA_tax", "tsu_rRNA_tax"]:
 				# ~ print("or should I?????")
-				filterflag = check_lower_ranking_protein_markers(self.contigdict[contig], filterflag)
+				filterflag, protmarker = check_lower_ranking_protein_markers(self.contigdict[contig], filterflag)
 				# ~ print(filterflag)
 				# ~ print("-----")
 		elif self.contigdict[contig]["refdb_ambig"] and "fringe case" in self.contigdict[contig]["refdb_ambig"] and not "potential refDB-contamination" in self.contigdict[contig]["refdb_ambig"]:
@@ -1098,9 +1103,13 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 			filterflag = "evaluate_high"
 		elif self.contigdict[contig]["refdb_ambig"] and "potential refDB-contamination" in self.contigdict[contig]["refdb_ambig"]:
 			filterflag = "evaluate_low"
-		elif self.contigdict[contig]["refdb_ambig"]	and self.contigdict[contig]["refdb_ambig"] == "gtdb/silva database ambiguity":	
-			filterflag = check_lower_ranking_protein_markers(self.contigdict[contig], "evaluate_high", "evaluate_low")
-			self.contigdict[contig]["ambig_info"] +=" but not on {}-level --> ambigeous gtdb-taxon".format(protmarker)
+		elif self.contigdict[contig]["refdb_ambig"]:
+			if self.contigdict[contig]["refdb_ambig"] == "gtdb/silva database ambiguity":	
+				filterflag, protmarker = check_lower_ranking_protein_markers(self.contigdict[contig], "evaluate_high", "evaluate_low")
+				# ~ if filterflag == "evaluate_low":
+					# ~ self.contigdict[contig]["refdb_ambig_infotext"] +=" but agrees with majority classification on {}-level --> ambigeous gtdb-taxon".format(protmarker)
+			elif self.contigdict[contig]["refdb_ambig"] == "unrepresented silva taxon/OTU":
+				filterflag, protmarker = check_lower_ranking_protein_markers(self.contigdict[contig], "evaluate_low", "keep")
 		return filterflag	 
 		#TODO: check how well the tax_notes are filled
 		
@@ -1130,8 +1139,10 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 		markerlevel = self.contigdict[contig]["toplevel_marker"]
 		if markerlevel:
 			species_cutoff = lca.species_identity_cutoffs[markerlevel]
-			if self.contigdict[contig]["toplevel_taxlevel"] in ["root", "domain"] and self.contigdict[contig]["toplevel_ident"] >= species_cutoff:
-				self.contigdict[contig]["refdb_ambig"] == True
+			genus_cutoff = lca.genus_identity_cutoffs[markerlevel]
+			ambig_detection_cutoff = (species_cutoff + genus_cutoff)/2
+			if self.contigdict[contig]["toplevel_taxlevel"] in ["root", "domain"] and self.contigdict[contig]["toplevel_ident"] >= ambig_detection_cutoff:
+				self.contigdict[contig]["refdb_ambig"] = True
 				self.contigdict[contig]["tax_note"] += " potential cross-domain/phylum refDB-ambiguity; "
 		
 	def _check_contig_refdb_ambiguity(self, contig, blastobj, db):
@@ -1277,9 +1288,12 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 				
 				
 		# ~ pass
-	
-	def clean_yourself(self, trustcutoff=4, ignore_viral=True):	
-		for  contig in self.get_untrusted_contignames(trustcutoff=4): #todo: actually have to make sure that all corresponding marker entries in markerdict, that belong to those removed conitgs are also removed. But skipping for now (time issues)
+
+	def sort_and_write_contigs(self):
+		pass
+
+	def remove_contigs_below_trustcutoff(self, trustcutoff=0, ignore_viral=True):	
+		for  contig in self.get_untrusted_contignames(trustcutoff=trustcutoff): #todo: actually have to make sure that all corresponding marker entries in markerdict, that belong to those removed conitgs are also removed. But skipping for now (time issues)
 			self.contigdict.pop(contig, None)
 
 ######################################################

@@ -22,9 +22,20 @@ def dict2tsvline(indictionary, lineprefix = "", key_header = "contig", onlyheade
 	if onlyheader:
 		return "{}{}\t{}\n".format(lineprefix, key_header, "\t".join([key for key in indictionary[list(indictionary.keys())[0]]]))
 	else:
+		# ~ print("HAHA")
+		# ~ print(indictionary.keys())
 		outlines = []
-		for i in indictionary[keys]:
-			outlines.append("{}{}\n".format(lineprefix, str(key), "\t".join([str(v) for v in inconsistencies[i].values()])))
+		# ~ print("huuuuuuu")
+		for i in indictionary.keys():
+			# ~ print(i)
+			# ~ print(indictionary[i].keys())
+			# ~ print("ööööööööö")
+			# ~ print(indictionary[i].values())
+			# ~ print("*"*40)
+			# ~ print("\t".join([str(v) for v in indictionary[i].values()]))
+
+			outlines.append("{}{}\t{}".format(lineprefix, str(i), "\t".join([str(v) for v in indictionary[i].values()])))
+			# ~ print(outlines)
 		return "{}\n".format("\n".join(outlines))
 
 def openfile(infilename, filemode = "rt"):

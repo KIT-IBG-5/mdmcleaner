@@ -366,19 +366,37 @@ class blastdata(object): #todo: define differently for protein or nucleotide bla
 				else:
 					amb_type += "fringe case [weighted-LCA level]" #todo: in these cases the script should check whether the best hit agrees with consenus-LCA. Yes --> keep contig, No --> put contig in "potential-refdb-contaminations"
 					amb_infotext +=  "; weighted LCA affected by few low-identity cross-phylum/domain hits"		
-				amb_evidence += 	" weighted_best_tax={}(identity={:.2f}%);;weighted_best_contradiction={}(identity={:.2f}%)".format(outinfo["weighted_lca_top_contradictions"]["besthit_taxid"], outinfo["weighted_lca_top_contradictions"]["besthitident"],outinfo["weighted_lca_top_contradictions"]["bestcontra_taxid"], outinfo["weighted_lca_top_contradictions"]["bestcontraident"])
+				amb_evidence += " weighted_best_tax={}(identity={:.2f}%, score={});;weighted_best_contradiction={}(identity={:.2f}%, score={})".format(outinfo["weighted_lca_top_contradictions"]["besthit_taxid"], outinfo["weighted_lca_top_contradictions"]["besthitident"], outinfo["weighted_lca_top_contradictions"]["besthitscore"],outinfo["weighted_lca_top_contradictions"]["bestcontra_taxid"], outinfo["weighted_lca_top_contradictions"]["bestcontraident"], outinfo["weighted_lca_top_contradictions"]["bestcontrascore"])
 				
 			if outinfo["sm_representative_contradiction"] == outinfo["weighted_lca_top_contradictions"] == None:
-				best3hitlines =  singlemarkerlcadict[list(singlemarkerlcadict.keys())[0]]["blastlines"][:3]
+				# ~ hitlines = singlemarkerlcadict[list(singlemarkerlcadict.keys())[0]]["blastlines"] #previous version: looked only blast hits of first marker
+				hitlines = []
+				for sm in singlemarkerlcadict.keys(): #now: in case tehre are multiple markers (e.g. proteins) get blast hits of all of them and choose the three best based on score (not just simply take the three first hits of the FIRST marker)
+					hitlines += singlemarkerlcadict[mn]["blastlines"]
+				hitlines = sorted(hitlines, key = lambda x: -x["score"])
+				best3hitlines =  hitlines[:3]
 				if db.is_eukaryote(best3hitlines[0]["taxid"]):
 					amb_infotext = "probable eukaryotic contamination"
 				elif outinfo["markerlevel"] in ["ssu_rRNA_tax", "lsu_rRNA_tax", "tsu_rRNA_tax"]:
-					amb_type = "gtdb/silva database ambiguity" #todo: in such cases downstream check protein_based markers (marker_prots or totalprots) also
-					amb_infotext = "gtdb/silva database ambiguity (e.g. possibly a Silva-OTU with no sequenced genome representative in gtdb OR conflicting taxonomic systems between silva&gtdb)"
+					best_gtdb_hit = None
+					best_gtdb_hits = [bl for bl in hitlines if db._gtdb_refseq_or_silva(bl["subject"]) == "gtdb"]
+					if len(best_gtdb_hits) > 0:
+						best_gtdb_hit = best_gtdb_hits[0]
+					if db._gtdb_refseq_or_silva(best3hitlines[0]["subject"]) == "silva" and  best3hitlines[0]["ident"] >= lca.species_identity_cutoffs[outinfo["markerlevel"]] and (best_gtdb_hit == None or (db._gtdb_refseq_or_silva(best_gtdb_hit["subject"]) and best_gtdb_hit["ident"] < lca.species_identity_cutoffs[outinfo["markerlevel"]])):
+						amb_type = "unrepresented silva taxon/OTU"
+						amb_infotext = "matches a silva taxon/OTU on '{}'-level, which is apparently not represented with any genome data in gtdb"
+					else:
+						amb_type = "gtdb/silva database ambiguity" #todo: in such cases downstream check protein_based markers (marker_prots or totalprots) also
+						amb_infotext = "gtdb/silva database ambiguity"
+						if best_gtdb_hit:
+							amb_infotext += "(possibly conflicting taxonomic placements in silva compared to gtdb)"
+							amb_evidence += "best gtdb-hit: acc={},taxid={},ident={:.2f}; ".format(best_gtdb_hit["subject"], best_gtdb_hit["taxid"], best_gtdb_hit["ident"])
+						else:
+							amb_infotext += "(possibly a novel taxon with hits to silva-OTUs but not to gtdb-representatives)"
 				else:
 					amb_type = "wtf"
 					amb_infotext = "wtf" #todo: look for such cases and try to figure them out if they occur!
-				amb_evidence = "best three blast hits: {}".format("; ".join(["db={},acc={},inferred_gtdb_taxid={},ident={:.2f}".format(db._gtdb_refseq_or_silva(h["subject"]), h["subject"], h["taxid"], h["ident"]) for h in best3hitlines]))
+				amb_evidence += "overall best three blast hits: {}".format("; ".join(["db={},acc={},inferred_gtdb_taxid={},ident={:.2f}".format(db._gtdb_refseq_or_silva(h["subject"]), h["subject"], h["taxid"], h["ident"]) for h in best3hitlines]))
 			#todo: maybe add a key "checktaxa" to outinfo, containing a list of taxa (sm- and weighted LCA best hits) to check against the consensus classification	
 			return amb_type, amb_evidence, amb_infotext
 				
@@ -431,11 +449,13 @@ class blastdata(object): #todo: define differently for protein or nucleotide bla
 			tempdict["besthit_subject"] = singlemarkerlcadict[i]["info"]["best_hit"]["taxid"]
 			tempdict["besthitdomphyl"] = "{},{}".format(singlemarkerlcadict[i]["info"]["best_hit"]["domain"],singlemarkerlcadict[i]["info"]["best_hit"]["phylum"])
 			tempdict["besthitident"] = singlemarkerlcadict[i]["info"]["best_hit"]["identity"]
+			tempdict["besthitscore"] = singlemarkerlcadict[i]["info"]["best_hit"]["score"]
 
 			tempdict["bestcontra_taxid"] = singlemarkerlcadict[i]["info"]["best_contradiction"]["taxid"]
 			tempdict["bestcontra_subject"] = singlemarkerlcadict[i]["info"]["best_contradiction"]["taxid"]			
 			tempdict["bestcontradomphyl"] = "{},{}".format(singlemarkerlcadict[i]["info"]["best_contradiction"]["domain"],singlemarkerlcadict[i]["info"]["best_contradiction"]["phylum"])
 			tempdict["bestcontraident"] = singlemarkerlcadict[i]["info"]["best_contradiction"]["identity"]
+			tempdict["bestcontrascore"] = singlemarkerlcadict[i]["info"]["best_contradiction"]["score"]
 			
 			tempdict["comparevalue"] = tempdict["besthitident"] + tempdict["bestcontraident"] # the marker with the highest overall identity of besthit + bestcontradiction combined is chosen as the representative. If two or more are tied, the one with the highest supportcount is chosen.
 			tempdict["supportcount"] = 1
@@ -454,7 +474,7 @@ class blastdata(object): #todo: define differently for protein or nucleotide bla
 			outinfo["sm_representative_contradiction"] = sm_contradiction_overview[rep_key]
 			outinfo["sm_contradiction_counts"] = sum([sm_contradiction_overview[x]["supportcount"] for x in sm_contradiction_overview])
 				
-		outtaxpath, top2_contras, top2_contras_avidents = lca.weighted_lca(db, blasthitlist=tempsinglemarkerlcas, taxlevel=markerlevel, return_contradicting_top2 = True)
+		outtaxpath, top2_contras, top2_contras_avidents, top2_contras_avscores = lca.weighted_lca(db, blasthitlist=tempsinglemarkerlcas, taxlevel=markerlevel, return_contradicting_top2 = True)
 		
 		
 		if top2_contras != None:
@@ -464,8 +484,8 @@ class blastdata(object): #todo: define differently for protein or nucleotide bla
 				outinfo["single_or_weighted_discrep"] = "single&weighted"
 			else:
 				outinfo["single_or_weighted_discrep"] = "weighted"
-			outinfo["weighted_lca_top_contradictions"] = {	"besthit_taxid" : top2_contras[0], "besthitident" : top2_contras_avidents[0],\
-															"bestcontra_taxid" : top2_contras[1], "bestcontraident" : top2_contras_avidents[1]} #had to correct sorting of taxoptions in weighted lca, but now the order is actually correct (besthit vs best contradiction)
+			outinfo["weighted_lca_top_contradictions"] = {	"besthit_taxid" : top2_contras[0], "besthitident" : top2_contras_avidents[0], "besthitscore" : top2_contras_avscores[0], \
+															"bestcontra_taxid" : top2_contras[1], "bestcontraident" : top2_contras_avidents[1], "bestcontrascore" : top2_contras_avscores[1]} #had to correct sorting of taxoptions in weighted lca, but now the order is actually correct (besthit vs best contradiction)
 		
 		
 		amb_type, amb_evidence, amb_infotext = categorize(outinfo, singlemarkerlcadict)

@@ -112,7 +112,7 @@ def weighted_lca(taxdb, seqid = None, blasthitlist=None, fractioncutoff = 0.95, 
 	fractioncutoff should be given as a fraction between 0.5 and 1. A taxon is accepted, as long as the sum of blast scroes supporting this assignment represents more than this fraction of the total sum of scores of all blast hits 
 	It is not trecommended to use this function for a cutoff of 1 (strict lca)! For strict lca, please use the function "strict_lca" instead, which should be much faster!
 	"""
-	top2_contras, top2_contras_avidents  = None, None
+	top2_contras, top2_contras_avidents, top2_contras_avscores  = None, None, None
 	assert fractioncutoff >= 0.5 and fractioncutoff <=1, "\nError: rangecutoff {} not within allowed range (0.5-1.0)!\n"
 	if fractioncutoff == 1:
 		sys.stderr.write("\nWARNING: it is NOT recommended to use 'weighted_lca' with a fractioncutoff of 1! Try using 'strict_lca' instead!\n")
@@ -192,10 +192,11 @@ def weighted_lca(taxdb, seqid = None, blasthitlist=None, fractioncutoff = 0.95, 
 			sorted_taxoptions = sorted(tempdict[i].items(), key = lambda x:-sum(x[1]["scores"])/len(x[1]["scores"]))
 			top2_contras = [ t[0] for t in sorted_taxoptions[:2]] #dict.items() returns a list of key/value tuples
 			top2_contras_avidents = [ sum(t[1]["identities"])/len(t[1]["identities"]) for t in sorted_taxoptions[:2] ]
+			top2_contras_avscores = [ sum(t[1]["scores"])/len(t[1]["scores"]) for t in sorted_taxoptions[:2] ]
 			break #if there are multiple contradicting taxonomic assignments, and no weighted major taxon can be determined based on fractioncutoff, then stop here and return current taxon-level as LCA
 	#check if annotated to species level, and if that is the case, check if identity abov speciescutoff (default 90% for proteins)
 	if return_contradicting_top2:
-		return outtaxpath, top2_contras, top2_contras_avidents
+		return outtaxpath, top2_contras, top2_contras_avidents, top2_contras_avscores
 	return outtaxpath #, tempdict #todo: only return last lca
 
 
