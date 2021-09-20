@@ -308,6 +308,15 @@ class blastdata(object): #todo: define differently for protein or nucleotide bla
 		import lca, getdb
 		cutoff_taxlevels =  ["species", "genus", "order"]
 		
+		def get_singlehit_domain_phylum_counts(db, markernames, singlemarkerlcadict): #todo: this could be interesting also for general contigdict info? consider putting this in reporting/mdmcleaner...
+			from collections import Counter
+			lcataxids = [ singlemarkerlcadict[mn]["lca"].taxid for mn in singlemarkerlcadict ]
+			domain_phylum_list = [ (db.get_specific_taxlevel_subtaxid(taxid, taxlevel="domain"), db.get_specific_taxlevel_subtaxid(taxid, taxlevel="phylum")) for taxid in lcataxids ]
+			domain_phylum_counts = Counter(domain_phylum_list)
+			domain_phylum_counts["no_blast_hit"] = len(markernames) - len(domain_phylum_list)
+			return domain_phylum_counts
+			
+			
 		def get_besthit_info(db, blastline, blastlineindex):
 			subject = blastline["subject"]
 			taxid = blastline["taxid"]
@@ -400,7 +409,7 @@ class blastdata(object): #todo: define differently for protein or nucleotide bla
 			#todo: maybe add a key "checktaxa" to outinfo, containing a list of taxa (sm- and weighted LCA best hits) to check against the consensus classification	
 			return amb_type, amb_evidence, amb_infotext
 				
-		outinfo = {"markerlevel" : markerlevel, "cutoffs" : cutoffs, "single_or_weighted_discrep": None, "discrepancy_taxlevel" : None, "amb_type" : None, "amb_infotext" : None, "amb_evidence": None, "sm_representative_contradiction" : None, "sm_contradiction_counts" : None,  "weighted_lca_top_contradictions": None}
+		outinfo = {"markerlevel" : markerlevel, "cutoffs" : cutoffs, "single_or_weighted_discrep": None, "discrepancy_taxlevel" : None, "amb_type" : None, "amb_infotext" : None, "amb_evidence": None, "sm_representative_contradiction" : None, "sm_contradiction_counts" : None,  "sm_domain_phylum_classification_counts" : None, "weighted_lca_top_contradictions": None}
 		singlemarkerlcadict = { mn: { "lca": None, "blastlines" : sorted(self.get_blastlines_for_query(mn), key = lambda x: -x["score"]), "info": {"best_hit" : None, "contradiction_level" : None, "best_contradiction" : None, "above_cutoff": None} }for mn in markernames if len(self.get_blastlines_for_query(mn)) > 0}   
 		tempsinglemarkerlcas = []
 		lowestcli = 999
@@ -409,6 +418,9 @@ class blastdata(object): #todo: define differently for protein or nucleotide bla
 			templines = singlemarkerlcadict[mn]["blastlines"]
 			# ~ import pdb; pdb.set_trace()
 			tophit = templines[0]
+			# ~ breakme = False #todo: debugging only
+			# ~ if tophit["contig"] == "PHBV01000266.1": #todo: debugging only
+				# ~ breakme = True #todo: debugging only
 			singlemarkerlcadict[mn]["lca"] = lca.strict_lca(db, blasthitlist = _blastlines2blasthits(templines)) #todo: is redundant to repeat this here. Should instead save individuyl marker-lcas when first doing them!
 			singlemarkerlcadict[mn]["info"]["best_hit"] = get_besthit_info(db, tophit, 0) 
 			templca = templines[0]["taxid"]
@@ -493,7 +505,9 @@ class blastdata(object): #todo: define differently for protein or nucleotide bla
 		outinfo["amb_evidence"] = amb_evidence
 		outinfo["amb_infotext"] = amb_infotext
 		
-		# ~ import pdb; pdb.set_trace()
+		outinfo["sm_domain_phylum_classification_counts"] = get_singlehit_domain_phylum_counts(db, markernames, singlemarkerlcadict)
+		# ~ if breakme: #todo: debugging only
+			# ~ import pdb; pdb.set_trace()
 		return outinfo
 				
 def read_blast_tsv(infilename, max_evalue = None, min_ident = None, dbobj = None, bindata_obj = None):
