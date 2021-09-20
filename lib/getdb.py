@@ -271,6 +271,7 @@ class taxdb(object):
 		import lca
 		assert taxlevel in lca.taxlevels, "\nERROR: taxlevel must be one of {}\n".format(lca.taxlevels[:2] + ["superkingdom"] + lca.taxlevels[2:])
 		assert returnvalue in ["taxid", "taxname"], "ERROR: returnvalue mist bei either \"taxid\" or \"taxname\"\n"
+		outtaxid = None
 		taxpath = self.taxid2taxpath(taxid)
 		if taxlevel == "domain":
 			taxlevel = "superkingdom"
