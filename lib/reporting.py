@@ -5,24 +5,47 @@ creating carious overview- and report-files for mdm_cleaner
 import misc
 from misc import openfile
 
+def dict2tsvline(indictionary, lineprefix = "", key_header = "contig", onlyheader=False):
+	"""
+	create tsv-table-like strings out of dictionary
+	"""
+	if onlyheader:
+		return "{}{}\t{}\n".format(lineprefix, key_header, "\t".join([key for key in indictionary[list(indictionary.keys())[0]]]))
+	else:
+		# ~ print("HAHA")
+		# ~ print(indictionary.keys())
+		outlines = []
+		# ~ print("huuuuuuu")
+		for i in indictionary.keys():
+			# ~ print(i)
+			# ~ print(indictionary[i].keys())
+			# ~ print("ööööööööö")
+			# ~ print(indictionary[i].values())
+			# ~ print("*"*40)
+			# ~ print("\t".join([str(v) for v in indictionary[i].values()]))
+
+			outlines.append("{}{}\t{}".format(lineprefix, str(i), "\t".join([str(v) for v in indictionary[i].values()])))
+			# ~ print(outlines)
+		return "{}\n".format("\n".join(outlines))
+
 def write_refdb_ambiguity_report(magsag, ambiguities, outfile):
 	import io
 	output = ""
 	if len(ambiguities) > 0:
-		header = misc.dict2tsvline(ambiguities, lineprefix = "magsag\t", key_header = "contig", onlyheader=True)
+		header = dict2tsvline(ambiguities, lineprefix = "magsag\t", key_header = "contig", onlyheader=True)
 		if isinstance(outfile, str):
-			print("isastering")
+			# ~ print("isastering")
 			outfile = openfile(outfile, "wt")
 			output += header
 			# ~ outfile.write(header)
 		if isinstance(outfile, io.IOBase):
-			print("isafile")
+			# ~ print("isafile")
 			# ~ print("00000000000000000==")
 			# ~ print(ambiguities)
 			# ~ print("--")
 			# ~ print(output)
 			# ~ print("=====================")
-			output += misc.dict2tsvline(ambiguities, lineprefix = "{}\t".format(magsag), key_header = "contig", onlyheader=False)
+			output += dict2tsvline(ambiguities, lineprefix = "{}\t".format(magsag), key_header = "contig", onlyheader=False)
 			# ~ line = "{}\t{}\t{}\n".format(magsag, i, "\t".join([str(v) for v in ambiguities[i].values()]))
 		# ~ print("huhu")
 		# ~ print(output)

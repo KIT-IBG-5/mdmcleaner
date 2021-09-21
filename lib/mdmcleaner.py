@@ -126,6 +126,10 @@ def gather_extended_bin_metrics(bindata, outfile, cutoff=5): #todo: make a simpl
 		fraction_trustedbp = sum([ bindata.contigdict[contig]["contiglen"] for contig in bindata.get_trusted_contignames() ])/totalbinbp
 		fraction_unknownbp = sum([ bindata.contigdict[contig]["contiglen"] for contig in bindata.get_contignames_with_trustscore(5) ])/totalbinbp
 		fraction_untrustedbp = sum([ bindata.contigdict[contig]["contiglen"] for contig in bindata.get_untrusted_contignames() ])/totalbinbp
+		# ~ fraction_keep = 
+		# ~ fraction_delete = 
+		# ~ fraction_evaluate_high = 0
+		# ~ fraction_evaluate_low = 0
 		bin_trust = statistics.mean( [ bindata.contigdict[contig]["trust_index"] for contig in bindata.contigdict])
 		bin_trust_ignoring_viral = statistics.mean( [ bindata.contigdict[contig]["trust_index"] for contig in bindata.contigdict if not bindata.contigdict[contig]["viral"]] )
 		fraction_different_species = sum([ bindata.contigdict[contig]["contiglen"] for contig in bindata.contigdict if bindata.contigdict[contig]["contradict_consensus"] == "species"])/totalbinbp
@@ -162,6 +166,10 @@ def gather_extended_bin_metrics(bindata, outfile, cutoff=5): #todo: make a simpl
 		fraction_trustedbp = 0
 		fraction_unknownbp = 0
 		fraction_untrustedbp = 0
+		fraction_keep = 0
+		fraction_delete = 0
+		fraction_evaluate_high = 0
+		fraction_evaluate_low = 0
 		bin_trust = None
 		bin_trust_ignoring_viral = None
 		fraction_different_species = 0
@@ -245,8 +253,9 @@ def main():
 	myparser.add_argument("--config", action = "store", dest = "configfile", default = find_local_configfile(), help = "provide a local config file with basic settings (such as the location of database-files). default: looks for config files named 'mdmcleaner.config' in current working directory. settings in the local config file will override settings in the global config file '{}'".format(os.path.join(os.path.dirname(os.path.abspath(__file__)), "mdmcleaner.config")))
 	myparser.add_argument("-t", "--threads", action = "store", dest = "threads", type = int, default = None, help = "Number of threads to use. Can also be set in the  mdmcleaner.config file")
 	myparser.add_argument("-f", "--force", action = "store_true", dest = "force", default = False, help = "Force reclassification of pre-existing blast-results")
-	myparser.add_argument("--blast2pass", action = "store_true", dest = "blast2pass", default = "False", help = "add a second-pass blastx blast-run for all contigs without any classification on blastp level (default: False)")
+	# ~ myparser.add_argument("--blast2pass", action = "store_true", dest = "blast2pass", default = "False", help = "add a second-pass blastx blast-run for all contigs without any classification on blastp level (default: False)")
 	myparser.add_argument("--overview_files_basename", action = "store", dest = "overview_basename", default = "overview", help = "basename for overviewfiles (default=\"overview\"")
+	myparser.add_argument("--no_filterfasta", action = "store_true", dest = "no_filterfasta", default = False, help = "Do not write filtered contigs to final output fastas (Default = False)")
 	args = myparser.parse_args()
 	#print(args.configfile)
 	
@@ -425,6 +434,9 @@ def main():
 			sys.stderr.flush()
 			test_1(bindata, os.path.join(bindata.bin_resultfolder, "testcontigmarkersnew_beforecleanup.tsv"))
 			overview_before = gather_extended_bin_metrics(bindata, outfile=overview_before, cutoff=5)
+			if not args.no_filterfasta:
+				bindata.sort_and_write_contigs()
+			bindata.write_krona_inputtable(db)
 			# ~ import pdb; pdb.set_trace()
 			# ~ bindata.clean_yourself() #todo: mdmcleaner runs into error if all contigs are removed fix this
 			# ~ import pdb; pdb.set_trace()

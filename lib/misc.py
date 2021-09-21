@@ -13,31 +13,6 @@ def has_gzip_suffix(infilename):
 			return True
 	return False
 
-
-
-def dict2tsvline(indictionary, lineprefix = "", key_header = "contig", onlyheader=False):
-	"""
-	create tsv-table-like strings out of dictionary
-	"""
-	if onlyheader:
-		return "{}{}\t{}\n".format(lineprefix, key_header, "\t".join([key for key in indictionary[list(indictionary.keys())[0]]]))
-	else:
-		# ~ print("HAHA")
-		# ~ print(indictionary.keys())
-		outlines = []
-		# ~ print("huuuuuuu")
-		for i in indictionary.keys():
-			# ~ print(i)
-			# ~ print(indictionary[i].keys())
-			# ~ print("ööööööööö")
-			# ~ print(indictionary[i].values())
-			# ~ print("*"*40)
-			# ~ print("\t".join([str(v) for v in indictionary[i].values()]))
-
-			outlines.append("{}{}\t{}".format(lineprefix, str(i), "\t".join([str(v) for v in indictionary[i].values()])))
-			# ~ print(outlines)
-		return "{}\n".format("\n".join(outlines))
-
 def openfile(infilename, filemode = "rt"):
 	""" a convenience function for creating file handles for compressed as well as uncompressed text files, for reading or writing as needed
 	accepts a filename(required) and a filemode (default = "rt") argument.

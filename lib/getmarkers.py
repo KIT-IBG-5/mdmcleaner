@@ -680,12 +680,19 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 		for suffix in [".gz", ".fa", ".fasta", ".fna", ".fas", ".fsa"]:
 			if bin_tempname.endswith(suffix):
 				bin_tempname = bin_tempname[:-len(suffix)]
+
 		self.outbasedir = outbasedir		
 		self.bin_tempname = bin_tempname
 		self.bin_resultfolder = os.path.join(self.outbasedir, self.bin_tempname)
 		self.pickle_progressfile = os.path.join(self.bin_resultfolder, "bindata_progress.pickle") #todo: change to better system
 		self.trna_jsonfile = os.path.join(self.bin_resultfolder, "bindata_progress.json.gz") #todo: REALLY start implementing a better system!
 		self.trnafastafile = os.path.join(self.bin_resultfolder, self.bin_tempname + "_tRNAs.fasta.gz")
+		self.filteroutputfiles = { 	"keep" : os.path.join(self.bin_resultfolder, self.bin_tempname + "_filtered_kept_contigs.fasta.gz"),\
+								"evaluate_low" : os.path.join(self.bin_resultfolder, self.bin_tempname + "_filtered_need_evaluation_low.fasta.gz"),\
+								"evaluate_high" : os.path.join(self.bin_resultfolder, self.bin_tempname + "_filtered_need_evaluation_high.fasta.gz"),\
+								"delete" : os.path.join(self.bin_resultfolder, self.bin_tempname + "_filtered_removed.fasta.gz") }
+		self.krona_input = os.path.join(self.bin_resultfolder, self.bin_tempname + "_kronainput.tsv")
+		
 		self.ref_db_ambiguity_overview = {}
 		for d in [self.outbasedir, self.bin_resultfolder]:
 			if not os.path.exists(d):
@@ -1234,16 +1241,28 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 		return sum([ self.contigdict[contig]["contiglen"] for contig in self.contigdict ])
 	
 	def get_refdbambiguity_contignames(self):
-		return [ contig for contig in self.contigdict if self.contigdict["refdb_ambig"] != False ]
+		return [ contig for contig in self.contigdict if self.contigdict[contig]["refdb_ambig"] != False ]
 		
 	def get_fraction_refdbambiguity(self):
 		return sum([ self.contigdict[contig]["contiglen"] for contig in self.get_refdbambiguity_contignames() ]) / self.get_total_size()
 
+	def get_refdbambiguity_type_contignames(self, ambig_type):
+		return [ contig for contig in self.get_refdbambiguity_contignames() if self.contigdict[contig]["refdb_ambig"] == ambig_type ]
+	
+	def get_fraction_refdbambiguity_type(self, ambig_type):
+		return sum([ self.contigdict[contig]["contiglen"] for contig in get_refdbambiguity_type_contignames(ambig_type) ]) / self.get_total_size()
+
 	def get_nocoding_contignames(self):
-		return [ contig for contig in self.contigdict if " lack of coding regions" in self.contigdict[contig]["tax_note"] ]
+		return [ contig for contig in self.contigdict if self.contigdict[contig]["non-coding"] ]
 
 	def get_fraction_nocoding(self):
 		return sum([ self.contigdict[contig]["contiglen"] for contig in self.get_nocoding_contignames() ]) / self.get_total_size()
+
+	def get_filterflag_contignames(self, filterflag):
+		return [ contig for contig in self.contigdict if self.contigdict[contig]["filterflag"] == filterflag ]
+	
+	def get_fraction_filterflag(self, filterflag):
+		return sum([ self.contigdict[contig]["contiglen"] for contig in self.get_filtertag_contignames(filterflag) ]) / self.get_total_size()
 
 	def get_trna_coordinates(self, trna_name):
 		import re
@@ -1281,16 +1300,41 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 			outrecords.append(newrecord)
 		return outrecords
 		
-	# ~ def make_kronachart(self):
-		# ~ def make_krona_inputtable(contigdict):
-			# ~ outlines = []
-			# ~ for contig in contigdict:
+	def write_krona_inputtable(self, db):
+		sys.stderr.write("\ncreating krona input-table\n")
+		outfile = misc.openfile(self.krona_input, "wt")
+		for contig in self.contigdict:
+			taxpath = []
+			contiglen = self.contigdict[contig]["contiglen"]
+			if self.contigdict[contig]["toplevel_tax"]:
+				if self.contigdict[contig]["refdb_ambig"]:
+					taxpath += ["refdb_ambig"]
+				else:
+					taxpath += ["classified"]				
+				taxass = self.contigdict[contig]["toplevel_tax"]
+				taxpath +=  [ db.taxid2taxname(t.taxid).replace(" ", "_") for t in taxass ]
+			else:
+				taxpath += ["unclassified"]	
+				if self.contigdict[contig]["non-coding"]:
+					taxpath += ["non-coding"]
+				elif self.contigdict[contig]["toplevel_ident"] == None:
+					taxpath += ["no_blast_hit"]
+			outfile.write("{}\t{}\n".format(contiglen, "\t".join(taxpath)))
+			
+			
 				
-				
-		# ~ pass
-
-	def sort_and_write_contigs(self):
-		pass
+	def sort_and_write_contigs(self): #todo: add option for uncompresed output fastas (in case anyone wants that...)
+		#todo: gather all records in seperate lists before writing. Probably saves time due to fewer individual wrtie-processes
+		sys.stderr.write("\ncreating output fastas\n")
+		from Bio import SeqIO
+		outfiles = { f : misc.openfile(self.filteroutputfiles[f], "wt") for f in self.filteroutputfiles}
+		for record in misc.read_fasta(self.binfastafile):
+			record.description = self.contigdict[record.id]["tax_note"]
+			filterflag = self.contigdict[record.id]["filterflag"]
+			SeqIO.write([record], outfiles[filterflag] , "fasta")
+		for f in outfiles:
+			outfiles[f].close()
+		return self.filteroutputfiles
 
 	def remove_contigs_below_trustcutoff(self, trustcutoff=0, ignore_viral=True):	
 		for  contig in self.get_untrusted_contignames(trustcutoff=trustcutoff): #todo: actually have to make sure that all corresponding marker entries in markerdict, that belong to those removed conitgs are also removed. But skipping for now (time issues)
