@@ -97,18 +97,11 @@ def check_progressdump(outfolder, infastas):
 def gather_extended_bin_metrics(bindata, outfile, cutoff=5): #todo: make a simple_binmetrics function
 	def write_dictlines(indict, outfile):
 		import io
-		# ~ print("{} = {}".format(outfile, type(outfile)))
-		# ~ sys.stdout.flush()
-		# ~ sys.stderr.flush()
 		if isinstance(outfile, str):
-			# ~ print("IS A STRING --> CREATING NEW FILE")
 			outfile = openfile(outfile, "wt")
 			outfile.write("#{}\n".format("\t".join(list(indict.keys()))))
 		if isinstance(outfile, io.IOBase):
-			# ~ print("IS A FILE --> APPENDING")
 			line = "{}\n".format("\t".join([";".join([str(y) for y in indict[x]]) if type(indict[x]) == list else str(indict[x]) for x in indict ]))
-			# ~ print(outfile.name)
-			# ~ print(line)
 			outfile.write(line)
 		return outfile
 	
@@ -123,15 +116,17 @@ def gather_extended_bin_metrics(bindata, outfile, cutoff=5): #todo: make a simpl
 	if totalbincontigs > 0:
 		totalbinbp = bindata.get_total_size()
 		majortaxpath = bindata.get_consensus_taxstringlist()
+		
 		fraction_trustedbp = sum([ bindata.contigdict[contig]["contiglen"] for contig in bindata.get_trusted_contignames() ])/totalbinbp
 		fraction_unknownbp = sum([ bindata.contigdict[contig]["contiglen"] for contig in bindata.get_contignames_with_trustscore(5) ])/totalbinbp
 		fraction_untrustedbp = sum([ bindata.contigdict[contig]["contiglen"] for contig in bindata.get_untrusted_contignames() ])/totalbinbp
-		# ~ fraction_keep = 
-		# ~ fraction_delete = 
-		# ~ fraction_evaluate_high = 0
-		# ~ fraction_evaluate_low = 0
+		fraction_keep = bindata.get_fraction_filterflag("keep")
+		fraction_evaluate_low = bindata.get_fraction_filterflag("evaluate_low")
+		fraction_evaluate_high = bindata.get_fraction_filterflag("evaluate_high")
+		fraction_delete = bindata.get_fraction_filterflag("delete")
 		bin_trust = statistics.mean( [ bindata.contigdict[contig]["trust_index"] for contig in bindata.contigdict])
 		bin_trust_ignoring_viral = statistics.mean( [ bindata.contigdict[contig]["trust_index"] for contig in bindata.contigdict if not bindata.contigdict[contig]["viral"]] )
+		
 		fraction_different_species = sum([ bindata.contigdict[contig]["contiglen"] for contig in bindata.contigdict if bindata.contigdict[contig]["contradict_consensus"] == "species"])/totalbinbp
 		fraction_different_genus = sum([ bindata.contigdict[contig]["contiglen"] for contig in bindata.contigdict if bindata.contigdict[contig]["contradict_consensus"] == "genus"])/totalbinbp
 		fraction_different_family = sum([ bindata.contigdict[contig]["contiglen"] for contig in bindata.contigdict if bindata.contigdict[contig]["contradict_consensus"] == "family"])/totalbinbp
@@ -139,9 +134,19 @@ def gather_extended_bin_metrics(bindata, outfile, cutoff=5): #todo: make a simpl
 		fraction_different_class = sum([ bindata.contigdict[contig]["contiglen"] for contig in bindata.contigdict if bindata.contigdict[contig]["contradict_consensus"] == "class"])/totalbinbp
 		fraction_different_phylum = sum([ bindata.contigdict[contig]["contiglen"] for contig in bindata.contigdict if bindata.contigdict[contig]["contradict_consensus"] == "phylum"])/totalbinbp
 		fraction_different_domain = sum([ bindata.contigdict[contig]["contiglen"] for contig in bindata.contigdict if bindata.contigdict[contig]["contradict_consensus"] == "domain"])/totalbinbp
-		fraction_refdb_contamination = bindata.get_fraction_refdbambiguity()
-		fraction_nocoding = bindata.get_fraction_nocoding()
 		fraction_viral = sum([ bindata.contigdict[contig]["contiglen"] for contig in bindata.contigdict if bindata.contigdict[contig]["viral"]])/totalbinbp
+		
+		fraction_refdb_ambiguity = bindata.get_fraction_refdbambiguity()
+		fraction_nocoding = bindata.get_fraction_nocoding()
+		
+		sum_fraction_different_domain = fraction_different_domain + fraction_viral
+		sum_fraction_different_phylum = fraction_different_phylum + sum_fraction_different_domain
+		sum_fraction_different_class = fraction_different_class + sum_fraction_different_phylum
+		sum_fraction_different_order = fraction_different_order + sum_fraction_different_class
+		sum_fraction_different_family = fraction_different_family + sum_fraction_different_order
+		sum_fraction_different_genus = fraction_different_genus + sum_fraction_different_family
+		sum_fraction_different_species = fraction_different_species + sum_fraction_different_genus
+		
 		fraction_trust0 = sum([ bindata.contigdict[contig]["contiglen"] for contig in bindata.get_contignames_with_trustscore(0) ])/totalbinbp
 		fraction_trust1 = sum([ bindata.contigdict[contig]["contiglen"] for contig in bindata.get_contignames_with_trustscore(1) ])/totalbinbp
 		fraction_trust2 = sum([ bindata.contigdict[contig]["contiglen"] for contig in bindata.get_contignames_with_trustscore(2) ])/totalbinbp
@@ -153,6 +158,7 @@ def gather_extended_bin_metrics(bindata, outfile, cutoff=5): #todo: make a simpl
 		fraction_trust8 = sum([ bindata.contigdict[contig]["contiglen"] for contig in bindata.get_contignames_with_trustscore(8) ])/totalbinbp
 		fraction_trust9 = sum([ bindata.contigdict[contig]["contiglen"] for contig in bindata.get_contignames_with_trustscore(9) ])/totalbinbp
 		fraction_trust10 = sum([ bindata.contigdict[contig]["contiglen"] for contig in bindata.get_contignames_with_trustscore(10) ])/totalbinbp
+		
 		total_16SrRNA = len([gene for gene in bindata.markerdict if  getmarkers.seqid2contig(gene) in bindata.contigdict and bindata.markerdict[gene]["stype"] == "ssu_rRNA"])
 		total_23SrRNA = len([gene for gene in bindata.markerdict if  getmarkers.seqid2contig(gene) in bindata.contigdict and bindata.markerdict[gene]["stype"] == "lsu_rRNA"])
 		total_5SrRNA = len([gene for gene in bindata.markerdict if  getmarkers.seqid2contig(gene) in bindata.contigdict and bindata.markerdict[gene]["stype"] == "tsu_rRNA"])
@@ -160,18 +166,19 @@ def gather_extended_bin_metrics(bindata, outfile, cutoff=5): #todo: make a simpl
 		total_marker_prots = len([gene for gene in bindata.markerdict if getmarkers.seqid2contig(gene) in bindata.contigdict and "_marker " in bindata.markerdict[gene]["stype"]])
 		total_proteins = len([gene for gene in bindata.markerdict if getmarkers.seqid2contig(gene) in bindata.contigdict and bindata.markerdict[gene]["stype"] == "total"]) + total_marker_prots
 	else:
-		# ~ print("hererherherherherhehre")
 		totalbinbp = 0
 		majortaxpath = 0
+		
 		fraction_trustedbp = 0
 		fraction_unknownbp = 0
 		fraction_untrustedbp = 0
 		fraction_keep = 0
+		fraction_evaluate_low = 0		
+		fraction_evaluate_high = 0		
 		fraction_delete = 0
-		fraction_evaluate_high = 0
-		fraction_evaluate_low = 0
 		bin_trust = None
 		bin_trust_ignoring_viral = None
+		
 		fraction_different_species = 0
 		fraction_different_genus = 0
 		fraction_different_family = 0
@@ -179,9 +186,19 @@ def gather_extended_bin_metrics(bindata, outfile, cutoff=5): #todo: make a simpl
 		fraction_different_class = 0
 		fraction_different_phylum = 0
 		fraction_different_domain = 0
-		fraction_refdb_contamination = 0
-		fraction_nocoding = 0
 		fraction_viral = 0
+		
+		fraction_refdb_ambiguity = 0
+		fraction_nocoding = 0
+		
+		sum_fraction_different_domain = 0
+		sum_fraction_different_phylum = 0
+		sum_fraction_different_class = 0
+		sum_fraction_different_order = 0
+		sum_fraction_different_family = 0
+		sum_fraction_different_genus = 0
+		sum_fraction_different_species = 0
+		
 		fraction_trust0 = 0
 		fraction_trust1 = 0
 		fraction_trust2 = 0
@@ -193,6 +210,7 @@ def gather_extended_bin_metrics(bindata, outfile, cutoff=5): #todo: make a simpl
 		fraction_trust8 = 0
 		fraction_trust9 = 0
 		fraction_trust10 = 0
+		
 		total_16SrRNA = 0
 		total_23SrRNA = 0
 		total_5SrRNA = 0
@@ -204,11 +222,17 @@ def gather_extended_bin_metrics(bindata, outfile, cutoff=5): #todo: make a simpl
 							"totalbincontigs" : totalbincontigs,\
 							"totalbinbp" : totalbinbp,\
 							"majortaxpath" : majortaxpath,\
+							
 							"fraction_trustedbp" : fraction_trustedbp, \
 							"fraction_unknownbp" : fraction_unknownbp, \
 							"fraction_untrustedbp" : fraction_untrustedbp, \
+							"fraction_keep" : fraction_keep, \
+							"fraction_evaluate_low" : fraction_evaluate_low	, \
+							"fraction_evaluate_high" : fraction_evaluate_high, \
+							"fraction_delete" : fraction_delete, \
 							"bin_trust" : bin_trust, \
 							"bin_trust_ignoring_viral":bin_trust_ignoring_viral, \
+							
 							"fraction_different_species":fraction_different_species, \
 							"fraction_different_genus":fraction_different_genus, \
 							"fraction_different_family":fraction_different_family, \
@@ -217,8 +241,18 @@ def gather_extended_bin_metrics(bindata, outfile, cutoff=5): #todo: make a simpl
 							"fraction_different_phylum":fraction_different_phylum, \
 							"fraction_different_domain":fraction_different_domain, \
 							"fraction_viral":fraction_viral, \
-							"fraction_refdb_contamination" : fraction_refdb_contamination, \
+							
+							"fraction_refdb_ambiguity" : fraction_refdb_ambiguity, \
 							"fraction_nocoding" : fraction_nocoding, \
+							
+							"sum_fraction_different_domain" : sum_fraction_different_domain, \
+							"sum_fraction_different_phylum" : sum_fraction_different_phylum, \
+							"sum_fraction_different_class" : sum_fraction_different_class, \
+							"sum_fraction_different_order" : sum_fraction_different_order, \
+							"sum_fraction_different_family" : sum_fraction_different_family, \
+							"sum_fraction_different_genus" : sum_fraction_different_genus, \
+							"sum_fraction_different_species" : sum_fraction_different_species, \
+									
 							"fraction_trust0":fraction_trust0, \
 							"fraction_trust1":fraction_trust1, \
 							"fraction_trust2":fraction_trust2, \
@@ -230,6 +264,7 @@ def gather_extended_bin_metrics(bindata, outfile, cutoff=5): #todo: make a simpl
 							"fraction_trust8":fraction_trust8, \
 							"fraction_trust9":fraction_trust9, \
 							"fraction_trust10":fraction_trust10, \
+							
 							"total_16SrRNA":total_16SrRNA, \
 							"total_23SrRNA":total_23SrRNA, \
 							"total_5SrRNA":total_5SrRNA, \
@@ -428,7 +463,6 @@ def main():
 			# ~ import pdb; pdb.set_trace()
 			#refdb_inconsistencies = bindata.doublecheck_refdb_ambig(db=db, nucblasts = nucblasts, protblasts = protblasts)
 			refdb_ambiguity_report = reporting.write_refdb_ambiguity_report(bindata.bin_tempname, bindata.ref_db_ambiguity_overview, refdb_ambiguity_report)
-			# todo_write refb_inconsistency_report
 			bindata.print_contigdict(os.path.join(bindata.bin_resultfolder, "contigdict.tsv"))
 			sys.stdout.flush()
 			sys.stderr.flush()
