@@ -1049,6 +1049,8 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 		total_bonus_penalty = 0
 		max_levelindex = max([0, max([len(contig_toptaxpath), len(consensus_taxpath)])-1])
 		min_levelindex = max([0, min([len(contig_toptaxpath), len(consensus_taxpath)])-1])
+		# ~ if contig == "PKVN01000006.1":	#todo: only for debugging
+			# ~ import pdb; pdb.set_trace()	#todo: only for debugging
 		if contig_toplevelcontradiction_taxrank:
 			self.contigdict[contig]["tax_note"] += "ATTENTION: contig-classification '{}' ({:.2f}% blast-ident) contradicts majority-classification '{}' at rank '{}' on '{}'-level".format(contig_toptaxid, contig_toptaxident, consensus_taxid, contig_toplevelcontradiction_taxrank, contig_toptaxmarkerlevel)
 			contradiction_levelindex = levels.index(contig_toplevelcontradiction_taxrank)
@@ -1056,19 +1058,23 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 				self.contigdict[contig]["info_flag"] = "viral"
 			else:
 				self.contigdict[contig]["info_flag"] = "mismatch_{}".format(contradiction_levelindex)
-			total_bonus_penalty -= sum(level_penalties[contradiction_levelindex:max_levelindex])
+			total_bonus_penalty -= sum(level_penalties[contradiction_levelindex:max_levelindex+1])
 		else:
 			# ~ print("hwhat is going on!")
+			# ~ print(contig_toptaxpath)
+			# ~ print(consensus_taxpath)
 			# ~ print(min_levelindex)
 			# ~ print(levels)
 			# ~ print(levels[min_levelindex])
 			self.contigdict[contig]["tax_note"] += "contig-classification '{}'({:.2f}% blast-ident) matches majority-classification '{}' upto rank {} on '{}'-level".format(contig_toptaxid, contig_toptaxident, consensus_taxid, levels[min_levelindex], contig_toptaxmarkerlevel)
-			total_bonus_penalty += sum(level_boni[:min_levelindex])
-			total_bonus_penalty -= sum(level_penalties[min_levelindex:max_levelindex])/10
+			total_bonus_penalty += sum(level_boni[:min_levelindex+1])
+			total_bonus_penalty -= sum(level_penalties[min_levelindex+1:max_levelindex+1])/10
 			self.contigdict[contig]["tax_note"] 
 		bonus_factor = markerlevel_factors[contig_toptaxmarkerlevel] * (contig_toptaxident/100)
 		total_bonus_penalty *= bonus_factor
 		contig_trust_score = round(((base_level_score + total_bonus_penalty) / max_level_score)*10)
+		# ~ if contig == "PKVN01000006.1":	#todo: only for debugging
+			# ~ import pdb; pdb.set_trace()	#todo: only for debugging
 		return contig_trust_score
 			
 		
@@ -1077,15 +1083,28 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 		import lca
 		def check_lower_ranking_protein_markers(contigentry, filterflag = "delete", altflag = "evaluate_low"):
 			for protmarker in ["prok_marker_tax", "total_prots_tax"]:
-				if self.contigdict[contig][protmarker] != None and (lca.contradicting_taxasstuples(self.contigdict[contig][protmarker], self.contigdict[contig]["toplevel_tax"]) and not lca.contradict_taxasstuple_majortaxdict(self.contigdict[contig][protmarker], self.majortaxdict)):
-					self.contigdict[contig]["info_flag"] = "refdb_ambig"
-					self.contigdict[contig]["refdb_ambig"] = "gtdb/silva database ambiguity"
-					self.contigdict[contig]["refdb_ambig_infotext"] +="ambigeous gtdb-taxon (taxonomy conflict on rRNA level, but not on protein level)"
-					self.contigdict[contig]["tax_note"] +=" but agrees with majority classification on {}-level --> ambigeous taxon placement".format(protmarker)
-				filterflag = altflag
-				break #only check the highest ranking protein-annotation...
+				if self.contigdict[contig][protmarker] != None:
+					if not lca.contradict_taxasstuple_majortaxdict(self.contigdict[contig][protmarker], self.majortaxdict):
+						if lca.contradicting_taxasstuples(self.contigdict[contig][protmarker], self.contigdict[contig]["toplevel_tax"]):
+							self.contigdict[contig]["info_flag"] = "refdb_ambig"
+							self.contigdict[contig]["refdb_ambig"] = "gtdb/silva database ambiguity"
+							self.contigdict[contig]["refdb_ambig_infotext"] +="ambigeous gtdb-taxon (taxonomy conflict on rRNA level, but not on protein level)"
+							self.contigdict[contig]["tax_note"] +=" but agrees with majority classification up to rank '{}' on {}-level --> ambigeous taxon placement".format(lca.taxlevels[min(len(self.contigdict[contig][protmarker]),  len([key for key in self.majortaxdict.keys() if self.majortaxdict[key] != None]))-1], protmarker)
+							filterflag = altflag
+						elif len(self.contigdict[contig][protmarker]) > len(self.contigdict[contig]["toplevel_tax"]):
+							self.contigdict[contig]["info_flag"] = "unrepresented silva taxon/OTU"
+							self.contigdict[contig]["refdb_ambig"] = "unrepresented silva taxon/OTU"
+							self.contigdict[contig]["refdb_ambig_infotext"] += " unrepresented silva taxon/OTU"
+							taxrank_index = min(len(self.contigdict[contig][protmarker]),  len([key for key in self.majortaxdict.keys() if self.majortaxdict[key] != None]))-1
+							self.contigdict[contig]["tax_note"] +=" but agrees with majority classification up to rank '{}' ({:.2f}% av.ident.) on {}-level --> unrepresented silva taxon/OTU".format(lca.taxlevels[taxrank_index], self.contigdict[contig][protmarker][taxrank_index].average_ident, protmarker)
+							filterflag = altflag
+					break #only check the highest ranking protein-annotation...
+			# ~ if contig == "PKVN01000033.1":#todo: only for debugging
+				# ~ import pdb; pdb.set_trace()#todo: only for debugging
 			return filterflag, protmarker
 			
+		# ~ if contig == "PKVN01000033.1": #todo: only for debugging
+			# ~ import pdb; pdb.set_trace()	#todo: only for debugging
 		filterflag = "keep"	
 		if self.contigdict[contig]["info_flag"] == "non-coding":
 			return "delete" #non-coding contigs are automatically assumed aéukaryotic contamination
@@ -1150,7 +1169,7 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 			ambig_detection_cutoff = (species_cutoff + genus_cutoff)/2
 			if self.contigdict[contig]["toplevel_taxlevel"] in ["root", "domain"] and self.contigdict[contig]["toplevel_ident"] >= ambig_detection_cutoff:
 				self.contigdict[contig]["refdb_ambig"] = True
-				self.contigdict[contig]["tax_note"] += " potential cross-domain/phylum refDB-ambiguity; "
+				self.contigdict[contig]["tax_note"] += " refDB-ambiguity; "
 		
 	def _check_contig_refdb_ambiguity(self, contig, blastobj, db):
 		import lca
@@ -1234,7 +1253,7 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 	def get_untrusted_contigs(self, trustcutoff=4):
 		return self.get_contig_records(self.get_untrusted_contignames(trustcutoff))
 
-	def get_fraction_contamination(self, trustcutoff=4):
+	def get_fraction_untrusted(self, trustcutoff=4):
 		sum([ self.contigdict[contig]["contiglen"] for contig in self.get_untrusted_contignames(trustcutoff)]) / self.get_total_size()
 		
 	def get_total_size(self):
@@ -1262,7 +1281,13 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 		return [ contig for contig in self.contigdict if self.contigdict[contig]["filterflag"] == filterflag ]
 	
 	def get_fraction_filterflag(self, filterflag):
-		return sum([ self.contigdict[contig]["contiglen"] for contig in self.get_filtertag_contignames(filterflag) ]) / self.get_total_size()
+		return sum([ self.contigdict[contig]["contiglen"] for contig in self.get_filterflag_contignames(filterflag) ]) / self.get_total_size()
+
+	def get_infoflag_contignames(self, infoflag):
+		return [ contig for contig in self.contigdict if self.contigdict[contig]["info_flag"] == infoflag ]
+
+	def get_fraction_infoflag(self, infoflag):
+		return sum([ self.contigdict[contig]["contiglen"] for contig in self.get_infoflag_contignames(infoflag) ]) / self.get_total_size()
 
 	def get_trna_coordinates(self, trna_name):
 		import re
