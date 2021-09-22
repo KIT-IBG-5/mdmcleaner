@@ -1107,10 +1107,10 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 			# ~ import pdb; pdb.set_trace()	#todo: only for debugging
 		filterflag = "keep"	
 		if self.contigdict[contig]["info_flag"] == "non-coding":
-			return "delete" #non-coding contigs are automatically assumed aéukaryotic contamination
-		if self.contigdict[contig]["info_flag"] and re.match("mismatch_[1-7]", self.contigdict[contig]["info_flag"]):
+			return "delete" #non-coding contigs are automatically assumed eukaryotic contamination
+		if self.contigdict[contig]["info_flag"] and re.match("mismatch_[0-7]", self.contigdict[contig]["info_flag"]):
 			# ~ print("MISMATCHING {}".format(self.contigdict[contig]["info_flag"]))
-			mismatch_rankindex = int(re.match("mismatch_([1-7])", self.contigdict[contig]["info_flag"]).group(1))
+			mismatch_rankindex = int(re.match("mismatch_([0-7])", self.contigdict[contig]["info_flag"]).group(1))
 			rankcutoff_index = lca.taxlevels[1:].index(filter_rankcutoff)
 			if mismatch_rankindex <= rankcutoff_index:
 				# ~ print("i should delete that!!!")
@@ -1264,6 +1264,12 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 		
 	def get_fraction_refdbambiguity(self):
 		return sum([ self.contigdict[contig]["contiglen"] for contig in self.get_refdbambiguity_contignames() ]) / self.get_total_size()
+
+	def get_ignored_refdbambiguity_contignames(self):
+		return [ contig for contig in self.contigdict if self.contigdict[contig]["refdb_ambig"] != False and self.contigdict[contig]["filterflag"] == "keep"]
+
+	def get_fraction_ignored_refdbambiguity(self):
+		return sum([ self.contigdict[contig]["contiglen"] for contig in self.get_ignored_refdbambiguity_contignames() ]) / self.get_total_size()
 
 	def get_refdbambiguity_type_contignames(self, ambig_type):
 		return [ contig for contig in self.get_refdbambiguity_contignames() if self.contigdict[contig]["refdb_ambig"] == ambig_type ]

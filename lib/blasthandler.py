@@ -394,7 +394,7 @@ class blastdata(object): #todo: define differently for protein or nucleotide bla
 						best_gtdb_hit = best_gtdb_hits[0]
 					if db._gtdb_refseq_or_silva(best3hitlines[0]["subject"]) == "silva" and  best3hitlines[0]["ident"] >= lca.species_identity_cutoffs[outinfo["markerlevel"]] and (best_gtdb_hit == None or (db._gtdb_refseq_or_silva(best_gtdb_hit["subject"]) and best_gtdb_hit["ident"] < lca.species_identity_cutoffs[outinfo["markerlevel"]])):
 						amb_type = "unrepresented silva taxon/OTU"
-						amb_infotext = "matches a silva taxon/OTU on '{}'-level, which is apparently not represented with any genome data in gtdb"
+						amb_infotext = "matches a silva taxon/OTU on '{}'-level, which is apparently not represented with any genome data in gtdb".format(outinfo["markerlevel"])
 					else:
 						amb_type = "gtdb/silva database ambiguity" #todo: in such cases downstream check protein_based markers (marker_prots or totalprots) also
 						amb_infotext = "gtdb/silva database ambiguity"
