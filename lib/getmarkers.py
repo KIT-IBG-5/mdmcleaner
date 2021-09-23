@@ -1051,12 +1051,19 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 		min_levelindex = max([0, min([len(contig_toptaxpath), len(consensus_taxpath)])-1])
 		# ~ if contig == "PKVN01000006.1":	#todo: only for debugging
 			# ~ import pdb; pdb.set_trace()	#todo: only for debugging
-		if contig_toplevelcontradiction_taxrank:
+		if contig_toplevelcontradiction_taxrank: #todo: this throws an error if cotig contradicts already at root (e.g. viral)
+			# ~ if contig_toplevelcontradiction_taxrank == "root": #todo: only for debugging
+				# ~ import pdb; pdb.set_trace()	#todo: only for debugging
 			self.contigdict[contig]["tax_note"] += "ATTENTION: contig-classification '{}' ({:.2f}% blast-ident) contradicts majority-classification '{}' at rank '{}' on '{}'-level".format(contig_toptaxid, contig_toptaxident, consensus_taxid, contig_toplevelcontradiction_taxrank, contig_toptaxmarkerlevel)
-			contradiction_levelindex = levels.index(contig_toplevelcontradiction_taxrank)
-			if db.is_viral(contig_toptaxid):
-				self.contigdict[contig]["info_flag"] = "viral"
+			if contig_toplevelcontradiction_taxrank == "root": #should happen only for viral hits, but keeping the option open to consider "artificial sequences" etc in the future also...
+				if db.is_viral(contig_toptaxid):
+					self.contigdict[contig]["info_flag"] = "viral"
+					self.contigdict[contig]["viral"] = True
+				else:
+					self.contigdict[contig]["info_flag"] = "Strange sequence" #working title. should not occur, ist just a stand in for anything other than prokaryotes, eukaryotes or viruses that may or may not be added in the future. If these pop up --> FIND OUT WHY!
+				contradiction_levelindex = 0 #set to 0 (equivalent to domain) because whether it differs at domain or root level does not change the "trustworthiness" any more
 			else:
+				contradiction_levelindex = levels.index(contig_toplevelcontradiction_taxrank)
 				self.contigdict[contig]["info_flag"] = "mismatch_{}".format(contradiction_levelindex)
 			total_bonus_penalty -= sum(level_penalties[contradiction_levelindex:max_levelindex+1])
 		else:
