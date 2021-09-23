@@ -695,9 +695,13 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 		
 		self.ref_db_ambiguity_overview = {}
 		for d in [self.outbasedir, self.bin_resultfolder]:
-			if not os.path.exists(d):
-				print("creating {}".format(d))
-				os.mkdir(d)
+			try:
+				if not os.path.exists(d):
+					print("creating {}".format(d))
+					os.mkdir(d)
+			except FileExistsError:
+					raise Exception("\nERROR: there seems to be a broken symlink present for the target output-folder: '{}' --> skipping this magsag\n".format(d))
+					
 		self.taxondict = None
 		self.majortaxdict = None 
 		self.consensustax = None
