@@ -286,6 +286,7 @@ def main():
 			bindata.print_contigdict(os.path.join(bindata.bin_resultfolder, "contigdict.tsv"))
 			sys.stdout.flush()
 			sys.stderr.flush()
+			# ~ import pdb; pdb.set_trace()
 			reporting.write_full_bindata(bindata, os.path.join(bindata.bin_resultfolder, "fullcontiginfos_beforecleanup.tsv"))
 			overview_before = reporting.gather_extended_bin_metrics(bindata, outfile=overview_before, cutoff=5)
 			if not args.no_filterfasta:

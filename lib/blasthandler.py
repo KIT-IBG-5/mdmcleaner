@@ -459,13 +459,13 @@ class blastdata(object): #todo: define differently for protein or nucleotide bla
 			
 			outinfo["single_or_weighted_discrep"] = "single"			
 			tempdict["besthit_taxid"] = singlemarkerlcadict[i]["info"]["best_hit"]["taxid"]
-			tempdict["besthit_subject"] = singlemarkerlcadict[i]["info"]["best_hit"]["taxid"]
+			tempdict["besthit_subject"] = singlemarkerlcadict[i]["info"]["best_hit"]["subject"]
 			tempdict["besthitdomphyl"] = "{},{}".format(singlemarkerlcadict[i]["info"]["best_hit"]["domain"],singlemarkerlcadict[i]["info"]["best_hit"]["phylum"])
 			tempdict["besthitident"] = singlemarkerlcadict[i]["info"]["best_hit"]["identity"]
 			tempdict["besthitscore"] = singlemarkerlcadict[i]["info"]["best_hit"]["score"]
 
 			tempdict["bestcontra_taxid"] = singlemarkerlcadict[i]["info"]["best_contradiction"]["taxid"]
-			tempdict["bestcontra_subject"] = singlemarkerlcadict[i]["info"]["best_contradiction"]["taxid"]			
+			tempdict["bestcontra_subject"] = singlemarkerlcadict[i]["info"]["best_contradiction"]["subject"]			
 			tempdict["bestcontradomphyl"] = "{},{}".format(singlemarkerlcadict[i]["info"]["best_contradiction"]["domain"],singlemarkerlcadict[i]["info"]["best_contradiction"]["phylum"])
 			tempdict["bestcontraident"] = singlemarkerlcadict[i]["info"]["best_contradiction"]["identity"]
 			tempdict["bestcontrascore"] = singlemarkerlcadict[i]["info"]["best_contradiction"]["score"]

@@ -166,8 +166,8 @@ def weighted_lca(taxdb, seqid = None, blasthitlist=None, fractioncutoff = 0.95, 
 	parentblacklist = []
 	taxassignment = namedtuple("taxassignment", ["taxid", "average_score", "average_ident", "ambigeous"]) #todo: replace this with something that is more similar to a "hit tuple". mayble add ambifeous field to those?
 	ambigeous = False
+	found_major_tax = False
 	for i in tempdict:#todo: consider using a dedicated object,rather than dictionary?
-		found_major_tax = False
 		currentlevel_taxa = list(tempdict[i].keys())
 		for tax in currentlevel_taxa:
 			if tempdict[i][tax]["parent"] in parentblacklist:

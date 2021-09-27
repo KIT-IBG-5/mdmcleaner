@@ -695,13 +695,9 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 		
 		self.ref_db_ambiguity_overview = {}
 		for d in [self.outbasedir, self.bin_resultfolder]:
-			try:
-				if not os.path.exists(d):
-					print("creating {}".format(d))
-					os.mkdir(d)
-			except FileExistsError:
-					raise Exception("\nERROR: there seems to be a broken symlink present for the target output-folder: '{}' --> skipping this magsag\n".format(d))
-					
+			if not os.path.exists(d):
+				print("creating {}".format(d))
+				os.mkdir(d)
 		self.taxondict = None
 		self.majortaxdict = None 
 		self.consensustax = None
@@ -1055,19 +1051,12 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 		min_levelindex = max([0, min([len(contig_toptaxpath), len(consensus_taxpath)])-1])
 		# ~ if contig == "PKVN01000006.1":	#todo: only for debugging
 			# ~ import pdb; pdb.set_trace()	#todo: only for debugging
-		if contig_toplevelcontradiction_taxrank: #todo: this throws an error if cotig contradicts already at root (e.g. viral)
-			# ~ if contig_toplevelcontradiction_taxrank == "root": #todo: only for debugging
-				# ~ import pdb; pdb.set_trace()	#todo: only for debugging
+		if contig_toplevelcontradiction_taxrank:
 			self.contigdict[contig]["tax_note"] += "ATTENTION: contig-classification '{}' ({:.2f}% blast-ident) contradicts majority-classification '{}' at rank '{}' on '{}'-level".format(contig_toptaxid, contig_toptaxident, consensus_taxid, contig_toplevelcontradiction_taxrank, contig_toptaxmarkerlevel)
-			if contig_toplevelcontradiction_taxrank == "root": #should happen only for viral hits, but keeping the option open to consider "artificial sequences" etc in the future also...
-				if db.is_viral(contig_toptaxid):
-					self.contigdict[contig]["info_flag"] = "viral"
-					self.contigdict[contig]["viral"] = True
-				else:
-					self.contigdict[contig]["info_flag"] = "Strange sequence" #working title. should not occur, ist just a stand in for anything other than prokaryotes, eukaryotes or viruses that may or may not be added in the future. If these pop up --> FIND OUT WHY!
-				contradiction_levelindex = 0 #set to 0 (equivalent to domain) because whether it differs at domain or root level does not change the "trustworthiness" any more
+			contradiction_levelindex = levels.index(contig_toplevelcontradiction_taxrank)
+			if db.is_viral(contig_toptaxid):
+				self.contigdict[contig]["info_flag"] = "viral"
 			else:
-				contradiction_levelindex = levels.index(contig_toplevelcontradiction_taxrank)
 				self.contigdict[contig]["info_flag"] = "mismatch_{}".format(contradiction_levelindex)
 			total_bonus_penalty -= sum(level_penalties[contradiction_levelindex:max_levelindex+1])
 		else:
@@ -1093,8 +1082,6 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 		import re
 		import lca
 		def check_lower_ranking_protein_markers(contigentry, filterflag = "delete", altflag = "evaluate_low"):
-			# ~ if self.contigdict[contig]["viral"]:
-				# ~ self.contigdict["tax_note"] == "probably viral; " + self.contigdict["tax_note"]
 			for protmarker in ["prok_marker_tax", "total_prots_tax"]:
 				if self.contigdict[contig][protmarker] != None:
 					if not lca.contradict_taxasstuple_majortaxdict(self.contigdict[contig][protmarker], self.majortaxdict):
@@ -1133,8 +1120,6 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 				filterflag, protmarker = check_lower_ranking_protein_markers(self.contigdict[contig], filterflag)
 				# ~ print(filterflag)
 				# ~ print("-----")
-		elif self.contigdict[contig]["viral"] and filter_viral:
-			filterflag = "delete"
 		elif self.contigdict[contig]["refdb_ambig"] and "fringe case" in self.contigdict[contig]["refdb_ambig"] and not "potential refDB-contamination" in self.contigdict[contig]["refdb_ambig"]:
 			if self.contigdict[contig]["contradict_consensus"] == None:
 				filterflag = "keep"
@@ -1157,7 +1142,7 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 	def evaluate_and_flag_all_contigs(self, *args, db, protblasts, nucblasts, filter_rankcutoff = "family", filter_viral = True, filter_unclassified = False): #args are unpacked only to enforce keyword aguments for protblasta and nucblasts (to prevent accidentally passing them in the wrong order) 
 		# ~ print("EEEEVALUATiNG...")
 		for contig in self.contigdict:
-			self._mark_ref_db_ambiguity(contig, ignore_viral = not filter_viral)
+			self._mark_ref_db_ambiguity(contig)
 			# ~ if contig == "PGYB01000035.1": #todo: only for debugging
 				# ~ print("-------{}---------__".format(contig)) #todo: only for debugging
 				# ~ import pdb; pdb.set_trace() #todo: only for debugging
@@ -1175,7 +1160,7 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 			self.contigdict[contig]["filterflag"] = self.check_and_set_filterflags(contig, filter_rankcutoff = filter_rankcutoff, filter_viral = filter_viral, filter_unclassified = filter_unclassified) 
 			# ~ import pdb; pdb.set_trace()
 			
-	def _mark_ref_db_ambiguity(self, contig, ignore_viral = True):
+	def _mark_ref_db_ambiguity(self, contig):
 		import lca
 		markerlevel = self.contigdict[contig]["toplevel_marker"]
 		if markerlevel:
@@ -1183,8 +1168,6 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 			genus_cutoff = lca.genus_identity_cutoffs[markerlevel]
 			ambig_detection_cutoff = (species_cutoff + genus_cutoff)/2
 			if self.contigdict[contig]["toplevel_taxlevel"] in ["root", "domain"] and self.contigdict[contig]["toplevel_ident"] >= ambig_detection_cutoff:
-				if self.contigdict[contig]["viral"] and not ignore_viral:
-					return None
 				self.contigdict[contig]["refdb_ambig"] = True
 				self.contigdict[contig]["tax_note"] += " refDB-ambiguity; "
 		
