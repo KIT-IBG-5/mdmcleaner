@@ -687,6 +687,7 @@ def _distribute_threads_over_jobs(total_threads, num_jobs): # to distribute N th
 	return [1] * num_jobs, total_threads
 
 def run_multiple_blasts_parallel(basic_blastarg_list, outbasename, total_threads): #basic_blastarg_list = list of tuples such as [(query1, db1, blast1), (query2, db2, blast2),...])
+	import pdb; pdb.set_trace()
 	#TODO: test using misc.run_multiple_functions_parallel() for this instead! DELETE THIS IF MISC VERSION WORKS!
 	if len(basic_blastarg_list) == 0:
 		sys.stderr.write("nothing to blast...")
@@ -778,6 +779,9 @@ def make_blast_db_from_gz(infasta, outfilename, makeblastdb="makeblastdb", db_ty
 
 def get_blast_combinations(dblist, querylist, blast = "blastn"):
 	import itertools #todo move up
+	# ~ print("gbc")
+	# ~ import pdb; pdb.set_trace()
+	querylist = [x for x in querylist if x != ""] #workaround for cases were tehre is no query file (e.g. no ssu or lsu rRNA found)
 	acceptable_blasttools = ["blastn", "blastp", "blastx"]
 	assert os.path.basename(blast) in acceptable_blasttools, "Error: 'blast' must be one of {}".format(acceptable_blasttools) #maybe remove this check or add a workaround to use diamond whith this also?
 	return [ blasttuple + (blast,) for blasttuple in list(itertools.chain(*list(zip(querylist, permu) for permu in itertools.permutations(dblist, len(querylist)))))] #todo:Only works as long as dblist is longer or equal to querylist... find a way to ensure/workaround this

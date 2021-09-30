@@ -262,6 +262,9 @@ def runbarrnap_all(infasta, outfilebasename, barrnap="barrnap", output_directory
 	# ~ print(gff_outputlist)
 	final_fastadict, contig_rrnadict = deduplicate_barrnap_results(tempfasta_list, gff_outputlist) #todo: also get a dictionary which which markers are on which contig
 	for ff in final_fastadict:
+		if len(final_fastadict[ff]) == 0:
+			final_fastadict[ff] = ""
+			continue
 		# ~ print("temporary barrnap file: {}_{}.fasta".format(outfilebasename, ff))
 		outfile = openfile("{}_{}.fasta".format(outfilebasename, ff), "wt")
 		SeqIO.write(final_fastadict[ff], outfile, "fasta")
@@ -339,6 +342,7 @@ def deduplicate_barrnap_results(tempfastas, gff_outputs):
 	for fasta in tempfastas: #currently doing this AFTER the previous loop, to make sure the files are only deleted when everything went well (debugging purposes)
 		os.remove(fasta)
 	print("\nfound {} rna sequences\n".format(sum([ len(finalfastadict[ghj]) for ghj in finalfastadict]))) #todo: delete this line (debugging only)
+	# ~ import pdb; pdb.set_trace()
 	return finalfastadict, contig_rrna_dict		#todo: also return a dictionary with contignames as keys and type of marker as values?
 					
 def parse_barrnap_headers(header):
@@ -737,6 +741,8 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 			# ~ import pdb; pdb.set_trace()
 		else:
 			self.rRNA_fasta_dict, self.rrnamarkerdict = runbarrnap_all(infasta=self.binfastafile, outfilebasename=os.path.join(self.bin_resultfolder, self.bin_tempname + "_rRNA"), barrnap="barrnap", output_directory = self.bin_resultfolder, threads=threads) #todo add option for rnammer (using the subdivided fastafiles)?
+			# ~ print("HI")
+			# ~ import pdb; pdb.set_trace()
 			self.contigdict, self.markerdict = add_rrnamarker_to_contigdict_and_markerdict(self.rrnamarkerdict, self.contigdict, self.markerdict) #todo: contigdict is probably not needed in this form. choose simpler dicts?
 		if from_json and os.path.exists(self.trna_jsonfile):
 			trna_list = misc.from_json(self.trna_jsonfile)

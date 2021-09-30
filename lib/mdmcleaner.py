@@ -197,6 +197,7 @@ def main():
 				ssu_blast_combinations = blasthandler.get_blast_combinations(ssu_nucblastdblist, ssublastquerylist, blast = "blastn")
 			# ~ trna_blast_combinations = blasthandler.get_blast_combinations(trna_nucblastdblist, trnablastquerylist, blast = "blastn")
 				all_blast_combinations = lsu_blast_combinations + ssu_blast_combinations
+				# ~ import pdb; pdb.set_trace()
 				# ~ print("queries")
 				# ~ print(lsublastquerylist)
 				# ~ print(ssublastquerylist)
@@ -208,6 +209,7 @@ def main():
 				# ~ print("---------___")
 				rnablastfiles = blasthandler.run_multiple_blasts_parallel(all_blast_combinations, os.path.join(bindata.bin_resultfolder, "blastn"), configs["threads"])
 				endtime = time.time()
+				# ~ import pdb; pdb.set_trace()
 				print("\nthis blast took {} seconds\n".format(endtime - starttime))
 				nucblasts = blasthandler.blastdata(*rnablastfiles, score_cutoff_fraction = 0.8, seqtype = "nuc") #stricter cutoff for nucleotide blasts
 				sys.stderr.write("looking up taxids of nucleotide blast hits...\n")
