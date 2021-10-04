@@ -680,6 +680,7 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 		self.rnammer_pattern = re.compile("^rRNA_(.+)_\d+-\d+_DIR[+-]")
 		self.binfastafile = contigfile
 		bin_tempname = os.path.basename(contigfile)
+		assert len(bin_tempname) <= 176, "ERROR: input-filename may not be longer than 176 characters (sorry)!" #todo: qucik and dirty fix for a stupid problem: can't produce outputfiles with filenames longer than 256 chars. considering the longest pre- and suffixes, the limit is for 176 chars for the input-filename (without path or suffix). Better long-term solution: create shorter output-filenames!
 		self.trnadict = {}
 		for suffix in [".gz", ".fa", ".fasta", ".fna", ".fas", ".fsa"]:
 			if bin_tempname.endswith(suffix):
@@ -689,7 +690,7 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 		self.bin_tempname = bin_tempname
 		self.bin_resultfolder = os.path.join(self.outbasedir, self.bin_tempname)
 		self.pickle_progressfile = os.path.join(self.bin_resultfolder, "bindata_progress.pickle") #todo: change to better system
-		self.trna_jsonfile = os.path.join(self.bin_resultfolder, "bindata_progress.json.gz") #todo: REALLY start implementing a better system!
+		self.trna_jsonfile = os.path.join(self.bin_resultfolder, "bindata_trna_progress.json.gz") #todo: REALLY start implementing a better system!
 		self.trnafastafile = os.path.join(self.bin_resultfolder, self.bin_tempname + "_tRNAs.fasta.gz")
 		self.filteroutputfiles = { 	"keep" : os.path.join(self.bin_resultfolder, self.bin_tempname + "_filtered_kept_contigs.fasta.gz"),\
 								"evaluate_low" : os.path.join(self.bin_resultfolder, self.bin_tempname + "_filtered_need_evaluation_low.fasta.gz"),\

@@ -687,7 +687,7 @@ def _distribute_threads_over_jobs(total_threads, num_jobs): # to distribute N th
 	return [1] * num_jobs, total_threads
 
 def run_multiple_blasts_parallel(basic_blastarg_list, outbasename, total_threads): #basic_blastarg_list = list of tuples such as [(query1, db1, blast1), (query2, db2, blast2),...])
-	import pdb; pdb.set_trace()
+	# ~ import pdb; pdb.set_trace()
 	#TODO: test using misc.run_multiple_functions_parallel() for this instead! DELETE THIS IF MISC VERSION WORKS!
 	if len(basic_blastarg_list) == 0:
 		sys.stderr.write("nothing to blast...")
