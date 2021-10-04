@@ -96,7 +96,7 @@ class blastdata(object): #todo: define differently for protein or nucleotide bla
 	_blasttsv_columnnames = {"query" : 0, "subject" : 1, "ident" : 2, "alignlen" : 3, "qstart": 6, "qend" : 7, "sstart" : 8, "ssend" : 9, "evalue" : 10, "score" : 11, "contig" : None, "stype" : None, "taxid": None} #reading in all fields, in case functionality is added later that also uses the sstat send etc fields
 	# ~ _nuc_stypelist = ["ssu_rRNA", "lsu_rRNA"]
 	# ~ _prot_stypelist = ["total", "bac_marker", "prok_marker", "arc_marker"]
-	def __init__(self, *blastfiles, max_evalue = None, min_ident = None, score_cutoff_fraction = 0.75, keep_max_hit_fraction = 0.5, keep_min_hit_count = 2, continue_from_json = False, auxilliary = False, seqtype=None): #todo: add a min_score #todo: change score_cutoff_fraction to 0.75?
+	def __init__(self, *blastfiles, max_evalue = None, min_ident = None, score_cutoff_fraction = 0.75, keep_max_hit_fraction = 0.5, keep_min_hit_count = 2, continue_from_json = False, auxilliary = False, seqtype=None, ignorelistfile=None): #todo: add a min_score #todo: change score_cutoff_fraction to 0.75?
 		#methods:
 		#	method 1: filter by query-genes. For each gene remove all hits with score below <score_cutoff_fraction> (default = 0.5) of maximum score for that gene
 		#			  from these keep the <keep_max_hit_fraction> of hits (default = 0.5), but keep at least <keep_min_fraction> (default = 2) in every case if possible
@@ -105,6 +105,8 @@ class blastdata(object): #todo: define differently for protein or nucleotide bla
 		# ~ if from_pickle and len(blastfiles) == 1: #if from_pickle is set, that means input shuld NOT be a list of blastfiles, but a single blastdata-object-pickle-file
 			# ~ print("blastdata object already exists! loading from pickle")
 			# ~ self.unpickleyourself(blastfiles[0])
+		# ~ print("blastdata:")
+		# ~ print(ignorelistfile)
 		assert seqtype in ["nuc", "prot", None], "\nERROR: seqtype must be either 'nuc', 'prot' or None (if unknown)\n"
 		self.seqtype = seqtype #todo: do something with this (e.g. set some cutoff)
 		self.min_ident = min_ident
@@ -112,10 +114,14 @@ class blastdata(object): #todo: define differently for protein or nucleotide bla
 		self.score_cutoff_fraction = score_cutoff_fraction
 		self.keep_max_hit_fraction = keep_max_hit_fraction
 		self.keep_min_hit_count = keep_min_hit_count
+		self.ignoreset = set() #todo: rather than reading this for each bin seperately, this should only be read ONCE during the mdmcleaner pipeline and passed as set!
 		if continue_from_json:
 			assert len(blastfiles) == 1, "ERROR: if supposed to create blastdata-object from json, you can provide only one input file (the json)"
 			self.from_json(blastfiles[0])
 		else:
+			# ~ import pdb; pdb.set_trace()
+			self._read_ignorefile(ignorelistfile)
+			# ~ import pdb; pdb.set_trace()
 			self.blastlinelist = []
 			for bf in blastfiles:
 				self.read_blast_tsv(bf, max_evalue = max_evalue, min_ident = min_ident) #TODO: Note: not passing bindata-object right here. if it needs to be looped through later anyway (after condensing the list) it makes more sense to do all further assignments later at that point
@@ -130,7 +136,18 @@ class blastdata(object): #todo: define differently for protein or nucleotide bla
 		# ~ elif stype_query in self._prot_stypelist:
 			# ~ return "prot"
 		
-			
+	def _read_ignorefile(self, ignorelistfile):
+		if ignorelistfile:
+			with openfile(ignorelistfile) as ilf:
+				for line in ilf:
+					# ~ print (line)
+					tokens = line.strip().split("#")
+					# ~ print(tokens)
+					if len(tokens) >0 and tokens[0] != "":
+						self.ignoreset.add(tokens[0])
+				# ~ import pdb; pdb.set_trace()
+				 
+	
 	def filter_hits_per_gene(self, score_cutoff_fraction = 0.75, keep_max_hit_fraction = 0.5, keep_min_hit_count = 2): #todo: allow additional filter settings for rRNA data (e.g. filter by identity not score)
 		"""
 		assumes the blastlinelist is already sorted by decreasind score!
@@ -270,9 +287,14 @@ class blastdata(object): #todo: define differently for protein or nucleotide bla
 		for line in infile:
 			tokens = line.strip().split("\t")
 			bl = { x : string_or_int_or_float(tokens[self._blasttsv_columnnames[x]]) if type(self._blasttsv_columnnames[x]) == int else None for x in self._blasttsv_columnnames}
+			# ~ print(bl["contig"])
+			# ~ if bl["contig"] == "contam_NZ_JAHGVE010000025.1_15" or bl["subject"] in ["GCF_004341205.1_NZ_SLUL01000011.1", "GCA_002434245.1_DJJR01000029.1"]:
+				# ~ import pdb; pdb.set_trace()
 			if max_evalue and bl["evalue"] > max_evalue: #bl.evalue > max_evalue:
 				continue
 			if min_ident and bl["ident"] < min_ident: #bl.ident < min_ident:
+				continue
+			if bl["subject"] in self.ignoreset:
 				continue
 			if bindata_obj != None:
 				bl["contig"] = bindata.marker2contig(bl["query"])
@@ -537,7 +559,8 @@ def read_blast_tsv(infilename, max_evalue = None, min_ident = None, dbobj = None
 def _blastlines2blasthits(blastlinelist):
 	return [ hit(accession=q["subject"], taxid=q["taxid"], identity=q["ident"], score=q["score"]) for q in blastlinelist ]
 
-def __add_contigs2blasthits_later(blastlinelist, parsetype = "prodigal", lookup_table = None): #todo: probably obsolete...
+
+def _add_contigs2blasthits_later(blastlinelist, parsetype = "prodigal", lookup_table = None): #todo: probably obsolete...
 	"""
 	assigns contigs to blast hits
 	parsetype must be one of ["prodigal", "rnammer", "barrnap", "lookup"]
@@ -595,7 +618,7 @@ def __add_contigs2blasthits_later(blastlinelist, parsetype = "prodigal", lookup_
 	if parsetype == "barrnap":
 		return _parse_barrnap(blastlinelist)
 	
-def __add_stype2blasthits_later(blastlinelist, markersetdict): #todo: probably obsolte... #markersetdict should be derived from a different module "fastahandler.py" that reads the markerfastas and returns either the sequences, or just the locus_tags/fasta_headers.
+def _add_stype2blasthits_later(blastlinelist, markersetdict): #todo: probably obsolte... #markersetdict should be derived from a different module "fastahandler.py" that reads the markerfastas and returns either the sequences, or just the locus_tags/fasta_headers.
 	#"markersetlist" should be a list of sets. sets should be ordered in decreasing hierarchy (16S first, then 23S then markerprots then totalprots)
 	#each set contains the locus_tags of the markers used in the blast
 	for blindex in range(len(blastlinelist)):
@@ -604,7 +627,7 @@ def __add_stype2blasthits_later(blastlinelist, markersetdict): #todo: probably o
 				blastlinelist[bl]["stype"] = ms
 	return blastlinelist
 
-def __add_taxid2blasthits_later(blastlinelist, db_obj): #todo: probably obsolte...
+def _add_taxid2blasthits_later(blastlinelist, db_obj): #todo: probably obsolte...
 	for blindex in range(len(blastlinelist)):
 		blastlinelist[bl]["taxid"] = db_obj.acc2taxid(blastlinelist[bl]["taxid"]["subject"])
 	return blastlinelist

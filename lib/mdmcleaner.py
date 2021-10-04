@@ -110,6 +110,7 @@ def main():
 	myparser.add_argument("-f", "--force", action = "store_true", dest = "force", default = False, help = "Force reclassification of pre-existing blast-results")
 	# ~ myparser.add_argument("--blast2pass", action = "store_true", dest = "blast2pass", default = "False", help = "add a second-pass blastx blast-run for all contigs without any classification on blastp level (default: False)")
 	myparser.add_argument("--overview_files_basename", action = "store", dest = "overview_basename", default = "overview", help = "basename for overviewfiles (default=\"overview\"")
+	myparser.add_argument("--ignorelistfile", action = "store", dest = "ignorelistfile", default = None, help = "File listing reference-DB sequence-names that should be ignored during blast-analyses (e.g. known refDB-contaminations...")
 	myparser.add_argument("--no_filterfasta", action = "store_true", dest = "no_filterfasta", default = False, help = "Do not write filtered contigs to final output fastas (Default = False)")
 	args = myparser.parse_args()
 	#print(args.configfile)
@@ -152,9 +153,12 @@ def main():
 			##### first protein blasts
 
 			sys.stdout.flush()
-			sys.stderr.flush()			
+			sys.stderr.flush()
+			# ~ import pdb; pdb.set_trace()		
 			if os.path.isfile(protblastjsonfilename) and args.force != True: #for debugging. allows picking up AFTER blastlines were already classified when re-running
-				protblasts = blasthandler.blastdata(protblastjsonfilename, score_cutoff_fraction = 0.75, continue_from_json = True, seqtype = "prot")
+				# ~ print ("CHECK!!!!!!!!!!!!")
+				# ~ print(args.ignorelistfile)
+				protblasts = blasthandler.blastdata(protblastjsonfilename, score_cutoff_fraction = 0.75, continue_from_json = True, seqtype = "prot", ignorelistfile = args.ignorelistfile)
 			else:
 				print("blasting protein data")
 				protblastfiles = []
@@ -172,14 +176,14 @@ def main():
 					endtime = time.time()
 					print("\nthis blast took {} seconds\n".format(endtime - starttime))
 				sys.stderr.write("\nreading in protblast files...\n")
-				protblasts = blasthandler.blastdata(*protblastfiles, score_cutoff_fraction = 0.75, seqtype = "prot")
+				protblasts = blasthandler.blastdata(*protblastfiles, score_cutoff_fraction = 0.75, seqtype = "prot", ignorelistfile = args.ignorelistfile)
 				sys.stderr.write("looking up taxids of protein blast hits...\n")
 				protblasts.add_info_to_blastlines(bindata, db)
 				print("saving protblasts for reuse") #todo: make this optional. is only for debugging now!
 				protblasts.to_json(protblastjsonfilename)
 			##### then rnablasts
 			if os.path.isfile(nucblastjsonfilename) and args.force != True: #for debugging. allows picking up AFTER blastlines were already classified when re-running
-				nucblasts = blasthandler.blastdata(nucblastjsonfilename, score_cutoff_fraction = 0.8, continue_from_json = True, seqtype = "nuc")
+				nucblasts = blasthandler.blastdata(nucblastjsonfilename, score_cutoff_fraction = 0.8, continue_from_json = True, seqtype = "nuc", ignorelistfile=args.ignorelistfile)
 			else:
 				rnablastfiles = []
 				starttime = time.time()
@@ -211,7 +215,7 @@ def main():
 				endtime = time.time()
 				# ~ import pdb; pdb.set_trace()
 				print("\nthis blast took {} seconds\n".format(endtime - starttime))
-				nucblasts = blasthandler.blastdata(*rnablastfiles, score_cutoff_fraction = 0.8, seqtype = "nuc") #stricter cutoff for nucleotide blasts
+				nucblasts = blasthandler.blastdata(*rnablastfiles, score_cutoff_fraction = 0.8, seqtype = "nuc", ignorelistfile = args.ignorelistfile) #stricter cutoff for nucleotide blasts
 				sys.stderr.write("looking up taxids of nucleotide blast hits...\n")
 				nucblasts.add_info_to_blastlines(bindata, db)
 				print("saving nuclasts for reuse") #todo: make this optional. is only for debugging now!
