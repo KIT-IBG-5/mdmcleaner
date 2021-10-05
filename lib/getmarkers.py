@@ -1043,6 +1043,7 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 			if sum([len(self.contigdict[contig][x]) for x in [ "ssu_rRNA", "lsu_rRNA", "tsu_rRNA", "tRNAs", "prok_marker", "bac_marker", "arc_marker", "totalprots"]]) == 0:
 				self.contigdict[contig]["tax_note"] += "ATTENTION: contig contains no detectable coding features --> automatically assumed eukaryotic!"
 				self.contigdict[contig]["info_flag"] = "non-coding"
+				self.contigdict[contig]["non-coding"] = True
 				return 3
 			else:
 				self.contigdict[contig]["tax_note"] += "unclassified"
@@ -1302,7 +1303,7 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 		return sum([ self.contigdict[contig]["contiglen"] for contig in get_refdbambiguity_type_contignames(ambig_type) ]) / self.get_total_size()
 
 	def get_nocoding_contignames(self):
-		return [ contig for contig in self.contigdict if self.contigdict[contig]["non-coding"] ]
+		return [ contig for contig in self.contigdict if (self.contigdict[contig]["non-coding"] or self.contigdict[contig]["info_flag"] == "non-coding") ] #temporary fast fix for false "non-coding flags" in version 0.2.0 (allows fast correction of summary stats without redoing all)
 
 	def get_fraction_nocoding(self):
 		return sum([ self.contigdict[contig]["contiglen"] for contig in self.get_nocoding_contignames() ]) / self.get_total_size()
@@ -1370,7 +1371,7 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 				taxpath +=  [ db.taxid2taxname(t.taxid).replace(" ", "_") for t in taxass ]
 			else:
 				taxpath += ["unclassified"]	
-				if self.contigdict[contig]["non-coding"]:
+				if self.contigdict[contig]["non-coding"] or self.contigdict[contig]["info_flag"] == "non_coding":
 					taxpath += ["non-coding"]
 				elif self.contigdict[contig]["toplevel_ident"] == None:
 					taxpath += ["no_blast_hit"]
