@@ -8,7 +8,7 @@ extracting protein-coding as rRNA genes from assemblies, and identifying markerg
 
 # note to self:
 # cutoff values were determined in different ways:
-# for tigrfam and pfam: strict and sensitive values were parsed from the "GA" and "NC" fields, respectively. moderate values were calculated as the average betrween the respective strict and sensitive cutoffs
+# for tigrfam and pfam: strict and sensitive values were parsed from the "TC" and "NC" fields, respectively. moderate values were calculated as the average betrween the respective strict and sensitive cutoffs
 # for cogs all marker models were aligned seperately against the component merkergene-alignments and against all nonmarker-cog-alignments
 # strict: the higher value of the cutoff that yielded 95% of the true positives (component markergene-alignents) and the cutoff that yielded less than 5% false positives (all nonmarker alignments)
 # sensitive: the LOWER value of the cutoff that yielded 95% of the true positives (component markergene-alignents) and the cutoff that yielded less than 5% false positives (all nonmarker alignments)
@@ -1482,11 +1482,22 @@ def main():
 	get_trna_args.add_argument("--outdir", dest = "outdir", default = ".", help = "Output directory for temporary files, etc. Default = '.'")
 	get_trna_args.add_argument("-b", "--binary", default = "binary", help = "aragorn executable (with path if not in PATH). Default= assume aragorn is in PATH")
 	get_trna_args.add_argument("-t", "--threads", default = 1, type = int, help = "number of parallel threads. Is only used when multiple input files are passed")
+	get_rrnas_args = subparsers.add_parser("get_rrnas", help = "extract_rRNA sequences using barrnap")
+	get_rrnas_args.add_argument("infasta", help = "input fasta. May be gzip-compressed")
+	get_rrnas_args.add_argument("-o", "--outbasename", action="store", dest="outfilebasename", default = "rRNA_barrnap", help = "basename of output files (default = 'rRNA_barrnap')")
+	get_rrnas_args.add_argument("-t", "--threads", action="store", dest="threads", type = int, default = 1, help = "number of threads to use (default = 1)")
+	get_rrnas_args.add_argument("-b", "--binary", action="store", dest="barrnap", default = "barrnap", help = "path to barrnap binaries (if not in PATH)")
+	get_rrnas_args.add_argument("--outdir", dest = "outdir", default = ".", help = "Output directory for temporary files, etc. Default = '.'")
 	args = myparser.parse_args()
 	
 	if args.command == "get_trnas":
-		print("here are the results:")
+		print("extracting tRNAs:")
 		print(get_trnas(*args.infastas, outdirectory = args.outdir, aragorn = args.binary, threads = args.threads)) # todo: make a dedicated standalone funtion with a mini_bindata-object (inherited from bindata)
+	elif args.command == "get_rrnas":
+		print("extracting rRNA genes:")
+		print(args.infasta)
+		rRNA_fasta_dict, rrnamarkerdict = runbarrnap_all(infasta=args.infasta, outfilebasename=args.outfilebasename, barrnap=args.barrnap, output_directory = args.outdir, threads=args.threads)	
+		print("created the following output-files:\n{}\n".format(",\n".join(list(rRNA_fasta_dict.values()))))
 	#_test_markernames()
 	#_test_basicmarkers()
 	#_test_multiprodigal()
