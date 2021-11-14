@@ -248,7 +248,8 @@ def download_gtdb_stuff(sourcedict = gtdb_source_dict, targetfolder=None):
 		as with _download_unixwget(), 'pattern' can be a comma seperated list of patterns (concatenated to a single string)
 		raises AssertionException if something is wrong with the downloaded files, returns a list of downloaded filenames in everything is fine
 		"""
-		#import re
+		import re
+		subpattern="_r\d+"
 		import fnmatch
 		#print("checking for '{}'".format(patternstring))
 		#sys.stdout.flush()
@@ -260,15 +261,22 @@ def download_gtdb_stuff(sourcedict = gtdb_source_dict, targetfolder=None):
 			tokens = line.strip().split()
 			checksum = tokens[0]
 			filename = os.path.basename(tokens[1])
+			filename = re.sub(subpattern, "", filename) #gtdb renames all files in the latest folder (removing version from filename), but not in the corresponding md5-file... 
+			# ~ print("PATTERNSTRING:  {}\n".format(patternstring))
+			# ~ print("?  {}\t{}\n".format(filename, checksum))
 			for pattern in patternlist:
 				if fnmatch.fnmatch(filename, pattern):
+					# ~ print("--> WANTEDPATTERN")
 					expectedfile = os.path.join(targetdir, filename)
+					# ~ print("--> EXPECTING FILE: {}".format(expectedfile))
 					if not os.path.isfile(expectedfile):
+						# ~ print("NOT THERE!!!")
 						allisfine = False
 						missing_filelist.append(filename)
 						break
 					actualhash = calculate_md5hash(expectedfile)
 					if not str(actualhash) == checksum:
+						# ~ print("WRONG HASH: {}".format(str(actualhash)))
 						allisfine = False
 						bad_filelist.append(filename)
 						os.remove(expectedfile)
@@ -276,6 +284,7 @@ def download_gtdb_stuff(sourcedict = gtdb_source_dict, targetfolder=None):
 					#print("yay they match! {}! {} != {}".format(expectedfile, actualhash, checksum))
 					ok_filelist.append(expectedfile)
 		infile.close()
+		# ~ import pdb; pdb.set_trace()	
 		assert len(ok_filelist) != 0, "\nERROR: None of the expected files appear to have been downloaded. Do you have read/write permissions for the targetfolder?\n"
 		assert allisfine, "\nERROR: something went wrong during download: {} expected files are missing, and {} files have mismatching CRCchecksums!\n  --> Missing files: {}\n  --> Corrupted files: {}\n".format(len(missing_filelist), len(bad_filelist), ",".join(missing_filelist), ",".join(bad_filelist))
 		#print("returning {}".format(ok_filelist)) 
