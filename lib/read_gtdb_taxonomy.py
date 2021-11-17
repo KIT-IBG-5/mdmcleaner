@@ -68,7 +68,7 @@ acc2taxid_outfilebasename = "gtdb_all.accession2taxid.sorted"
 lcawalkdb_outfilebasename = "gtdb_lcawalkdb_br.db" #todo: "_br" still stands for "binrefiner". change that!
 
 _progress_steps = {"download": [None, "01a", "02a", "03a"], \
-				  "prepare": ["04a", "04b", "05a", "06a", "06b", "06c", "07a"]} #todo: add more steps for individual dbs (instead of concatenating all to one db
+				  "prepare": ["04a", "04b", "04c", "05a", "06a", "06b", "06c", "07a"]} #todo: add more steps for individual dbs (instead of concatenating all to one db
 
 
 
@@ -284,6 +284,7 @@ def download_gtdb_stuff(sourcedict = gtdb_source_dict, targetfolder=None):
 					#print("yay they match! {}! {} != {}".format(expectedfile, actualhash, checksum))
 					ok_filelist.append(expectedfile)
 		infile.close()
+		ok_filelist.sort() #ensure alphabetial ordering of files, even if order is different in MD5-file
 		# ~ import pdb; pdb.set_trace()	
 		assert len(ok_filelist) != 0, "\nERROR: None of the expected files appear to have been downloaded. Do you have read/write permissions for the targetfolder?\n"
 		assert allisfine, "\nERROR: something went wrong during download: {} expected files are missing, and {} files have mismatching CRCchecksums!\n  --> Missing files: {}\n  --> Corrupted files: {}\n".format(len(missing_filelist), len(bad_filelist), ",".join(missing_filelist), ",".join(bad_filelist))
@@ -540,7 +541,7 @@ def make_gtdb_blastdb():
 	"""
 	pass		
 
-def _concat_fastas(contig_fastalist, outfastahandle, return_headerdict = False, remove_prodigalIDs = False, remove_descriptions = False): #todo: make solution for nucleotide fastas (maybe just create individual blast-dbs because ncbi-blast can handle that)?
+def _concat_fastas(contig_fastalist, outfastahandle, return_headerdict = False, remove_prodigalIDs = False, remove_descriptions = False): 
 	"""
 	concatenates the fastafiles given in contig_fastalist
 	if return_headers == True, thisreturns dictionary with assemblyIDs as keys and lists of corresponding fasta-sequenceIDs as values. otherwise returns None
@@ -549,15 +550,28 @@ def _concat_fastas(contig_fastalist, outfastahandle, return_headerdict = False, 
 	if remove_descriptions == True, it will remove all description info from the headers (keep only the sequenceID)
 	"""
 	import re
+	print("\n_concat_fastas\n")
+	print(outfastahandle.name + "\n")
 	assemblyIDpattern = re.compile("GC._\d+\.\d")
 	prodigalinpattern = re.compile("(^>\w+(\.\d+){0,1})(_\d+)(.*)")
+	ignore_patterns = [ recompile("\.tsv$") ] #stored as a list, to make it easier to add additional patterns if things change on the gtdb server
 	prodigalreplacement = r"\1 \4"
 	headerdict = {}
 	filecounter = seqcounter = 0
 	for cf in contig_fastalist:
+		ignore = False
 		if os.path.isdir(cf):
 			continue	
 		filebasename = os.path.basename(cf)
+		for ip in ignore_patterns:
+			if re.search(ip, filebasename):
+				ignore = True
+				break
+		if ignore == False and re.search(assemblyIDpattern, filebasename) == None:
+			sys.stderr.write("\nWARNING: encountered unexpected file '{}'! Probably something changed in the organization of the gtdb-download-server. Ignoring for now, BUT MAKE SURE THE WORKFLOW STILL WORKS!\n".format(filebasename))
+			ignore = True
+		if ignore:
+			continue
 		assemblyid = re.search(assemblyIDpattern, filebasename).group(0)
 		infile = openfile(cf)
 		for line in infile:
@@ -587,18 +601,17 @@ def _concat_fastas(contig_fastalist, outfastahandle, return_headerdict = False, 
 				
 def gtdb_contignames2taxids(contig_fastalist, acc2taxidinfilelist, acc2taxidoutfilename, outfastahandle):
 	"""
-	Todo: read acc2taxidfile line by line (taxids for assemblie-ids)
-	Todo: open_contigfastas (named after assembly-ids, read contig names), read seqeunces and write to concatenated file
-	Todo: assign each contig to taxid based on assembly-id
-	write to new acc2taxidfile
 	return new acc2taxid-filename
 	Note:	sadly the refrence file at gtdb do not follow the same naming scheme for protein and genomic files (or their taxid-lookuptables). 
 			the seqids in their taxid-lookuptables as well as the protein files have a "RS_" or "GB_" prefix, but the genomic files do not.
 			have to remove that prefix here
 	"""
 	import re
+	print("\ngtdb_contignames2taxids\n")
+	print(outfastahandle.name + "\n")
 	assemblyIDpattern = re.compile("GC._\d+\.\d")
 	headerdict = _concat_fastas(contig_fastalist, outfastahandle, return_headerdict = True, remove_prodigalIDs = False, remove_descriptions = True)
+	# ~ import pdb; pdb.set_trace()
 	import getdb #todo: delete this. is only for debuggung
 	getdb.dict2jsonfile(headerdict, "delme_headerdict.json.gz") #todo: delete this. is only for debuggung (or keep it as additional progress saving point
 	outaccfile = openfile(acc2taxidoutfilename, "wt")
@@ -759,15 +772,37 @@ def _prepare_dbdata_nonncbi(targetdir, progressdump): #Todo:add continueflag arg
 		#TODO: create seperate concat_fastas (and seperate diamond-dbs) for gtdb and refseq (maybe even for each refseq-vireukat category) 
 		sstart = time.time()
 		assert len(gtdb_download_dict["gtdb_fastas"]) == 2, "\nERROR: number of downloaded gtdb tars different than expected: should be 2 but is {}\n".format(len(gtdb_download_dict)) #Notifying myself, so that i don't forget to adapt this if i ever choose to download more or less reference categories from gtdb
+		print("-"*30)
+		print(gtdb_download_dict["gtdb_fastas"])
+		print("-"*30)
+		print("unpacking genome files : {}".format(gtdb_download_dict["gtdb_fastas"][0]))
 		gtdb_genomefiles = misc.untar(gtdb_download_dict["gtdb_fastas"][0], targetdir, removetar=True) 
-		gtdb_proteinfiles = misc.untar(gtdb_download_dict["gtdb_fastas"][1], targetdir, removetar=True) 
+		print("unpacking protein files : {}".format(gtdb_download_dict["gtdb_fastas"][1]))
+		gtdb_proteinfiles = misc.untar(gtdb_download_dict["gtdb_fastas"][1], targetdir, removetar=True)
+		progressdump["gtdb_genomefiles"] = gtdb_genomefiles
+		progressdump["gtdb_proteinfiles"] = gtdb_proteinfiles
+		return gtdb_genomefiles, gtdb_proteinfiles
+
+	def step4c():
+		# ~ import pdb; pdb.set_trace()	
 		progressdump["concatprotfasta"] = os.path.join(targetdir, "concat_refprot.faa")
 		progressdump["concatgenomefasta"] = os.path.join(targetdir, "concat_refgenomes.fasta")
 		concatgenomefastahandle = openfile(progressdump["concatgenomefasta"], "wt")
 		concatprotfastahandle = openfile(progressdump["concatprotfasta"], "wt")
+		# ~ print("")
+		# ~ print("genomes")
+		# ~ print(gtdb_genomefiles[:100])
+		print("concatenating genomes\n")
+		sys.stdout.flush()
+		# ~ import pdb; pdb.set_trace()	
 		progressdump["acc2taxidfilelist"].append(gtdb_contignames2taxids(gtdb_genomefiles, progressdump["acc2taxidfilelist"], os.path.join(targetdir, "temp_acc2taxid_gtdb.acc2taxid.gz"), concatgenomefastahandle))
-		#todo: in the above line, the created gtdb_accession2taxid file contains a lot of emty lines! fix this!!!
+		#todo: in the above line, the created gtdb_accession2taxid file contains a lot of empty lines! fix this!!!
 		concatgenomefastahandle.close()
+		# ~ print("")
+		# ~ print("proteins")
+		# ~ print(gtdb_proteinfiles[:100])
+		print("concatenating proteins\n")
+		# ~ import pdb; pdb.set_trace()
 		_concat_fastas(gtdb_proteinfiles, concatprotfastahandle, return_headerdict = False, remove_prodigalIDs = True, remove_descriptions = False) #does not return an acc2taxidfile ,because that is already covered by the contig-accessions
 		send = time.time()
 		print("this took {} seconds".format(send -sstart))	
@@ -830,12 +865,31 @@ def _prepare_dbdata_nonncbi(targetdir, progressdump): #Todo:add continueflag arg
 	step = steporder[steporder.index(step) + 1]
 	sys.stderr.write("\n--{}--\n".format(step))
 	currentprogressmarker = "progress_step{}.json".format(step)
- 	#step 04b
+ 	#step 04b (unpack gtdb tars und store extracted filenames
 	if progressdump["step"] == laststep:
 		print("doing step '{}'".format(step))
 		sys.stdout.flush() # todo: only for debugging
 		progressdump["step"] = step
-		concatgenomefastahandle, concatprotfastahandle = step4b() ##step 4b: uncompress gtdb-tar-files and read contig names for each genome-file --> assign contigs to taxids and write to acc2taxidfile	
+		gtdb_genomefiles, gtdb_proteinfiles = step4b() ##step 4b: uncompress gtdb-tar-files
+		getdb.dict2jsonfile(progressdump, os.path.join(targetdir, currentprogressmarker))
+		#os.remove(os.path.join(targetdir, lastprogressmarker)) #todo: uncomment this
+	else:
+		#concatgenomefastahandle =  openfile(progressdump["concatgenomefasta"], "at")
+		gtdb_genomefiles = progressdump["gtdb_genomefiles"]
+		gtdb_proteinfiles = progressdump["gtdb_proteinfiles"]
+		sys.stderr.write("-->already done this earlier. skipping this step\n")
+		sys.stderr.flush()
+		
+	lastprogressmarker, laststep = currentprogressmarker, step
+	step = steporder[steporder.index(step) + 1]
+	sys.stderr.write("\n--{}--\n".format(step))
+	currentprogressmarker = "progress_step{}.json".format(step)
+ 	#step 04c (unpack gtdb tars und store extracted filenames
+	if progressdump["step"] == laststep:
+		print("doing step '{}'".format(step))
+		sys.stdout.flush() # todo: only for debugging
+		progressdump["step"] = step
+		concatgenomefastahandle, concatprotfastahandle = step4c() ##step 4c:read contig names for each uncompressed genome-file --> assign contigs to taxids and write to acc2taxidfile	
 		getdb.dict2jsonfile(progressdump, os.path.join(targetdir, currentprogressmarker))
 		#os.remove(os.path.join(targetdir, lastprogressmarker)) #todo: uncomment this
 	else:
@@ -843,6 +897,7 @@ def _prepare_dbdata_nonncbi(targetdir, progressdump): #Todo:add continueflag arg
 		concatprotfastahandle = openfile(progressdump["concatprotfasta"], "at")
 		sys.stderr.write("-->already done this earlier. skipping this step\n")
 		sys.stderr.flush()
+
 		
 	#step5: get silva taxonomy
 	lastprogressmarker, laststep = currentprogressmarker, step 
@@ -963,7 +1018,7 @@ def getNprepare_dbdata_nonncbi(targetdir, continueflag=False):
 	print(targetdir)
 	progressdump = _check_progressmarker(targetdir)
 	#steps1-3:
-	print("HI THERE")
+	# ~ print("HI THERE")
 	#print(progressdump)
 	print(progressdump["step"])
 	if progressdump["step"] in _progress_steps["download"][:-1]:
