@@ -108,15 +108,16 @@ def _download_unixwget(sourceurl, pattern=None, targetdir=None, verbose=False): 
 		wgetcmd = wget_basecmd + wget_batchargs + [sourceurl]
 	else: #otherwise, if pattern==None,  assume that sourceurl points to a file and disable recursive download
 		wgetcmd = wget_basecmd + [sourceurl]
-	sys.stderr.write("\n" + " ".join(wgetcmd) + "\n")
-	sys.stderr.flush()
+	if verbose:
+		sys.stderr.write("\n" + " ".join(wgetcmd) + "\n")
+		sys.stderr.flush()
 	wget_proc = subprocess.Popen(wgetcmd, stdout = subprocess.PIPE, stderr = subprocess.PIPE, text = True, universal_newlines=True)
 	while True:
 		output = wget_proc.stderr.readline()
 		if wget_proc.poll() != None:
 			break
 		if output:
-			sys.stderr.write("\r" + output.rstrip("\n")) #find a way to have newlines everytime a new file is downloaded
+			sys.stderr.write("\r" + output.rstrip("\n")) #todo: find a way to have newlines everytime a new file is downloaded
 	return wget_proc.poll()
 
 
@@ -218,7 +219,7 @@ def download_refseq_eukaryote_prots(sourcedict=refseq_dbsource_dict, targetfolde
 		for f in preexisting_crc:
 			os.remove(f)
 		### now downloading CRC
-	_download_unixwget(sourcedict["crc"]["url"], sourcedict["crc"]["pattern"], targetdir=targetfolder, verbose) 
+	_download_unixwget(sourcedict["crc"]["url"], sourcedict["crc"]["pattern"], targetdir=targetfolder, verbose=verbose) 
 	downloaded_crc = glob.glob(targetfolder + "/release*.files.installed")
 	assert len(downloaded_crc) == 1, "\nERROR: Expected exactly 1 'release*.files.installed' file in {} after download, but found {}! Be honest, are you messing with me?\n".format(targetfolder, len(downloaded_crc))
 	crcfile = downloaded_crc[0]
@@ -280,7 +281,7 @@ def download_gtdb_stuff(sourcedict = gtdb_source_dict, targetfolder=None, verbos
 		
 	for gtdbcat in sourcedict:
 		sys.stderr.write("\nNow downloading from gtdb: \"{}\"...\n".format(gtdbcat))
-		returncode = _download_unixwget(sourcedict[gtdbcat]["url"], sourcedict[gtdbcat]["pattern"], targetdir=targetfolder, verbose)
+		returncode = _download_unixwget(sourcedict[gtdbcat]["url"], sourcedict[gtdbcat]["pattern"], targetdir=targetfolder, verbose=verbose)
 		if returncode != 0:
 			sys.stderr.write("\nWARNING: wget returned non-zero returncode '{}' after downloading {} \n".format(returncode, gtdbcat))
 	download_dict = { x : check_gtdbmd5file(os.path.join(targetfolder, "MD5SUM"), targetfolder, sourcedict[x]["pattern"]) for x in sourcedict } #todo: need to do something about MD5SUM file ??
@@ -320,7 +321,7 @@ def download_silva_stuff(sourcedict = silva_source_dict, targetfolder=None, verb
 		#if os.path.exists(versionfilename):
 		#	sys.stderr.write("\nDeleting pre-existing {}\n".format(versionfilename))
 		#	os.remove(versionfilename)
-		_download_unixwget(urldict["url"] + urldict["wishlist"][0], targetdir=targetfolder, verbose)
+		_download_unixwget(urldict["url"] + urldict["wishlist"][0], targetdir=targetfolder, verbose=verbose)
 		
 		with open(versionfilename) as versionfile:
 			version = versionfile.read().strip()
@@ -334,7 +335,7 @@ def download_silva_stuff(sourcedict = silva_source_dict, targetfolder=None, verb
 	for silvacat in ["silva_taxfiles", "silva_fastas"]:
 		for wish in wishdict[silvacat]:
 			sys.stderr.write("\nNow downloading from silva: \"{}\"...\n".format(wish))
-			returncode = _download_unixwget(sourcedict[silvacat]["url"] + wish, pattern = None, targetdir=targetfolder, verbose)
+			returncode = _download_unixwget(sourcedict[silvacat]["url"] + wish, pattern = None, targetdir=targetfolder, verbose=verbose)
 			if returncode != 0:
 				sys.stderr.write("\nWARNING: wget returned non-zero returncode '{}' after downloading {} \n".format(returncode, wish))
 			prelim_downloadlist.append(os.path.join(targetfolder, wish))
@@ -422,9 +423,9 @@ def read_gtdb_taxonomy_from_tsv(infilename, taxdict=None, LCA_walktree=None):#to
 		acc2taxidfile.write("0\t{}\t{}\t0\n".format(acc, taxlist[-1])) #"dummy" fields with value 0 in columns 1 and 4, to make it look like the original acc2taxid files expected by "_create_sorted_acc2taxid_lookup()" in getdb.py (interesting infos in columns 2&3)
 		linecount += 1
 		if linecount % 500 == 0:
-			sys.stderr.write("\rread {} lines and added {} taxa so far..".format(linecount, len(taxdict)))
+			sys.stderr.write("\r\tread {} lines and added {} taxa so far..".format(linecount, len(taxdict)))
 			sys.stderr.flush()
-	sys.stderr.write("\rread {} lines and added {} taxa so far..\n".format(linecount, len(taxdict)))
+	sys.stderr.write("\r\tread {} lines and added {} taxa so far..\n".format(linecount, len(taxdict)))
 	infile.close()
 	acc2taxidfile.close()
 	return taxdict, LCA_walktree, acc2taxidfilename #this file should be used to crossreference protein-ids and contig ids with taxids in the gtdb reference-fastas later on! #the filename should also be used as input for "_create_sorted_acc2taxid_lookup()" in getdb.py later on
@@ -464,7 +465,7 @@ def read_silva_taxonomy_from_tsv(infilename, taxdict, LCA_walktree): #IMPORTANT!
 	acc2taxidfile = openfile(acc2taxidfilename, "wt")		 
 	infile=misc.openfile(infilename)
 	linecount = 0
-	sys.stderr.write("\nreading silva data from {}\n".format(infilename))
+	sys.stderr.write("\n\treading silva data from {}\n".format(infilename))
 	sys.stderr.flush()
 	
 	for line in infile:
@@ -655,7 +656,7 @@ creates files for storing taxdict, LCA_walktree and acc2taxid files and returns 
 	currentprogressmarker = "progress_step{}.json".format(step)
 	if progressdump["step"] == laststep:
 		progressdump["step"] = step
-		progressdump["gtdb_download_dict"] = download_gtdb_stuff(gtdb_source_dict, targetdir, verbose)
+		progressdump["gtdb_download_dict"] = download_gtdb_stuff(gtdb_source_dict, targetdir, verbose=verbose)
 		getdb.dict2jsonfile(progressdump, os.path.join(targetdir, currentprogressmarker))
 	else:
 		sys.stderr.write("-->already did this step earlier. skipping it now! (delete progress marker '{}' and higher if you want to redo it)\n".format(currentprogressmarker))
@@ -669,7 +670,7 @@ creates files for storing taxdict, LCA_walktree and acc2taxid files and returns 
 	currentprogressmarker = "progress_step{}.json".format(step)
 	if progressdump["step"] == laststep:
 		progressdump["step"] = step
-		progressdump["refseq_files"] = download_refseq_eukaryote_prots(refseq_dbsource_dict, targetdir, verbose)
+		progressdump["refseq_files"] = download_refseq_eukaryote_prots(refseq_dbsource_dict, targetdir, verbose=verbose)
 		getdb.dict2jsonfile(progressdump, os.path.join(targetdir, currentprogressmarker))
 		os.remove(os.path.join(targetdir, lastprogressmarker))
 	else:
@@ -684,7 +685,7 @@ creates files for storing taxdict, LCA_walktree and acc2taxid files and returns 
 	currentprogressmarker = "progress_step{}.json".format(step)
 	if progressdump["step"] == laststep:
 		progressdump["step"] = step
-		progressdump["silva_download_dict"] = download_silva_stuff(silva_source_dict, targetdir, verbose)
+		progressdump["silva_download_dict"] = download_silva_stuff(silva_source_dict, targetdir, verbose=verbose)
 		getdb.dict2jsonfile(progressdump, os.path.join(targetdir, currentprogressmarker))
 		os.remove(os.path.join(targetdir, lastprogressmarker))
 	else:
@@ -718,7 +719,7 @@ def _check_progressmarker(targetdir):
 	
 	
 	
-def _prepare_dbdata_nonncbi(targetdir, progressdump, verbose): #Todo:add continueflag argument #todo: make sure verbosity is implemented
+def _prepare_dbdata_nonncbi(targetdir, progressdump, verbose=False): #Todo:add continueflag argument #todo: make sure verbosity is implemented
 	import blasthandler
 	import getdb #todo: for using dict2jsonthis will be obsolete, when this is moved there #edit: no it won't. keeping download for gttdb and ncbi data seperate. common stuff goes to misc or getdb
 	import time #todo probably not needed anymore
@@ -755,7 +756,7 @@ def _prepare_dbdata_nonncbi(targetdir, progressdump, verbose): #Todo:add continu
 	
 	def step5a(): #todo take progressdump as input, return progressdump as output
 		for f in silva_download_dict["silva_taxfiles"]:
-			sys.stderr.write("reading {}\n".format(f)) #todo: debugging message
+			sys.stderr.write("\treading {}\n".format(f)) #todo: debugging message
 			sys.stderr.flush()
 			taxdict, LCA_walktree, filename = read_silva_taxonomy_from_tsv(f, progressdump["taxdict"], progressdump["lca_walktree"])
 			progressdump["acc2taxidfilelist"].append(filename)
@@ -936,10 +937,10 @@ def _prepare_dbdata_nonncbi(targetdir, progressdump, verbose): #Todo:add continu
 		sys.stderr.write("-->already did this step earlier. skipping it now! (delete progress marker '{}' and higher if you want to redo it)\n".format(currentprogressmarker))
 		sys.stderr.flush()		
 	sys.stderr.write("\n{}\nfinished downloading and processing reference database!\n".format("="*50))
-	sys.stdout.flush()
+	sys.stderr.flush()
 	return progressdump
 
-def getNprepare_dbdata_nonncbi(targetdir, continueflag=False, verbose):
+def getNprepare_dbdata_nonncbi(targetdir, continueflag=False, verbose=False):
 	#TODO: pack all data into pgrogessdump
 	#  Todo: pass only progressdump to subsequent functions
 	#  Todo: have a dictionary of progresssteps and their respecitve functions.
@@ -949,22 +950,37 @@ def getNprepare_dbdata_nonncbi(targetdir, continueflag=False, verbose):
 	sys.stderr.write("highest pre-existing progressmarker found: '{}'\n".format(progressdump["step"]))
 	if progressdump["step"] in _progress_steps["download"][:-1]:
 		sys.stderr.write("beginning/continuing at download stage\n")
-		progressdump = _download_dbdata_nonncbi(targetdir, progressdump, verbose)
+		progressdump = _download_dbdata_nonncbi(targetdir, progressdump, verbose=verbose)
 	#steps 4-6 (processing)
 	if progressdump["step"] in [_progress_steps["download"][-1]] + _progress_steps["prepare"][:-1]:
 		sys.stderr.write("beginning/continuing at processing stage\n")
-		progressdump = _prepare_dbdata_nonncbi(targetdir, progressdump, verbose)
-		
+		progressdump = _prepare_dbdata_nonncbi(targetdir, progressdump, verbose=verbose)
+
+def cleanupwhenfinished():
+	pass
+	#todo: implement this!!!
+		#CREATE version file listing gtdb,silva and refseq release versions
+		#delete original fastas
+		#delete refseq releaseXXX.files.installed
+		#delete MD5SUM
+		#delete silva taxmaps
+		#delete gtdb taxonomy
+		#delete protein_faa_reps
+		#deöete gtdbgenomes_reps
+		#delete concat refprot.faa
+		#delete VERSION.txt (only lists silva version)
+
+#todo: DROP download of ncbi2gtdb and vice versa mapping files will not use themanyway!
 
 def main():
 	import argparse
 	myparser = argparse.ArgumentParser(prog=os.path.basename(sys.argv[0]), description = "Download and prepare GTDB- and SILVA-data for MDMcleaner")
 	myparser.add_argument("-o", "--outdir", action = "store", dest = "outdir", default = "mdmcleaner_gtdb-data", help = "target directory for gtdb-/silva-data. may not be the current working directory. Default = 'mdmcleaner_gtdb-data'")
 	myparser.add_argument("-c", "--continue", action = "store_true", dest = "continue_from_checkpoint", default = False, help = "continue from last progress (if targetdir already exists). Default = False") 
-	myparser.add_argument("--verbose", action = "store_true", dest = verbose, default = False, help = "verbose output (download progress etc)") #todo: finish implementing
-	myparser.add_argument("--quiet", action = "store_true", dest = quiet, default = False, help = "quiet mode (suppress any status messages except Errors and Warnings)") #todo: implement
+	myparser.add_argument("--verbose", action = "store_true", dest = "verbose", default = False, help = "verbose output (download progress etc)") #todo: finish implementing
+	myparser.add_argument("--quiet", action = "store_true", dest = "quiet", default = False, help = "quiet mode (suppress any status messages except Errors and Warnings)") #todo: implement
 	args = myparser.parse_args()
-	getNprepare_dbdata_nonncbi(args.outdir, args.continue_from_checkpoint, verbose)
+	getNprepare_dbdata_nonncbi(args.outdir, args.continue_from_checkpoint, verbose=args.verbose)
 
 if __name__ == '__main__':
 	main()
