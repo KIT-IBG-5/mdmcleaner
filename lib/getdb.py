@@ -12,7 +12,7 @@ import locale #hopefully this ensures that sorts and string comparisons behave l
 locale.setlocale(locale.LC_ALL, "C") #hopefully this ensures that sorts and string comparisons behave like during lookuptable-generation
 
 '''
-module for downloading and parsing the ncbi taxonomy databases for bin refinerwork in progress
+module for downloading and parsing the ncbi taxonomy databases for MDMcleaner work in progress
 things to consider:
 	-maybe use SQLite for databases (check if that uses less memory)
 	-maybe just use already existing python SQLite implementation for ncbi TAxonomy: taxadb?
@@ -97,24 +97,24 @@ def json_taxdb_from_kronadb(kronadb):
 	for line in infile:
 		pass #todo: finish this sometime
 
-def _create_sorted_acc2taxid_lookup(acc2taxidfilelist, acc2taxid_outfilename): #TODO: !!! THIS IS BROKEN! SORT BEHAVES DIFFERENTLY ON DIFFERENT MACHINES!! HAVE TO USE "env LC_ALL=C sort" instead of just sort to make sure it behaves identically across machines, or moreover identically between python and bash
+def _create_sorted_acc2taxid_lookup(acc2taxidfilelist, acc2taxid_outfilename): 
 	'''
 	for creating an alphabetically sorted list of acessions and their corrsponding taxids
 	for use with binary search
 	TODO: try making this presort multiple input files in paralall (if multiple cpus are specified)
 	'''
 	import subprocess
-	import time
+	# ~ import time
 	sys.stderr.write("\ncreating {}...\n".format(acc2taxid_outfilename))
-	start = time.time() #todo: for debugging
+	# ~ start = time.time() #todo: for debugging
 	#import shlex #allow string splitting accoring to Shell -like syntax
 	#presortcmd = "zcat {infile} | cut -f 2,3| grep -v accession | sed 's#\.[0-9]*##'| sort > {outfile}" #using shell commands probably way faster than anything i can do in pure python
-	#NOTE: the presortcmd partielly renames the accession (remoes version number). This may have been necessary for ncbi, but does not work for gtdb data. 
+	#NOTE: the presortcmd partially renames the accession (remoes version number). This may have been necessary for ncbi, but does not work for gtdb data. 
 	#      so am removing this for now (will find a way later to flexibly deal with it for ncbi data)
 	#TODO: find out if removing verison numbers from accessions actually necessary for ncbi data. Find a flexible workaround that works for ncbi AND gtdb data
 	presortcmd = "zcat {infile} | cut -f 2,3| grep -v accession | grep -v -P '^$'| env LC_ALL=C sort > {outfile}" #IMPORTANT! removes a sed substitution in accession field. check  if still works for nucleotide basts.  additional note: using shell commands probably way faster than anything i can do in pure python
-	#ALSO IMPORTANT: added removal of empty lines in the above command. This is because some input files contain mepty lines. This resulted in emptylines in the sorted lookupfile, resulting in broken lookups. Check if that is fixed now.
-	#ALSO IMPORTANT: added "env LC_ALL=C before the sort command, in a desperate attempt to ensure same localse seetings for creating and using the accession index. Sort behaves differently based on locale settings and that can cajuse problems
+	#ALSO IMPORTANT: added removal of empty lines in the above command. This is because some input files contain empty lines. This resulted in empty lines in the sorted lookupfile, resulting in broken lookups. This is fixed now.
+	#ALSO IMPORTANT: added "env LC_ALL=C before the sort command, in a desperate attempt to ensure same localse seetings for creating and using the accession index. Sort behaves differently based on locale settings and that can cause problems
 	finalsortcmd = "sort -m {filelist} > {finaldb}"
 	tempfilelist = []
 	for f in acc2taxidfilelist:
@@ -125,7 +125,7 @@ def _create_sorted_acc2taxid_lookup(acc2taxidfilelist, acc2taxid_outfilename): #
 		sout, serr = subprocess.Popen(["bash", "-c", presortcmd.format(infile=f, outfile=tempfile)], stdout=subprocess.PIPE).communicate()
 		if serr != None:
 			raise RuntimeError("...extraction exited with Error:\n{}\n".format(serr))
-		#os.remove(f) #todo: uncomment this! commented out only for debugging purposes! 
+		os.remove(f) 
 		if os.path.exists(f + ".md5"):
 			os.remove(f + ".md5")
 		tempfilelist.append(tempfile)
@@ -134,12 +134,12 @@ def _create_sorted_acc2taxid_lookup(acc2taxidfilelist, acc2taxid_outfilename): #
 	if serr != None:
 			raise RuntimeError("...extraction exited with Error:\n{}\n".format(serr))
 	#now clean up:
-	end = time.time()
-	print("this took : {}".format(end - start)) #todo: for debugging
-	sys.stdout.flush()	#todo: for debugging
+	# ~ end = time.time()
+	# ~ print("this took : {}".format(end - start)) #todo: for debugging
+	# ~ sys.stdout.flush()	#todo: for debugging
 	sys.stderr.write("removing temporary downloads")
-	#for f in tempfilelist: #todo: uncomment this!
-		#os.remove(f) #todo: uncoment this!
+	for f in tempfilelist:
+		os.remove(f)
 	return acc2taxid_outfilename
 
 class taxdb(object):
