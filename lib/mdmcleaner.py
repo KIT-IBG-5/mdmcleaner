@@ -271,4 +271,6 @@ def main():
 
 main()			
 
+#todo: add more argparse options and multiple parsers
+# todo: add check for existing database and instructins on how to get one
 	

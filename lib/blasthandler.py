@@ -740,7 +740,7 @@ def make_diamond_db(infasta, outfilename, diamond = "diamond", threads = 1):
 	_command_available(command="diamond")
 	mkdbcmd = [ diamond, "makedb", "--in", infasta, "--db", outfilename, "--threads", str(threads) ]
 	mkdbproc = subprocess.run(mkdbcmd, stdout = subprocess.PIPE, stderr = subprocess.PIPE, text = True)
-	sys.stderr.write("\n creating diamond-db \"{}\"...".format(outfilename))
+	sys.stderr.write("\n\tcreating diamond-db {}...".format(outfilename))
 	sys.stderr.flush()
 	try:
 		mkdbproc.check_returncode()
@@ -756,13 +756,11 @@ def make_blast_db(infasta, outfilename, makeblastdb="makeblastdb", db_type="nucl
 	import subprocess
 	#todo: combine with "make_blast_db_from_gz" below: check if infasta ends with .gz. If yes: pipe from zcat, otherwise run makeblastdb directly
 	assert db_type in ["nucl", "prot"],  "dbtype has to be either 'nucl' or 'prot'"
-	sys.stderr.write("\n-->creating blastdb {}...\n".format(outfilename))
+	sys.stderr.write("\n\tcreating blastdb {}...\n".format(outfilename))
 	sys.stderr.flush()
 	mkdbcmd = [ makeblastdb, "-in", infasta, "-title", outfilename, "-out", outfilename, "-dbtype", db_type, "-max_file_sz", "4GB"] #hash_index apparently not possible for very large datasets
-	print(" ".join(mkdbcmd))
+	# ~ print(" ".join(mkdbcmd)) #todo: add verbose option and print mkdbcmd it TRUE
 	mkdbproc = subprocess.run(mkdbcmd, stdout = subprocess.PIPE, stderr = subprocess.PIPE, text = True)
-	sys.stderr.write("\n creating blastdb-db \"{}\"...".format(outfilename))
-	sys.stderr.flush()
 	try:
 		mkdbproc.check_returncode()
 		sys.stderr.write("...finished!\n")
@@ -777,25 +775,25 @@ def make_blast_db_from_gz(infasta, outfilename, makeblastdb="makeblastdb", db_ty
 	import subprocess
 	_command_available(command="makeblastdb")
 	# todo: if this works,incorporate it with "make_blast_db" above! check if infasta ends with .gz. If yes: pipe from zcat, otherwise run makeblastdb directly
-	sys.stderr.write("\ncreating blastdb {}...\n".format(outfilename))
+	sys.stderr.write("\n\tcreating blastdb {}...\n".format(outfilename))
 	sys.stderr.flush()
 	if not infasta.endswith(".gz"):
-		sys.stderr.write("\ninput is not compressed! using standard make_blast_db function".format(outfilename))
+		# ~ sys.stderr.write("\ninput is not compressed! using standard make_blast_db function".format(outfilename))
 		return make_blast_db(infasta, outfilename, makeblastdb, db_type, threads) #todo: make this the other way round. make it call this function if it finds input to be compressed
 	assert db_type in ["nucl", "prot"],  "dbtype has to be either 'nucl' or 'prot'"
 	zcatcmd = [ "zcat", infasta]
 	mkdbcmd = [ makeblastdb, "-title", outfilename, "-out", outfilename, "-dbtype", db_type, "-max_file_sz", "4GB"] #hash_index apparently not possible for very large datasets
-	import time
-	start = time.time()
+	# ~ import time
+	# ~ start = time.time()
 	zcatproc = subprocess.Popen(zcatcmd, stdout = subprocess.PIPE, stderr = subprocess.PIPE, text = True)
-	print(" ".join(mkdbcmd))
-	sys.stdout.flush()
+	# ~ print(" ".join(mkdbcmd)) #todo: add verbose option and print mkdbcmd it TRUE
 	mkdbproc = subprocess.Popen(mkdbcmd, stdin = zcatproc.stdout, stdout = subprocess.PIPE, stderr = subprocess.PIPE, text = True)
 	stdout, stderr = mkdbproc.communicate()
 	mkdbproc.wait()
-	end = time.time()
-	print("piping it this way took : {}".format(end - start))
-	sys.stdout.flush()
+	sys.stderr.write("...finished!\n")
+	# ~ end = time.time()
+	# ~ print("piping it this way took : {}".format(end - start))
+	# ~ sys.stdout.flush()
 	return outfilename
 	#todo: compare how long it take to pipe this via python subprocess and ow long to do the same on the bash shell
 

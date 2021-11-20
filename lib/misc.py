@@ -54,7 +54,7 @@ def unixzcat(*infilelist, outfilename): #my guess is, that this is probably much
 	outfile.close()
 	return outfilename
 
-def untar(infilename, targetdir=".", filemode = None, removetar = False):
+def untar(infilename, targetdir=".", filemode = None, removetar = False, verbose=False): #todo: make sure calling function passes verbose variable
 	""" a convenience function for unpacking compressed and ancompressed tar files.
 	accepts a filename(required) and an optional filemode (default = None) argument.
 	filemode may be any of ["r:", "r:gz", None ]. If filemode == None, it will try to determine filemode based on filename-extension
@@ -66,13 +66,13 @@ def untar(infilename, targetdir=".", filemode = None, removetar = False):
 	import sys
 	def track_progress(filelist):
 		for f in range(len(filelist)):
-			if f % 50 == 0:
-				sys.stderr.write("\r extracted {} of {} objects".format(f, len(filelist)))
+			if (f % 50 == 0 or f == len(filelist)) and verbose:
+				sys.stderr.write("\r\textracted {} of {} objects".format(f, len(filelist)))
 				sys.stderr.flush()
 			yield filelist[f]
 		
 	assert filemode in ["r:", "r:gz", None], "\nERROR: filemode not allowed : '{}'\n".format(filemode)
-	sys.stderr.write("    assessing contents of '{}'\n".format(infilename))
+	sys.stderr.write("\tassessing contents of '{}'\n".format(infilename))
 	sys.stderr.flush() 
 	if filemode == None:
 		if infilename.endswith(".tar.gz"):
@@ -84,15 +84,15 @@ def untar(infilename, targetdir=".", filemode = None, removetar = False):
 	infile = tarfile.open(infilename, filemode)
 	contentlist = infile.getmembers()
 	#print(contentlist)
-	print("found {} files in tar".format(len(contentlist)))
-	sys.stdout.flush() # todo: only for debugging
-	sys.stderr.write("    extracting contents of '{}'\n".format(infilename))
+	if verbose:
+		sys.stderr.write("\tfound {} files in tar\n".format(len(contentlist)))
+	sys.stderr.write("\textracting contents of '{}'\n".format(infilename))
 	sys.stderr.flush() 
-	infile.extractall(path=targetdir, members = track_progress(contentlist)) #todo: uncomment
-	sys.stderr.write("\r finished extracting {}\n".format(infilename))
+	infile.extractall(path=targetdir, members = track_progress(contentlist))
+	sys.stderr.write("\n\tfinished extracting {}\n".format(infilename))
 	infile.close()
 	if removetar:
-		sys.stderr.write("\n\ndeleting {}".format(infilename))
+		sys.stderr.write("\tdeleting {}\n".format(infilename))
 		os.remove(infilename)
 	return [ os.path.join(targetdir, f.name) for f in contentlist ] #todo: add check if file or dir
 

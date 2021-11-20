@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 from _version import __version__
+import re
 #todo: rename progress files to progess_getgtdb_..... (create own type of progressfile for different sections of pipeline, because download of dbs is only done once (and differently for gtdb and ncbi) but lca etc is done again and again for each analysis
 #todo: add a check for the correct wget version (1.19+) by calling "wget --version"
 """
@@ -211,7 +212,7 @@ def download_refseq_eukaryote_prots(sourcedict=refseq_dbsource_dict, targetfolde
 	assert targetfolder and os.path.abspath(targetfolder) != os.getcwd(), "\nERROR: You must provide a temporary targetfolder name!\n Temporary Target folder will be created, if it doesn't already exist.\n Temporary Target folder can NOT be the current working directory, as it will be deleted later!\n"
 	temp_download_dict = {}
 	#### first get the the crc-checksum file:
-	sys.stderr.write("\nFirst downloading CRCchecksum file\n")
+	sys.stderr.write("\n\tFirst downloading CRCchecksum file\n")
 		### checking for (and deleting) older crc files (shit happens. first download-attempt may have happened before update, and then resumed after update, leading to two different CRCchecksum files)
 	preexisting_crc = glob.glob(targetfolder + "/release*.files.installed") 
 	if len(preexisting_crc) != 0:
@@ -223,15 +224,16 @@ def download_refseq_eukaryote_prots(sourcedict=refseq_dbsource_dict, targetfolde
 	downloaded_crc = glob.glob(targetfolder + "/release*.files.installed")
 	assert len(downloaded_crc) == 1, "\nERROR: Expected exactly 1 'release*.files.installed' file in {} after download, but found {}! Be honest, are you messing with me?\n".format(targetfolder, len(downloaded_crc))
 	crcfile = downloaded_crc[0]
+	refseq_release_number = re.search("(release\d+)\.files\.installed", crcfile).group(1)
 	#### Now that We have the crc file, download the rest:
 	for vireukcat in [ vec for vec in sourcedict if vec != "crc" ]:
-		sys.stderr.write("\nNow downloading refseq release category \"{}\"...\n".format(vireukcat))
+		sys.stderr.write("\n\tNow downloading refseq release category \"{}\"...\n".format(vireukcat))
 		returncode = _download_unixwget(sourcedict[vireukcat]["url"], sourcedict[vireukcat]["pattern"], targetdir=targetfolder)
 		if returncode != 0:
 			sys.stderr.write("\nWARNING: wget returned non-zero returncode '{}' after downloading {} \n".format(returncode, vireukcat))
-	download_list = check_crcfile(crcfile, targetfolder, ",".join(["{}*.protein.faa.gz".format(x) for x in sourcedict if x != "crc"])) # todo: correct md5 to crc, to avoid confusion
+	download_list = check_crcfile(crcfile, targetfolder, ",".join(["{}*.protein.faa.gz".format(x) for x in sourcedict if x != "crc"]))
 	#TODO: create a flag file to indicate that this has already run
-	return download_list
+	return download_list, refseq_release_number
 
 def download_gtdb_stuff(sourcedict = gtdb_source_dict, targetfolder=None, verbose=False):
 	"""
@@ -247,7 +249,7 @@ def download_gtdb_stuff(sourcedict = gtdb_source_dict, targetfolder=None, verbos
 		raises AssertionException if something is wrong with the downloaded files, returns a list of downloaded filenames in everything is fine
 		"""
 		import re
-		subpattern="_r\d+"
+		subpattern="_(r\d+)"
 		import fnmatch
 		patternlist = patternstring.split(",")
 		infile = openfile(md5_file)
@@ -277,16 +279,30 @@ def download_gtdb_stuff(sourcedict = gtdb_source_dict, targetfolder=None, verbos
 		assert len(ok_filelist) != 0, "\nERROR: None of the expected files appear to have been downloaded. Do you have read/write permissions for the targetfolder?\n"
 		assert allisfine, "\nERROR: something went wrong during download: {} expected files are missing, and {} files have mismatching CRCchecksums!\n  --> Missing files: {}\n  --> Corrupted files: {}\n".format(len(missing_filelist), len(bad_filelist), ",".join(missing_filelist), ",".join(bad_filelist)) 
 		return ok_filelist
-		# end of nested subfunctions
+
+	def get_gtdbversion_from_MD5SUM(md5sumfile):
+		import re
+		infile = openfile(md5sumfile)
+		versionpattern = "_(r\d+)\.tsv.gz" #just aiming on the compressed taxonomy tables which should always be there
+		for line in infile:
+			tokens=line.strip().split()
+			if len(tokens) < 2:
+				continue
+			patternmatch = re.search(versionpattern, tokens[1])
+			if patternmatch:
+				version = patternmatch.group(1)
+				return version
+	# end of nested subfunctions
+	
 		
 	for gtdbcat in sourcedict:
-		sys.stderr.write("\nNow downloading from gtdb: \"{}\"...\n".format(gtdbcat))
+		sys.stderr.write("\n\tNow downloading from gtdb: \"{}\"...\n".format(gtdbcat))
 		returncode = _download_unixwget(sourcedict[gtdbcat]["url"], sourcedict[gtdbcat]["pattern"], targetdir=targetfolder, verbose=verbose)
 		if returncode != 0:
 			sys.stderr.write("\nWARNING: wget returned non-zero returncode '{}' after downloading {} \n".format(returncode, gtdbcat))
-	download_dict = { x : check_gtdbmd5file(os.path.join(targetfolder, "MD5SUM"), targetfolder, sourcedict[x]["pattern"]) for x in sourcedict } #todo: need to do something about MD5SUM file ??
-	#TODO: create a flag file, indicating that this already ran successfully
-	return download_dict
+	download_dict = { x : check_gtdbmd5file(os.path.join(targetfolder, "MD5SUM"), targetfolder, sourcedict[x]["pattern"]) for x in sourcedict }
+	version = get_gtdbversion_from_MD5SUM(os.path.join(targetfolder, "MD5SUM"))
+	return download_dict, version
 
 def download_silva_stuff(sourcedict = silva_source_dict, targetfolder=None, verbose=False):
 	# start of nested subfunctions
@@ -307,7 +323,7 @@ def download_silva_stuff(sourcedict = silva_source_dict, targetfolder=None, verb
 						os.remove(f)
 						os.remove(md5file)
 						allisfine = False
-						continue
+						continue				
 				successlist.append(f)
 			elif os.path.basename(f) in wishlist:
 				sys.stderr.write("\nExpcted downloaded file '{}', but could not find it ...\n".format(f))
@@ -316,7 +332,7 @@ def download_silva_stuff(sourcedict = silva_source_dict, targetfolder=None, verb
 		return successlist
 	
 	def getsilvaversion(urldict, targetfolder): #yes I know. This could go easier with urllib2 yadayadayada. But for the other stuff wget is better, so sticking with that for now!
-		sys.stderr.write("\n Now trying to get current silva release version...\n")
+		sys.stderr.write("\n\tNow trying to get current silva release version...\n")
 		versionfilename = os.path.join(targetfolder, urldict["wishlist"][0])
 		#if os.path.exists(versionfilename):
 		#	sys.stderr.write("\nDeleting pre-existing {}\n".format(versionfilename))
@@ -334,14 +350,14 @@ def download_silva_stuff(sourcedict = silva_source_dict, targetfolder=None, verb
 	wishdict = {silvacat : [ w.format(version) for w in sourcedict[silvacat]["wishlist"] ] for silvacat in sourcedict }
 	for silvacat in ["silva_taxfiles", "silva_fastas"]:
 		for wish in wishdict[silvacat]:
-			sys.stderr.write("\nNow downloading from silva: \"{}\"...\n".format(wish))
+			sys.stderr.write("\n\tNow downloading from silva: \"{}\"...\n".format(wish))
 			returncode = _download_unixwget(sourcedict[silvacat]["url"] + wish, pattern = None, targetdir=targetfolder, verbose=verbose)
 			if returncode != 0:
 				sys.stderr.write("\nWARNING: wget returned non-zero returncode '{}' after downloading {} \n".format(returncode, wish))
 			prelim_downloadlist.append(os.path.join(targetfolder, wish))
 	download_dict = { x : check_silvamd5file([df for df in prelim_downloadlist if not df.endswith(".md5")], wishdict[x]) for x in wishdict} # listing all the files that are not md5 files #TODO: something wrong here. lists all the files again in every key
 	#TODO: create a flag file, indicating that this already ran successfully
-	return download_dict
+	return download_dict, version
 		
 		
 def _empty_taxdicts(): #creating basic "pro-forma" enries for Eukaryotes
@@ -564,9 +580,9 @@ def _concat_fastas(contig_fastalist, outfastahandle, return_headerdict = False, 
 		os.remove(cf) #delete file because it is no longer needed #todo: uncomment this! only commented out for test-runs
 		filecounter += 1
 		if seqcounter % 1000 == 0:
-			sys.stderr.write("\rread {} of {} files so far, wrote {} sequences to {}".format(filecounter, len(contig_fastalist), seqcounter, outfastahandle.name))
+			sys.stderr.write("\r\tread {} of {} files so far, wrote {} sequences to {}".format(filecounter, len(contig_fastalist), seqcounter, outfastahandle.name))
 			sys.stderr.flush()
-	sys.stderr.write("\rread {} of {} files so far, wrote {} sequences to {}\n".format(filecounter, len(contig_fastalist), seqcounter, outfastahandle.name))
+	sys.stderr.write("\r\tread {} of {} files so far, wrote {} sequences to {}\n".format(filecounter, len(contig_fastalist), seqcounter, outfastahandle.name))
 	sys.stderr.flush()
 	return headerdict if return_headerdict else None
 				
@@ -600,13 +616,13 @@ def gtdb_contignames2taxids(contig_fastalist, acc2taxidinfilelist, acc2taxidoutf
 			outaccfile.write("\n".join(["0\t{}\t{}\t0\n".format(contigname, taxid) for contigname in headerlist]))
 			contigcounter += len(headerlist)
 			if linecounter % 100 == 0:
-				sys.stderr.write("\rassigned {} contigs to {} taxids".format(contigcounter, linecounter))
+				sys.stderr.write("\r\tassigned {} contigs to {} taxids".format(contigcounter, linecounter))
 				sys.stderr.flush()
 		inaccfile.close()
 	outaccfile.close()
 	with open("delmetemp_repcheckfile.tsv", "wt") as repcheckfile: #todo: this is only for checking sanity of gtdb downloads (which genomes are considered "representative" and have seqdate provided? which are missing? are all species/genera/phyla covered? which are missing)? comment this out later
 		repcheckfile.write("{}\n".format("\n".join(["{}\t{}".format(x[0], x[1]) for x in reptuple_list]))) #todo: this is only for checking sanity of gtdb downloads (which genomes are considered "representative" and have seqdate provided? which are missing? are all species/genera/phyla covered? which are missing)? comment this out later
-	sys.stderr.write("\rassigned {} contigs to {} taxids\n".format(contigcounter, linecounter))
+	sys.stderr.write("\r\tassigned {} contigs to {} taxids\n".format(contigcounter, linecounter))
 	sys.stderr.flush()	
 	return acc2taxidoutfilename
 
@@ -651,12 +667,14 @@ creates files for storing taxdict, LCA_walktree and acc2taxid files and returns 
 
 	#step 1: download gtdb
 	step = steporder[1]
+	stepdesc = "download GTDB data"
 	laststep = None 
-	sys.stderr.write("\n--{}--\n".format(step))
+	sys.stderr.write("\n--{}: {}--\n".format(step, stepdesc))
 	currentprogressmarker = "progress_step{}.json".format(step)
 	if progressdump["step"] == laststep:
 		progressdump["step"] = step
-		progressdump["gtdb_download_dict"] = download_gtdb_stuff(gtdb_source_dict, targetdir, verbose=verbose)
+		progressdump["gtdb_download_dict"], progressdump["gtdb_version"] = download_gtdb_stuff(gtdb_source_dict, targetdir, verbose=verbose)
+		sys.stderr.write("\tGTDB_version = {}\n".format(progressdump["gtdb_version"]))
 		getdb.dict2jsonfile(progressdump, os.path.join(targetdir, currentprogressmarker))
 	else:
 		sys.stderr.write("-->already did this step earlier. skipping it now! (delete progress marker '{}' and higher if you want to redo it)\n".format(currentprogressmarker))
@@ -665,12 +683,14 @@ creates files for storing taxdict, LCA_walktree and acc2taxid files and returns 
 	#step 2: download refseq-release eukaryotes
 	laststep = step
 	step = steporder[steporder.index(step) + 1]
-	sys.stderr.write("\n--{}--\n".format(step))
+	stepdesc = "downlad RefSeq-release Eukaryotes and Viruses"
+	sys.stderr.write("\n--{}: {}--\n".format(step, stepdesc))
 	lastprogressmarker = currentprogressmarker 
 	currentprogressmarker = "progress_step{}.json".format(step)
 	if progressdump["step"] == laststep:
 		progressdump["step"] = step
-		progressdump["refseq_files"] = download_refseq_eukaryote_prots(refseq_dbsource_dict, targetdir, verbose=verbose)
+		progressdump["refseq_files"], progressdump["refseq_release_number"] = download_refseq_eukaryote_prots(refseq_dbsource_dict, targetdir, verbose=verbose)
+		sys.stderr.write("\tRefSeq release = {}\n".format(progressdump["refseq_release_number"]))
 		getdb.dict2jsonfile(progressdump, os.path.join(targetdir, currentprogressmarker))
 		os.remove(os.path.join(targetdir, lastprogressmarker))
 	else:
@@ -680,18 +700,24 @@ creates files for storing taxdict, LCA_walktree and acc2taxid files and returns 
 	#step 3: download silva stuff
 	laststep = step
 	step = steporder[steporder.index(step) + 1]
-	sys.stderr.write("\n--{}--\n".format(step))
+	stepdesc = "downlad SILVA data"
+	sys.stderr.write("\n--{}: {}--\n".format(step, stepdesc))
 	lastprogressmarker = currentprogressmarker 
 	currentprogressmarker = "progress_step{}.json".format(step)
 	if progressdump["step"] == laststep:
 		progressdump["step"] = step
-		progressdump["silva_download_dict"] = download_silva_stuff(silva_source_dict, targetdir, verbose=verbose)
+		progressdump["silva_download_dict"], progressdump["silva_version"] = download_silva_stuff(silva_source_dict, targetdir, verbose=verbose)
+		sys.stderr.write("\tSilva_version = {}\n".format(progressdump["silva_version"]))
 		getdb.dict2jsonfile(progressdump, os.path.join(targetdir, currentprogressmarker))
 		os.remove(os.path.join(targetdir, lastprogressmarker))
 	else:
 		sys.stderr.write("-->already did this step earlier. skipping it now! (delete progress marker '{}' and higher if you want to redo it)\n".format(currentprogressmarker))
 		sys.stderr.flush()
 
+	with openfile(os.path.join(targetdir, "DB_versions.txt"), "wt") as versionsfile:
+		versionsfile.write("GTDB version = {}\n".format(progressdump["gtdb_version"]))
+		versionsfile.write("RefSeq release = {}\n".format(progressdump["refseq_release_number"]))
+		versionsfile.write("silva_download_dict = {}\n".format(progressdump["silva_version"]))
 	return progressdump
 
 def _check_progressmarker(targetdir):
@@ -955,22 +981,51 @@ def getNprepare_dbdata_nonncbi(targetdir, continueflag=False, verbose=False):
 	if progressdump["step"] in [_progress_steps["download"][-1]] + _progress_steps["prepare"][:-1]:
 		sys.stderr.write("beginning/continuing at processing stage\n")
 		progressdump = _prepare_dbdata_nonncbi(targetdir, progressdump, verbose=verbose)
+	#cleanup
+	cleanupwhenfinished(progressdump, targetdir)
 
-def cleanupwhenfinished():
-	pass
-	#todo: implement this!!!
-		#CREATE version file listing gtdb,silva and refseq release versions
-		#delete original fastas
-		#delete refseq releaseXXX.files.installed
-		#delete MD5SUM
-		#delete silva taxmaps
-		#delete gtdb taxonomy
-		#delete protein_faa_reps
-		#deöete gtdbgenomes_reps
-		#delete concat refprot.faa
-		#delete VERSION.txt (only lists silva version)
+def cleanupwhenfinished(progressdump, targetdir, verbose):
+	'''
+	deletes remaining intermediary files and logs component database versions
+	'''
+	import re
+	sys.stderr.write("\n--CLEANING UP--\n")
+	def deletefiles(stufflist):
+		restlist = []
+		for stuff in stufflist:
+			if os.path.exists(stuff) and os.path.isfile(stuff):
+				os.remove(stuff)
+				sys.stderr.write("\tdeleted {}\n".format(stuff)) #todo: only when verbose
+			else:
+				restlist.append(stuff)
+				
 
-#todo: DROP download of ncbi2gtdb and vice versa mapping files will not use themanyway!
+	def deletedirs(stufflist):
+		for stuff in stfflist:
+			if os.path.exists(stuff) and os.path.isdir(stuff):
+				try:
+					os.rmdir(stuff)
+					sys.stderr.write("\tdeleted {}\n".format(stuff)) #todo: only when verbose
+				except OSError:
+					sys.stderr.write("\nWARNING: could not delete intermediary directory {}!. Either not empty or permissions not sufficient? Please check and delete manually, if necessary!\n".format(stuff))
+
+	def NestedDictValues(stuffdict):
+		for stuff in stuffdict.values():
+			if isinstance(stuff, dict):
+				yield from NestedDictValues(stuff)
+			else:
+				yield stuff
+
+		delcategories = ["silva_download_dict", "gtdb_download_dict", "gtdb_genomefiles", "gtdb_proteinfiles"]
+		for dc in delcategories:
+			dellist = [ x for x in NestedDictValues(progressdump[dc])] + [ x + ".md5" for x in NestedDictValues(progressdump[dc])]
+			deletefiles(dellist)
+			deletedirs(dellist)
+				 
+		delversionfiles = ["MD5SUM", "release209.files.installed", "VERSION.txt"]
+		deletefiles([os.path.join(targetdir, x) for x in delversionfiles])
+
+#todo: DROP download of ncbi2gtdb and vice versa mapping files will not use them anyway!
 
 def main():
 	import argparse
