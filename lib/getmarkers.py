@@ -64,7 +64,7 @@ def split_fasta_for_parallelruns(infasta, minlength = 0, number_of_fractions = 2
 	import random
 	from Bio import SeqIO
 
-	sys.stderr.write("\nsubdividing contigs of {} for multiprocessing\n".format(infasta))
+	sys.stderr.write("\n-->subdividing contigs of {} for multiprocessing\n".format(infasta))
 	fastafile = openfile(infasta)
 	records = SeqIO.parse(fastafile, "fasta")
 	contigdict = {}
@@ -88,7 +88,7 @@ def split_fasta_for_parallelruns(infasta, minlength = 0, number_of_fractions = 2
 		index += direction
 		
 	outlist = [ x for x in outlist if len(x) > 0 ] #removing any leftover fractions that did not get contigs (in case number of contigs was lower than number of fractions)
-	sys.stderr.write("divided {} contigs into {} fractions\n".format(contigcounter, len(outlist)))
+	sys.stderr.write("\tdivided {} contigs into {} fractions\n".format(contigcounter, len(outlist)))
 
 	if outfilebasename != None: #IF an outfilenasename is specified --> Do NOT return a list of lists of seqrecords, but instead write fractions fo tempfiles and return list of linemanes instead
 		outfilenamelist = []
@@ -147,7 +147,7 @@ def get_trnas(*subfastas, outdirectory = ".", aragorn = "aragorn", threads = 1):
 	"""
 	#TODO: create another function "extract_trnas" that can extract the exact trna seqeucne based on the respective coordinates, for blasting against the nucleotide-dbs
 	from itertools import chain
-	sys.stderr.write("starting trna scan\n")
+	sys.stderr.write("-->scanning for tRNAs...\n")
 	tempfilelist = []
 	subfastas=list(subfastas)
 	for i in range(len(subfastas)):
@@ -191,7 +191,7 @@ def _parse_aragorn_output(outstringlist, verbose=False): #todo:implement verbosi
 				sys.stderr.flush()
 			outlist.append(genename)
 			trnaset.add(trna)
-	sys.stderr.write("found {} of {} tRNAs --> {}%\n".format(len(trnaset), len(full_tRNA_species), len(trnaset)/len(full_tRNA_species)*100)) #todo: change to an actual completeness function that takes into consideration that only about 22% or sequenced bacteria encode SeC-tRNAs
+	sys.stderr.write("\tfound {} of {} tRNAs --> {}%\n".format(len(trnaset), len(full_tRNA_species), len(trnaset)/len(full_tRNA_species)*100)) #todo: change to an actual completeness function that takes into consideration that only about 22% or sequenced bacteria encode SeC-tRNAs
 	if verbose:
 		sys.stderr.write("{}\n".format("\t-".join(outlist)))
 	return outlist
@@ -226,7 +226,7 @@ def runbarrnap_single(infasta, barrnap="barrnap", kingdom = "bac", output_direct
 def runbarrnap_all(infasta, outfilebasename, barrnap="barrnap", output_directory = ".", threads=3): #todo: parse resultfolder from basename. or rather basename from resultfolder!
 	from Bio import SeqIO
 	import misc
-	sys.stderr.write("\nscanning for rRNA genes...\n")
+	sys.stderr.write("\n-->scanning for rRNA genes...\n")
 	joblist = []
 	for kingdom in ["bac", "arc", "euk"]:
 		joblist.append(("getmarkers", "runbarrnap_single", {"infasta" : infasta, "barrnap" : barrnap, "kingdom" : kingdom, "output_directory" : output_directory }))
@@ -237,7 +237,7 @@ def runbarrnap_all(infasta, outfilebasename, barrnap="barrnap", output_directory
 	for ff in final_fastadict:
 		if len(final_fastadict[ff]) == 0:
 			final_fastadict[ff] = ""
-			continue)
+			continue
 		outfile = openfile("{}_{}.fasta".format(outfilebasename, ff), "wt")
 		SeqIO.write(final_fastadict[ff], outfile, "fasta")
 		outfile.close()
@@ -424,16 +424,16 @@ def get_markerprotnames(proteinfastafile, cutoff_dict = cutofftablefile, hmmsear
 		#TODO: add logger message that cutoff dict is being read from file
 		cutoff_dict = get_cutoff_dict(cutoff_dict)
 	list_of_markerdicts = []
-	sys.stderr.write("detecting marker genes...\n")
+	sys.stderr.write("-->Detecting marker genes...\n")
 	for hmmpath in hmmpathdict[level]:
 		hmmfiles = [ os.path.join(hmmpath, hmmfile) for hmmfile in os.listdir(hmmpath) if hmmfile.endswith(".hmm") ]
 		markerdict = {}
 		for hmmfile in hmmfiles:
 			outfile = os.path.join(outdir, os.path.basename(hmmfile) + ".domtblout")
 			if os.path.exists(outfile):
-				sys.stderr.write("\nHmmer-resultfile '{}' already exists. --> skipping this HMM-search!\n".format(outfile))
+				sys.stderr.write("\tHMMer-resultfile '{}' already exists. --> skipping this HMM-search!\n".format(outfile))
 			else:
-				sys.stderr.write("\nsearching {} ...".format(hmmfile))
+				sys.stderr.write("\tsearching {} ...\n".format(os.path.basename(hmmfile)))
 				outfile = hmmersearch(hmmsearch, hmmfile, proteinfastafile, outfile, "sensitive", None, threads)
 			markerdict = parse_hmmer(outfile, cutoff_dict, cmode, markerdict)
 		list_of_markerdicts.append(markerdict)
@@ -579,7 +579,7 @@ def prodigalprot2contig(protid): #todo: probably obsolete. replace with above?
 
 def parse_protmarkerdict(protmarkerdict, contigdict, protmarkerlevel, markerdict = None): #todo make this a hidden object-function of bindata objects. check if contigdict actually needed
 	#pattern = re.compile("_\d+$")
-	sys.stderr.write("parsing protmarkerdict!\n")
+	sys.stderr.write("\tparsing protmarkerdict: {}\n".format(pml))
 	marker = protmarkerlevel_dict[protmarkerlevel]
 	for protid in protmarkerdict:
 		contigname = prodigalprot2contig(protid)
@@ -1206,7 +1206,7 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 		return start, stop, direction
 	
 	def get_trna_sequences_from_contigs(self, trna_namelist):
-		sys.stderr.write("\ngetting trna sequences\n")
+		# ~ sys.stderr.write("\ngetting trna sequences\n")
 		trna_namelist = sorted(trna_namelist)
 		contignamelist = list(set([self.marker2contig(trna_name) for trna_name in trna_namelist]))
 		contigrecords = { record.id : record for record in self.get_contig_records(contignamelist) }

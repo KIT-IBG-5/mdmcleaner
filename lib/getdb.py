@@ -43,7 +43,21 @@ rank2index = { "no rank" : 0, \
 
 index2rank = { rank2index[key] : key for key in rank2index }
 
-
+#todo: split gtdb protblastdbs into several subdbs that can be blasted in parallel (check out if faster first)
+#todo: find common names for gtdb and ncbi dbs to simplify things
+#todo: find actual names for ncbi dbs
+dbfiles = { "gtdb" : {	"protblastdbs" : ["gtdbplus_protdb.dmnd"], \
+						"nucblastdbs" : ["concat_refgenomes", "SILVA_138.1_SSURef_NR99_tax_silva", "SILVA_138.1_LSURef_NR99_tax_silva"] ,\
+						"ssu_nucblastdbs" : ["concat_refgenomes", "SILVA_138.1_SSURef_NR99_tax_silva"], \
+						"lsu_nucblastdbs" : ["concat_refgenomes", "SILVA_138.1_LSURef_NR99_tax_silva"], \
+						"trna_nucblastdbs" : ["concat_refgenomes"], \
+						"mdmdbs" : ["gtdb_all.accession2taxid.sorted", "gtdb_taxonomy_br.json.gz", "gtdb_lcawalkdb_br.db"] },\
+			"ncbi" : { "protblastdbs" : ["nr"], \
+						"nucblastdbs" : ["nt"], \
+						"ssu_nucblastdbs" : ["nt"], \
+						"lsu_nucblastdbs" : ["nt"], \
+						"trna_nucblastdbs" : ["nt"], \
+						"mdmdbs" : [ "ncbi_accession2taxid", "ncbi_taxonomy_br.json.gz", "ncbi_lcawalkdb_br.db"] } }
 
 
 def build_lca_db(lca_walk_tree, outfilename, startingnode = "1"): #this default starting node only works for ncbi based taxonomy. need to pass other staring node when using gtdb
@@ -105,7 +119,7 @@ def _create_sorted_acc2taxid_lookup(acc2taxidfilelist, acc2taxid_outfilename):
 	'''
 	import subprocess
 	# ~ import time
-	sys.stderr.write("\ncreating {}...\n".format(acc2taxid_outfilename))
+	sys.stderr.write("\n\tcreating {}...\n".format(acc2taxid_outfilename))
 	# ~ start = time.time() #todo: for debugging
 	#import shlex #allow string splitting accoring to Shell -like syntax
 	#presortcmd = "zcat {infile} | cut -f 2,3| grep -v accession | sed 's#\.[0-9]*##'| sort > {outfile}" #using shell commands probably way faster than anything i can do in pure python
@@ -121,7 +135,7 @@ def _create_sorted_acc2taxid_lookup(acc2taxidfilelist, acc2taxid_outfilename):
 		if f.endswith(".gz"):
 			tempfile = f[:-3]
 		tempfile = tempfile + ".sorted"
-		sys.stderr.write("extracting and presorting {}\n".format(f))
+		sys.stderr.write("\textracting and presorting {}\n".format(f))
 		sout, serr = subprocess.Popen(["bash", "-c", presortcmd.format(infile=f, outfile=tempfile)], stdout=subprocess.PIPE).communicate()
 		if serr != None:
 			raise RuntimeError("...extraction exited with Error:\n{}\n".format(serr))
@@ -129,7 +143,7 @@ def _create_sorted_acc2taxid_lookup(acc2taxidfilelist, acc2taxid_outfilename):
 		if os.path.exists(f + ".md5"):
 			os.remove(f + ".md5")
 		tempfilelist.append(tempfile)
-	sys.stderr.write("combining sorted tempfiles: {}\n".format(", ".join(tempfilelist)))
+	sys.stderr.write("\tcombining sorted tempfiles: {}\n".format(", ".join(tempfilelist)))
 	sout,serr = subprocess.Popen(["bash", "-c", finalsortcmd.format(filelist=" ".join(tempfilelist), finaldb=acc2taxid_outfilename)], stdout=subprocess.PIPE).communicate()
 	if serr != None:
 			raise RuntimeError("...extraction exited with Error:\n{}\n".format(serr))
@@ -137,34 +151,69 @@ def _create_sorted_acc2taxid_lookup(acc2taxidfilelist, acc2taxid_outfilename):
 	# ~ end = time.time()
 	# ~ print("this took : {}".format(end - start)) #todo: for debugging
 	# ~ sys.stdout.flush()	#todo: for debugging
-	sys.stderr.write("removing temporary downloads")
+	sys.stderr.write("\tremoving temporary downloads")
 	for f in tempfilelist:
 		os.remove(f)
 	return acc2taxid_outfilename
 
 class taxdb(object):
-	def __init__(self, acc2taxid_lookupfile, taxdbfile = None, lca_pathsfile = None): #todo: create and read a "config file" to get file-locations from
+	def __init__(self, configs): # acc2taxid_lookupfile, taxdbfile = None, lca_pathsfile = None): #todo: create and read a "config file" to get file-locations from
 		#self.taxdict = self.read_taxddbfile(taxdbfile) #todo: write tis!
-		
-		
-		self.acc2taxid_lookupfile = acc2taxid_lookupfile
-		self.acc_lookup_handle = misc.openfile(acc2taxid_lookupfile)
+		self.dbpath = os.path.join(configs["db_basedir"][0], configs["db_type"][0])
+
+		 
+		self.acc2taxid_lookupfile = os.path.join(self.dbpath, dbfiles[configs["db_type"][0]]["mdmdbs"][0])
+		self.taxdbfile = os.path.join(self.dbpath, dbfiles[configs["db_type"][0]]["mdmdbs"][1])
+		self.lca_pathsfile = os.path.join(self.dbpath, dbfiles[configs["db_type"][0]]["mdmdbs"][2])
+
+		self.versionfile = os.path.join(self.dbpath, "DB_versions.txt")
+		self.check_db_folder()
+		self.read_db_versions()
+		self.acc_lookup_handle = misc.openfile(self.acc2taxid_lookupfile)
 		self.acc_lookup_handle_filesize = self.acc_lookup_handle.seek(0,2) #jump to end of file and give bytesize (alternative to "os.path.getsize()")
-		if taxdbfile != None:
-			assert lca_pathsfile, "Error: have to specify BOTH 'taxdbfile' and 'lca_pathsfile'"
-			try:
-				self.read_taxdb(taxdbfile)					
-			except Exception as e: #TODO: replace this with the specific exception throen when there was actually an problem parsing the file as json
-				sys.stderr.write("\n{}\n".format(e, traceback.print_exc()))
-				sys.stderr.write("\nperhabs the taxdbfile is not in json-format? Assuming a krona-taxonomydb and trying to covert it to json\n")
-				self.taxdbfile = json_taxdb_from_kronadb(taxdbfile)
-				self.read_taxdb(self.taxdbfile)
-			self.read_lca_paths(os.path.join(lca_pathsfile))
-		else:
-			self.taxdict = None
-			self.walk_list = None
-			self.depth_list = None
+		###the following was meant to provide more flexibility (allow users to use their own databases and taxonomic systems, and especially reuse preexisting KRONA lookup files when using ncbi) but scrapped now fow simplicity reasons
+		# ~ if taxdbfile != None:
+			# ~ assert lca_pathsfile, "Error: have to specify BOTH 'taxdbfile' and 'lca_pathsfile'"
+			# ~ try:
+				# ~ self.read_taxdb(taxdbfile)					
+			# ~ except Exception as e: #TODO: replace this with the specific exception throen when there was actually an problem parsing the file as json
+				# ~ sys.stderr.write("\n{}\n".format(e, traceback.print_exc()))
+				# ~ sys.stderr.write("\nperhabs the taxdbfile is not in json-format? Assuming a krona-taxonomydb and trying to covert it to json\n")
+				# ~ self.taxdbfile = json_taxdb_from_kronadb(taxdbfile)
+				# ~ self.read_taxdb(self.taxdbfile)
+			# ~ self.read_lca_paths(os.path.join(lca_pathsfile))
+		# ~ else:
+			# ~ self.taxdict = None
+			# ~ self.walk_list = None
+			# ~ self.depth_list = None
+		### end of scrapped part
+		self.read_taxdb(self.taxdbfile)
+		self.read_lca_paths(self.lca_pathsfile)
+
+	def check_db_folder(self):
+		import read_gtdb_taxonomy #todo: after reimplementing optional ncbi taxonomy, put both into the same module and import THAT here
+		final_progress_marker = os.path.join(self.dbpath, "progress_step{}.json".format(read_gtdb_taxonomy._progress_steps["finished"][-1])) #todo: make a "get_progress_marker_filename()" function in read_gtdb_taxonomy.py?
+		if not (os.path.exists(self.dbpath) and os.path.isdir(self.dbpath)):
+			raise IOException("\n\nERROR: can't find specified database folder '{dbpath}'!\nyou may need to download and create the database with 'mdmcleaner.py download_db -o {dbpath}'".format(dbpath=self.dbpath))
+		if not os.access(self.dbpath, os.R_OK):
+			raise PermissionError("\n\nERROR: insufficient permissions to read from db_dir: '{}'\n".format(self.dbpath))
+		assert os.path.exists(final_progress_marker),"\n\nERROR: Database creation is not complete! Please run 'mdmcleaner.py download_db -o {dbpath}' to finish it!\n"
+		for f in [self.acc2taxid_lookupfile, self.taxdbfile, self.lca_pathsfile, self.versionfile]:
+			assert os.path.exists(f), "\n\nERROR: can't find file '{}' in '{}'! Reference database is not complete! Please run 'mdmcleaner.py download_db -o {dbpath}' to finish it!\n".format(os.path.basename(f), self.dbpath)
 	
+	def read_db_versions(self):
+		import pprint
+		self.versions = {}
+		with misc.openfile(self.versionfile) as infile:
+			for line in infile:
+				tokens = line.strip().split("=")
+				if len(tokens) != 2:
+					continue
+				db = tokens[0].strip()
+				version = tokens[1].strip()
+				self.versions[db] = version			
+		sys.stderr.write("\n\nDatabase versions:\n" + pprint.pformat(self.versions)+ "\n\n")
+		
 	def read_lca_paths(self, lca_pathsfile):
 		infile = misc.openfile(lca_pathsfile)
 		#only two lines are recognized. if there is anything else, it will be ignored

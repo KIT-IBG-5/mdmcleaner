@@ -3,6 +3,7 @@ from _version import __version__
 import re
 #todo: rename progress files to progess_getgtdb_..... (create own type of progressfile for different sections of pipeline, because download of dbs is only done once (and differently for gtdb and ncbi) but lca etc is done again and again for each analysis
 #todo: add a check for the correct wget version (1.19+) by calling "wget --version"
+#todo: in order to reduce protein-db size: cluster each protein based on 99% identity within each genome, to reduce paralogs. keep only longest copy per genome
 """
 suggestion 1 for eukaryote part of taxtree:
 virus: domain=Viruses
@@ -69,7 +70,8 @@ acc2taxid_outfilebasename = "gtdb_all.accession2taxid.sorted"
 lcawalkdb_outfilebasename = "gtdb_lcawalkdb_br.db" #todo: "_br" still stands for "binrefiner". change that!
 
 _progress_steps = {"download": [None, "01a", "02a", "03a"], \
-				  "prepare": ["04a", "04b", "04c", "05a", "06a", "06b", "06c", "07a"]} #todo: add more steps for individual dbs (instead of concatenating all to one db
+				  "prepare": ["04a", "04b", "04c", "05a", "06a", "06b", "06c", "07a"], \
+				  "finished": ["08a"]} #todo: add more steps for individual dbs (instead of concatenating all to one db
 
 
 
@@ -966,11 +968,23 @@ def _prepare_dbdata_nonncbi(targetdir, progressdump, verbose=False): #Todo:add c
 	sys.stderr.flush()
 	return progressdump
 
-def getNprepare_dbdata_nonncbi(targetdir, continueflag=False, verbose=False):
+def test_or_create_targetdir(targetdir):
+	try:
+		if os.path.exists(targetdir) and os.path.isdir(targetdir):
+			if not os.access('/path/to/folder', os.W_OK):
+				raise PermissionError
+		else:
+			os.makedirs(targetdir)
+	except PermissionError as e:
+		# ~ sys.stderr.write("\nERROR: insufficient write permissions for '{}'! Please choose a different target directory and try again\n".format(targetdir))
+		raise PermissionError("\n\nERROR: insufficient write permissions for '{}'! Please choose a different target directory and try again\n".format(targetdir))
+
+def getNprepare_dbdata_nonncbi(targetdir, verbose=False):
 	#TODO: pack all data into pgrogessdump
 	#  Todo: pass only progressdump to subsequent functions
-	#  Todo: have a dictionary of progresssteps and their respecitve functions.
-	sys.stderr.write("Using target directory '{}'\n".format(targetdir))
+	#  Todo: have a dictionary of progresssteps and their respecitve functions.	
+	sys.stderr.write("Specified target directory '{}'\n".format(targetdir))
+	test_or_create_targetdir(targetdir)
 	progressdump = _check_progressmarker(targetdir)
 	#steps1-3 (downloading):
 	sys.stderr.write("highest pre-existing progressmarker found: '{}'\n".format(progressdump["step"]))
@@ -981,18 +995,24 @@ def getNprepare_dbdata_nonncbi(targetdir, continueflag=False, verbose=False):
 	if progressdump["step"] in [_progress_steps["download"][-1]] + _progress_steps["prepare"][:-1]:
 		sys.stderr.write("beginning/continuing at processing stage\n")
 		progressdump = _prepare_dbdata_nonncbi(targetdir, progressdump, verbose=verbose)
-	#cleanup
-	cleanupwhenfinished(progressdump, targetdir)
+	if progressdump["step"] == _progress_steps["prepare"][-1]:
+		#cleanup
+		cleanupwhenfinished(progressdump, targetdir, verbose)
+	elif progressdump["step"] == _progress_steps["finished"][-1]:
+		sys.stderr.write("\nfully processed database already exists at '{}'. If this should be replaced, please delete and try again, or specify a different target directory\n".format(targetdir))
 
-def cleanupwhenfinished(progressdump, targetdir, verbose):
+def cleanupwhenfinished(progressdump, targetdir, verbose=False):
 	'''
 	deletes remaining intermediary files and logs component database versions
 	'''
 	import re
+	import getdb
 	sys.stderr.write("\n--CLEANING UP--\n")
 	def deletefiles(stufflist):
 		restlist = []
 		for stuff in stufflist:
+			# ~ print(stuff)
+			# ~ sys.stdout.flush()		
 			if os.path.exists(stuff) and os.path.isfile(stuff):
 				os.remove(stuff)
 				sys.stderr.write("\tdeleted {}\n".format(stuff)) #todo: only when verbose
@@ -1001,7 +1021,9 @@ def cleanupwhenfinished(progressdump, targetdir, verbose):
 				
 
 	def deletedirs(stufflist):
-		for stuff in stfflist:
+		for stuff in stufflist:
+			# ~ print(stuff)
+			# ~ sys.stdout.flush()
 			if os.path.exists(stuff) and os.path.isdir(stuff):
 				try:
 					os.rmdir(stuff)
@@ -1015,27 +1037,40 @@ def cleanupwhenfinished(progressdump, targetdir, verbose):
 				yield from NestedDictValues(stuff)
 			else:
 				yield stuff
+	# ~ import pdb; pdb.set_trace()
+	laststep = progressdump["step"]
+	lastprogressmarker = "progress_step{}.json".format(laststep)
+	progressdump["step"] = _progress_steps["finished"][-1]
+	currentprogressmarker = "progress_step{}.json".format(progressdump["step"])
+	delcategories = ["silva_download_dict", "gtdb_download_dict", "gtdb_genomefiles", "gtdb_proteinfiles"]
+	for dc in delcategories:
+		# ~ print("---{}".format(dc))
+		if isinstance(progressdump[dc], dict):
+			dellists = [ x for x in NestedDictValues(progressdump[dc])]
+			flattened_dellist = [y for x in dellists for y in x] + [y + ".md5" for x in dellists for y in x]
+		else:
+			flattened_dellist = progressdump[dc]
+		deletefiles(flattened_dellist)
+		deletedirs(sorted(flattened_dellist, key=lambda x:len(x), reverse=True))
+		progressdump[dc] = ""
+		
+			 
+	delversionfiles = ["MD5SUM", "release209.files.installed", "VERSION.txt"]
+	delfastafiles = ["concat_refgenomes.fasta", "concat_refprot.faa"]
+	deletefiles([os.path.join(targetdir, x) for x in delversionfiles + delfastafiles])
 
-		delcategories = ["silva_download_dict", "gtdb_download_dict", "gtdb_genomefiles", "gtdb_proteinfiles"]
-		for dc in delcategories:
-			dellist = [ x for x in NestedDictValues(progressdump[dc])] + [ x + ".md5" for x in NestedDictValues(progressdump[dc])]
-			deletefiles(dellist)
-			deletedirs(dellist)
-				 
-		delversionfiles = ["MD5SUM", "release209.files.installed", "VERSION.txt"]
-		deletefiles([os.path.join(targetdir, x) for x in delversionfiles])
-
+	getdb.dict2jsonfile(progressdump, os.path.join(targetdir, currentprogressmarker))
+	os.remove(lastprogressmarker)
 #todo: DROP download of ncbi2gtdb and vice versa mapping files will not use them anyway!
 
 def main():
 	import argparse
 	myparser = argparse.ArgumentParser(prog=os.path.basename(sys.argv[0]), description = "Download and prepare GTDB- and SILVA-data for MDMcleaner")
-	myparser.add_argument("-o", "--outdir", action = "store", dest = "outdir", default = "mdmcleaner_gtdb-data", help = "target directory for gtdb-/silva-data. may not be the current working directory. Default = 'mdmcleaner_gtdb-data'")
-	myparser.add_argument("-c", "--continue", action = "store_true", dest = "continue_from_checkpoint", default = False, help = "continue from last progress (if targetdir already exists). Default = False") 
+	myparser.add_argument("-o", "--outdir", action = "store", dest = "outdir", default = "./db/gtdb", help = "target directory for gtdb-/silva-data. may not be the current working directory. Default = './db/gtdb'")
 	myparser.add_argument("--verbose", action = "store_true", dest = "verbose", default = False, help = "verbose output (download progress etc)") #todo: finish implementing
 	myparser.add_argument("--quiet", action = "store_true", dest = "quiet", default = False, help = "quiet mode (suppress any status messages except Errors and Warnings)") #todo: implement
 	args = myparser.parse_args()
-	getNprepare_dbdata_nonncbi(args.outdir, args.continue_from_checkpoint, verbose=args.verbose)
+	getNprepare_dbdata_nonncbi(args.outdir, verbose=args.verbose)
 
 if __name__ == '__main__':
 	main()

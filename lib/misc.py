@@ -112,14 +112,14 @@ def run_multiple_functions_parallel(jobtuple_list, total_threads): #jobtuple_lis
 	"""
 	#TODO: allow option for UNEVEN distribution of threads over jobs. Figure aout a way how to do so... (e.g. protein-diamond vs nr should get much more threads than hmmer-searches!)
 	def _distribute_threads_over_jobs(total_threads, num_jobs): # to distribute N threads over M groups as evenly as possible, put (N/M) +1 in (N mod M) groups, and (N/M) in the rest
-		print("_distribute_threads_over_jobs")
+		# ~ print("_distribute_threads_over_jobs")
 		if num_jobs < total_threads:
 			more_threads_list = [ int(total_threads / num_jobs) + 1 ] * (total_threads % num_jobs) #these should go to the lower priority markers, as there will be more of them
 			fewer_threads_list = [ int(total_threads / num_jobs) ] * (num_jobs - len(more_threads_list))
 			return fewer_threads_list + more_threads_list, num_jobs
 		return [1] * num_jobs, total_threads
 
-	print("run_multiple_functions_parallel")		
+	# ~ print("run_multiple_functions_parallel")		
 	from multiprocessing import Pool
 	thread_args, no_processes = _distribute_threads_over_jobs(total_threads, len(jobtuple_list))
 	arglist = []

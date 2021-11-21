@@ -17,22 +17,6 @@ from _version import __version__
 
 progressdump_filename = "mdmprogress.json"
 
-#todo: split gtdb protblastdbs into several subdbs that can be blasted in parallel (check out if faster first)
-#todo: find common names for gtdb and ncbi dbs to simplify things
-#todo: find actual names for ncbi dbs
-dbfiles = { "gtdb" : {	"protblastdbs" : ["gtdbplus_protdb.dmnd"], \
-						"nucblastdbs" : ["concat_refgenomes", "SILVA_138.1_SSURef_NR99_tax_silva", "SILVA_138.1_LSURef_NR99_tax_silva"] ,\
-						"ssu_nucblastdbs" : ["concat_refgenomes", "SILVA_138.1_SSURef_NR99_tax_silva"], \
-						"lsu_nucblastdbs" : ["concat_refgenomes", "SILVA_138.1_LSURef_NR99_tax_silva"], \
-						"trna_nucblastdbs" : ["concat_refgenomes"], \
-						"mdmdbs" : ["gtdb_all.accession2taxid.sorted", "gtdb_taxonomy_br.json.gz", "gtdb_lcawalkdb_br.db"] },\
-			"ncbi" : { "protblastdbs" : ["nr"], \
-						"nucblastdbs" : ["nt"], \
-						"ssu_nucblastdbs" : ["nt"], \
-						"lsu_nucblastdbs" : ["nt"], \
-						"trna_nucblastdbs" : ["nt"], \
-						"mdmdbs" : [ "ncbi_accession2taxid", "ncbi_taxonomy_br.json.gz", "ncbi_lcawalkdb_br.db"] } }
-
 def find_global_configfile():
 	moduledir = os.path.dirname(os.path.abspath(__file__))
 	if os.path.exists(os.path.join(moduledir, "mdmcleaner.config")) and os.path.isfile(os.path.join(moduledir, "mdmcleaner.config")):
@@ -45,14 +29,14 @@ def find_local_configfile():
 	if os.path.exists(os.path.join(cwd, "mdmcleaner.config")) and os.path.isfile(os.path.join(cwd, "mdmcleaner.config")):
 		return os.path.join(cwd, "mdmcleaner.config")	
 
-def read_configs(configfilelist, args): #todo: switch to config object instead of dictionary #todo: make it dynamically set blastdb_diamond (and others) to list of default-dbs, if no custom db is set for these
+def read_configs(configfilelist, args): #todo: switch to config object instead of dictionary #todo: 
 	"""
 	Reads the config files in hierarchical order (first global, then local), with the later configs always overriding the previous in case of conflicts
 	Config files must be tab-seperated text files (may be compressed though), with setting names in the first column, and the corresponding setting value(s) in subsequent columns.
 	Setting values are always read as lists
 	Unknown setting names will just be ignored. However, comments should optimally be marked with "#"
 	"""
-	setting_keys = ["blastp", "blastn", "diamond", "barrnap", "rnammer", "hmmsearch", "db_basedir","db_type", "blastdb_diamond", "blastdb_blastp", "blastdb_blastn", "threads"] # todo: complete this list 
+	setting_keys = ["blastp", "blastn", "diamond", "barrnap", "rnammer", "hmmsearch", "aragorn", "db_basedir","db_type", "blastdb_diamond", "blastdb_blastp", "blastdb_blastn", "threads"] # todo: complete this list 
 	settings = {}
 	for config in configfilelist:
 		sys.stderr.write("\nreading settings from configfile: \"{}\"\n".format(config))
@@ -70,9 +54,6 @@ def read_configs(configfilelist, args): #todo: switch to config object instead o
 	else:
 		settings["threads"] = int(settings["threads"][0])
 	return settings
-
-def getdatabase(acc2taxid_lookupfile, taxdictjson_file, lcawalk_file):#todo: find a system. either one directory per database (with the same filename for each of these) or specyfy each of these sperately
-	return getdb.taxdb(acc2taxid_lookupfile, taxdictjson_file, lcawalk_file)
 
 def check_progressdump(outfolder, infastas):
 	if os.path.exists(outfolder):
@@ -105,15 +86,15 @@ def main():
 	# ~ print(configfile_hierarchy)
 	configs = read_configs(configfile_hierarchy, args) #todo finish this
 	#initialize blastdbs
-	ssu_nucblastdblist = [os.path.join(configs["db_basedir"][0], configs["db_type"][0], nbdb) for nbdb in dbfiles[configs["db_type"][0]]["ssu_nucblastdbs"]]
-	lsu_nucblastdblist = [os.path.join(configs["db_basedir"][0], configs["db_type"][0], nbdb) for nbdb in dbfiles[configs["db_type"][0]]["lsu_nucblastdbs"]] #used for lsu and "tsu" rRNAs
-	trna_nucblastdblist = [os.path.join(configs["db_basedir"][0], configs["db_type"][0], nbdb) for nbdb in dbfiles[configs["db_type"][0]]["trna_nucblastdbs"]]		#todo: implement tRNA_blasts		
-	protblastdblist = [os.path.join(configs["db_basedir"][0], configs["db_type"][0], pbdb) for pbdb in dbfiles[configs["db_type"][0]]["protblastdbs"]]
+	ssu_nucblastdblist = [os.path.join(configs["db_basedir"][0], configs["db_type"][0], nbdb) for nbdb in getdb.dbfiles[configs["db_type"][0]]["ssu_nucblastdbs"]]
+	lsu_nucblastdblist = [os.path.join(configs["db_basedir"][0], configs["db_type"][0], nbdb) for nbdb in getdb.dbfiles[configs["db_type"][0]]["lsu_nucblastdbs"]] #used for lsu and "tsu" rRNAs
+	trna_nucblastdblist = [os.path.join(configs["db_basedir"][0], configs["db_type"][0], nbdb) for nbdb in getdb.dbfiles[configs["db_type"][0]]["trna_nucblastdbs"]]		#todo: implement tRNA_blasts		
+	protblastdblist = [os.path.join(configs["db_basedir"][0], configs["db_type"][0], pbdb) for pbdb in getdb.dbfiles[configs["db_type"][0]]["protblastdbs"]]
 	
-	sys.stderr.write("\n\nSTETTINGS:\n" + pprint.pformat(configs)+ "\n\n")
+	sys.stderr.write("\n\nSETTINGS:\n" + pprint.pformat(configs)+ "\n\n")
 	progressdump = check_progressdump(args.output_folder, args.input_fastas) #todo: this is meant to implement a "major-progressdump", consisting of multiple "mini-progressdumps" (one for each input-fasta). for each input-fasta, it should list the current progress-state [None = not started yet, stepxx = currently unfinished, "Finished" = finished]
 	
-	db = getdatabase(*[os.path.join(configs["db_basedir"][0], configs["db_type"][0], dbfile) for dbfile in dbfiles[configs["db_type"][0]]["mdmdbs"]]) #todo: instead have getdb() accept the congifs.dict as input?
+	db = getdb.taxdb(configs)
 	errorlistfile = openfile(args.overview_basename + "_errorlist.txt", "wt")
 
 	overview_before = args.overview_basename + "_all_before_cleanup.tsv"
@@ -136,7 +117,7 @@ def main():
 
 				protblasts = blasthandler.blastdata(protblastjsonfilename, score_cutoff_fraction = 0.75, continue_from_json = True, seqtype = "prot", ignorelistfile = args.ignorelistfile)
 			else:
-				sys.stderr.write("blasting protein data\n")
+				sys.stderr.write("-->blasting protein data\n")
 				protblastfiles = []
 				for blastdb in protblastdblist: #for protmarkers, every db is blasted one after another with full threads #todo: set list of pbdb names during initialization!
 					pbdb = os.path.basename(blastdb)
@@ -146,11 +127,11 @@ def main():
 					protblastfiles.append(blasthandler._run_any_blast(bindata.totalprotsfile, blastdb, "diamond", os.path.join(bindata.bin_resultfolder, "{}_totalprots_vs_{}.blast.tsv".format(bindata.bin_tempname, pbdb)), configs["threads"]))  #todo make choce of blast tool flexible. perhaps dependent on db (add tool/db tuple pairs to configs-dict)
 					# ~ endtime = time.time()
 					# ~ print("\nthis blast took {} seconds\n".format(endtime - starttime))
-				sys.stderr.write("\nreading in protblast files...\n")
+				sys.stderr.write("\treading in protblast files...\n")
 				protblasts = blasthandler.blastdata(*protblastfiles, score_cutoff_fraction = 0.75, seqtype = "prot", ignorelistfile = args.ignorelistfile)
-				sys.stderr.write("looking up taxids of protein blast hits...\n")
+				sys.stderr.write("\tlooking up taxids of protein blast hits...\n")
 				protblasts.add_info_to_blastlines(bindata, db)
-				sys.stderr.write("saving protblasts for reuse\n") #todo: make this optional. is only for debugging now!
+				sys.stderr.write("\tsaving protblasts for reuse\n") #todo: make this optional. is only for debugging now!
 				protblasts.to_json(protblastjsonfilename)
 			##### then rnablasts
 			if os.path.isfile(nucblastjsonfilename) and args.force != True: #for debugging. allows picking up AFTER blastlines were already classified when re-running
@@ -159,14 +140,14 @@ def main():
 				rnablastfiles = []
 				# ~ starttime = time.time()
 				#todo: not all rRNAs should be blasted against all databases.  so creating different blast_combiantions for lsu & ssu (and tsu and trna?) here. create a get_blast_combinations function for this in blasthander!
-				# ~ nucblastdblist = [os.path.join(configs["db_basedir"][0], configs["db_type"][0], nbdb) for nbdb in dbfiles[configs["db_type"][0]]["nucblastdbs"]] #todo: set nucblastdblist during initialization!
+				# ~ nucblastdblist = [os.path.join(configs["db_basedir"][0], configs["db_type"][0], nbdb) for nbdb in getdb.dbfiles[configs["db_type"][0]]["nucblastdbs"]] #todo: set nucblastdblist during initialization!
 
-				# ~ trna_nucblastdblist = [os.path.join(configs["db_basedir"][0], configs["db_type"][0], nbdb) for nbdb in dbfiles[configs["db_type"][0]]["trna_nucblastdbs"]]		#todo: implement tRNA_blasts		
+				# ~ trna_nucblastdblist = [os.path.join(configs["db_basedir"][0], configs["db_type"][0], nbdb) for nbdb in getdb.dbfiles[configs["db_type"][0]]["trna_nucblastdbs"]]		#todo: implement tRNA_blasts		
 				lsublastquerylist = [bindata.rRNA_fasta_dict["lsu_rRNA"]] #,  bindata.rRNA_fasta_dict["tsu_rRNA"]] was thinking about running the 5S blasts now, but actually they should only be run if needed at the end!
 				ssublastquerylist = [bindata.rRNA_fasta_dict["ssu_rRNA"]]
 				# ~ trnablastquerylist = [bindata.trnafile]
 	
-				sys.stderr.write("blasting rRNA data\n") 
+				sys.stderr.write("-->blasting rRNA data\n") 
 				#todo: the following blasts all against all (including 16S vs 23S database). But blasting 16S only makes sense against a 16S dabatase... --> ensure blasts are only against appropriate dbs![
 				lsu_blast_combinations = blasthandler.get_blast_combinations(lsu_nucblastdblist, lsublastquerylist, blast = "blastn")
 				ssu_blast_combinations = blasthandler.get_blast_combinations(ssu_nucblastdblist, ssublastquerylist, blast = "blastn")
@@ -176,19 +157,20 @@ def main():
 				# ~ endtime = time.time()
 				# ~ print("\nthis blast took {} seconds\n".format(endtime - starttime))
 				nucblasts = blasthandler.blastdata(*rnablastfiles, score_cutoff_fraction = 0.8, seqtype = "nuc", ignorelistfile = args.ignorelistfile) #stricter cutoff for nucleotide blasts
-				sys.stderr.write("looking up taxids of nucleotide blast hits...\n")
+				sys.stderr.write("\tlooking up taxids of nucleotide blast hits...\n")
 				nucblasts.add_info_to_blastlines(bindata, db)
-				sys.stderr.write("saving nuclasts for reuse\n") #todo: make this optional. is only for debugging now!
+				sys.stderr.write("\tsaving nuclasts for reuse\n") #todo: make this optional. is only for debugging now!
 				nucblasts.to_json(nucblastjsonfilename)		
 
 
 			############## getting LCA classifications
+			sys.stderr.write("-->LCA classifications\n")
 			if os.path.exists(bindata.pickle_progressfile):
-				sys.stderr.write("skipping LCA classification, because already present in pickle file\n") #todo: add check for toplevel_taxlevel set in contigdict and setting it if not
+				sys.stderr.write("\tskipping LCA classification, because already present in pickle file\n") #todo: add check for toplevel_taxlevel set in contigdict and setting it if not
 			else:
-				sys.stderr.write("classifying protein sequences...\n")
+				sys.stderr.write("\tclassifying protein sequences...\n")
 				bindata.add_lca2markerdict(protblasts, db)
-				sys.stderr.write("classifying rRNA sequences...\n")
+				sys.stderr.write("\tclassifying rRNA sequences...\n")
 				bindata.add_lca2markerdict(nucblasts, db)
 				bindata.verify_arcNbac_marker(db) #todo: maybe skip that step and assume bac/arch-markers as more conserved even if assignable to the other domain? (after all, these archaeal and bacterial marker sets correspond to SINGLE-COPY markers and we don't care if they are single copy, only if they are conserved)
 				#todo: combine prok with corresponding bac or arc markers for each contig

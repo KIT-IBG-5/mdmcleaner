@@ -756,7 +756,7 @@ def make_blast_db(infasta, outfilename, makeblastdb="makeblastdb", db_type="nucl
 	import subprocess
 	#todo: combine with "make_blast_db_from_gz" below: check if infasta ends with .gz. If yes: pipe from zcat, otherwise run makeblastdb directly
 	assert db_type in ["nucl", "prot"],  "dbtype has to be either 'nucl' or 'prot'"
-	sys.stderr.write("\n\tcreating blastdb {}...\n".format(outfilename))
+	sys.stderr.write("\n\tcreating blastdb {}...".format(outfilename))
 	sys.stderr.flush()
 	mkdbcmd = [ makeblastdb, "-in", infasta, "-title", outfilename, "-out", outfilename, "-dbtype", db_type, "-max_file_sz", "4GB"] #hash_index apparently not possible for very large datasets
 	# ~ print(" ".join(mkdbcmd)) #todo: add verbose option and print mkdbcmd it TRUE
@@ -775,12 +775,12 @@ def make_blast_db_from_gz(infasta, outfilename, makeblastdb="makeblastdb", db_ty
 	import subprocess
 	_command_available(command="makeblastdb")
 	# todo: if this works,incorporate it with "make_blast_db" above! check if infasta ends with .gz. If yes: pipe from zcat, otherwise run makeblastdb directly
-	sys.stderr.write("\n\tcreating blastdb {}...\n".format(outfilename))
-	sys.stderr.flush()
 	if not infasta.endswith(".gz"):
 		# ~ sys.stderr.write("\ninput is not compressed! using standard make_blast_db function".format(outfilename))
 		return make_blast_db(infasta, outfilename, makeblastdb, db_type, threads) #todo: make this the other way round. make it call this function if it finds input to be compressed
 	assert db_type in ["nucl", "prot"],  "dbtype has to be either 'nucl' or 'prot'"
+	sys.stderr.write("\n\tcreating blastdb {}...".format(outfilename))
+	sys.stderr.flush()
 	zcatcmd = [ "zcat", infasta]
 	mkdbcmd = [ makeblastdb, "-title", outfilename, "-out", outfilename, "-dbtype", db_type, "-max_file_sz", "4GB"] #hash_index apparently not possible for very large datasets
 	# ~ import time
