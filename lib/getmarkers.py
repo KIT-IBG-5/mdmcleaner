@@ -64,7 +64,7 @@ def split_fasta_for_parallelruns(infasta, minlength = 0, number_of_fractions = 2
 	import random
 	from Bio import SeqIO
 
-	sys.stderr.write("\n-->subdividing contigs of {} for multiprocessing\n".format(infasta))
+	sys.stderr.write("\tsubdividing contigs of {} for multiprocessing\n".format(infasta))
 	fastafile = openfile(infasta)
 	records = SeqIO.parse(fastafile, "fasta")
 	contigdict = {}
@@ -305,8 +305,8 @@ def deduplicate_barrnap_results(tempfastas, gff_outputs, verbose=False): #todo: 
 					contig_rrna_dict[contig][seqtype_dict[recordtype]].append(record.id)
 	for fasta in tempfastas: #currently doing this AFTER the previous loop, to make sure the files are only deleted when everything went well (debugging purposes)
 		os.remove(fasta)
-	if verbose:
-		sys.stderr.write("\n\tfound {} rRNA sequences\n".format(sum([ len(finalfastadict[ghj]) for ghj in finalfastadict])))
+	# ~ if verbose: #todo: implement verbosity
+	sys.stderr.write("\n\tfound {} rRNA sequences\n".format(sum([ len(finalfastadict[ghj]) for ghj in finalfastadict])))
 	return finalfastadict, contig_rrna_dict		#todo: also return a dictionary with contignames as keys and type of marker as values?
 					
 def parse_barrnap_headers(header):
@@ -424,7 +424,7 @@ def get_markerprotnames(proteinfastafile, cutoff_dict = cutofftablefile, hmmsear
 		#TODO: add logger message that cutoff dict is being read from file
 		cutoff_dict = get_cutoff_dict(cutoff_dict)
 	list_of_markerdicts = []
-	sys.stderr.write("-->Detecting marker genes...\n")
+	sys.stderr.write("\n-->Detecting marker genes...\n")
 	for hmmpath in hmmpathdict[level]:
 		hmmfiles = [ os.path.join(hmmpath, hmmfile) for hmmfile in os.listdir(hmmpath) if hmmfile.endswith(".hmm") ]
 		markerdict = {}
@@ -579,7 +579,7 @@ def prodigalprot2contig(protid): #todo: probably obsolete. replace with above?
 
 def parse_protmarkerdict(protmarkerdict, contigdict, protmarkerlevel, markerdict = None): #todo make this a hidden object-function of bindata objects. check if contigdict actually needed
 	#pattern = re.compile("_\d+$")
-	sys.stderr.write("\tparsing protmarkerdict: {}\n".format(pml))
+	sys.stderr.write("\tparsing protmarkerdict: {}\n".format(protmarkerlevel))
 	marker = protmarkerlevel_dict[protmarkerlevel]
 	for protid in protmarkerdict:
 		contigname = prodigalprot2contig(protid)
@@ -604,7 +604,7 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 		self.rnammer_pattern = re.compile("^rRNA_(.+)_\d+-\d+_DIR[+-]")
 		self.binfastafile = contigfile
 		bin_tempname = os.path.basename(contigfile)
-		assert len(bin_tempname) <= 176, "ERROR: input-filename may not be longer than 176 characters (sorry)!" #todo: qucik and dirty fix for a stupid problem: can't produce outputfiles with filenames longer than 256 chars. considering the longest pre- and suffixes, the limit is for 176 chars for the input-filename (without path or suffix). Better long-term solution: create shorter output-filenames!
+		assert len(bin_tempname) <= 176, "ERROR: input-filename may not be longer than 176 characters (sorry)!" #todo: qucik and dirty fix for a stupid problem: can't produce outputfiles with filenames longer than 256 chars. considering the longest pre- and suffixes, the limit is for 176 chars for the input-filename (without path or suffix). Better long-term solution: shorten output-filenames if necessary (but ensure that tehy are unique)!
 		self.trnadict = {}
 		for suffix in [".gz", ".fa", ".fasta", ".fna", ".fas", ".fsa"]:
 			if bin_tempname.endswith(suffix):
@@ -612,6 +612,7 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 
 		self.outbasedir = outbasedir		
 		self.bin_tempname = bin_tempname
+		sys.stderr.write("\n\n{}\nNow processing genome: {}\n\n".format("="*60, self.bin_tempname))
 		self.bin_resultfolder = os.path.join(self.outbasedir, self.bin_tempname)
 		self.pickle_progressfile = os.path.join(self.bin_resultfolder, "bindata_progress.pickle") #todo: change to better system
 		self.trna_jsonfile = os.path.join(self.bin_resultfolder, "bindata_trna_progress.json.gz") #todo: REALLY start implementing a better system!
@@ -634,6 +635,7 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 		self.majortaxdict = None 
 		self.consensustax = None
 		self.totalprotsfile = os.path.join(self.bin_resultfolder, self.bin_tempname + "_totalprots.faa")
+		sys.stderr.write("\n-->doing ORF-calling\n")
 		self._get_all_markers(threads, mincontiglength, cutofftable)
 	
 
@@ -644,7 +646,7 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 	def _get_all_markers(self, threads, mincontiglength, cutofftable, from_json = True): #todo: split into a.) get totalprots b.) get_markerprots c.) get rRNA genes! #todo: delete the "from_json argument or set default to False
 		#todo: make a more elegant checkpoint system. This convoluted stuff here may only be temporary because of shortage of time 
 		if os.path.exists(self.totalprotsfile):
-			sys.stderr.write("\n{} already exists. --> skipping ORF-calling!\n".format(self.totalprotsfile))
+			sys.stderr.write("\t{} already exists. --> skipping ORF-calling!\n".format(self.totalprotsfile))
 			self._prep_onlycontigs(mincontiglength, threads)
 		else:
 			self._prep_contigsANDtotalprots(mincontiglength, threads)
@@ -653,8 +655,8 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 
 		for pml in range(len(self.protmarkerdictlist)): #todo: contigdict is maybe not needed in this form. choose simpler dicts ?
 			self.contigdict = parse_protmarkerdict(self.protmarkerdictlist[pml], self.contigdict, pml, self.markerdict)
-		if from_json and os.path.exists(self.pickle_progressfile): #todo: for debugging. hacy solution to preserve LCA from previous runs. can be done better (complete progress_dict like during db-downlad). this here is only temporary!
-			sys.stderr.write("loading bindata from pickle\n") #todo: get rid of pickles. only use json
+		if from_json and os.path.exists(self.pickle_progressfile): #todo: for debugging. hacky solution to preserve LCA from previous runs. can be done better (complete progress_dict like during db-downlad). this here is only temporary!
+			sys.stderr.write("\tloading bindata from pickle\n") #todo: get rid of pickles. only use json
 			markerprogress_dict = misc.from_pickle(self.pickle_progressfile)
 			self.rRNA_fasta_dict = markerprogress_dict["rRNA_fasta_dict"]
 			self.rrnamarkerdict = markerprogress_dict["rrnamarkerdict"]
@@ -822,7 +824,7 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 			return taxa[checklevel] != taxb[checklevel]
 					
 		import lca
-		sys.stderr.write("determining major taxon\n")
+		sys.stderr.write("\n-->determining major taxon\n")
 		markerranking = [ "ssu_rRNA_tax", "lsu_rRNA_tax", "prok_marker_tax", "total_prots_tax" ]
 		#taxlevels = ["root", "domain", "phylum", "class", "order", "family", "genus", "species"] # todo: change to lca.taxlevels
 		self.taxondict = { tl: {} for tl in lca.taxlevels }
@@ -873,6 +875,7 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 		
 		if last_tax_entry != None:
 			self.consensus_tax = db.taxid2taxpath(last_tax_entry[0][-1])
+		sys.stderr.write("\tmajority tax-path: {}\n".format("; ".join(self.get_consensus_taxstringlist())))
 		
 		for contig in self.contigdict:
 			contradiction, contradiction_evidence = lca.contradict_taxasstuple_majortaxdict(self.contigdict[contig]["toplevel_tax"], self.majortaxdict, return_idents = True) #check each contigs if contradicts majortax
@@ -886,6 +889,7 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 	def get_consensus_taxstringlist(self):
 		if self.consensus_tax != None:
 			return [ taxtuple[0] for taxtuple in self.consensus_tax ]
+		return [None]
 
 
 	def calc_contig_trust_score(self, contig, db):#todo: virals are not ignored here, but just at the filtering step. will get low trust regardless
@@ -1224,7 +1228,7 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 		return outrecords
 		
 	def write_krona_inputtable(self, db):
-		sys.stderr.write("\ncreating krona input-table\n")
+		sys.stderr.write("\tcreating krona input-table\n")
 		outfile = misc.openfile(self.krona_input, "wt")
 		for contig in self.contigdict:
 			taxpath = []
@@ -1246,9 +1250,9 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 			
 			
 				
-	def sort_and_write_contigs(self): #todo: add option for uncompresed output fastas (in case anyone wants that...)
+	def sort_and_write_contigs(self): #todo: add option for uncompressed output fastas (in case anyone wants that...)
 		#todo: gather all records in seperate lists before writing. Probably saves time due to fewer individual wrtie-processes
-		sys.stderr.write("\ncreating output fastas\n")
+		sys.stderr.write("\tcreating output fastas\n")
 		from Bio import SeqIO
 		outfiles = { f : misc.openfile(self.filteroutputfiles[f], "wt") for f in self.filteroutputfiles}
 		for record in misc.read_fasta(self.binfastafile):

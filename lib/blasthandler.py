@@ -180,8 +180,8 @@ class blastdata(object): #todo: define differently for protein or nucleotide bla
 		self.blastlinelist = filtered_blastlinelist
 	
 	def add_info_to_blastlines(self, bindata_obj, taxdb_obj = None):
-		import time #todo: remove this later
-		print("add_info_to_blastlines old version")
+		# ~ import time #todo: remove this later
+		sys.stderr.write("\tadding info to blastlines (old version)")
 		starttime = time.time()
 		for i in range(len(self.blastlinelist)):
 			self.blastlinelist[i]["contig"] = bindata_obj.marker2contig(self.blastlinelist[i]["query"])
@@ -195,17 +195,18 @@ class blastdata(object): #todo: define differently for protein or nucleotide bla
 				# ~ print("--{}--".format(self.blastlinelist[i]))
 				# ~ import pdb; pdb.set_trace()
 				self.blastlinelist[i]["taxid"] = taxdb_obj.acc2taxid(self.blastlinelist[i]["subject"])[0]
-		endtime = time.time()
-		print("\nthis took {} seconds\n".format(endtime - starttime))
+		# ~ endtime = time.time()
+		# ~ print("\nthis took {} seconds\n".format(endtime - starttime))
 
 	def from_json(self, jsonfilename):
 		self.blastlinelist = misc.from_json(jsonfilename)
 
 	def to_json(self, jsonfilename):
 		misc.to_json(self.blastlinelist, jsonfilename)
+		
 	# ~ def add_info_to_blastlines(self, bindata_obj, taxdb_obj = None):
 		# ~ import time #todo: remove this later
-		# ~ print("add_info_to_blastlines NEW version")
+		# ~ sys.stderr.write("\tadding info to blastlines (NEW version)")
 		# ~ starttime = time.time()
 		# ~ if taxdb_obj != None:
 			# ~ acc2taxiddict = taxdb_obj.acclist2taxiddict(list({bl["subject"] for bl in self.blastlinelist})) 
@@ -283,7 +284,7 @@ class blastdata(object): #todo: define differently for protein or nucleotide bla
 					return testint
 
 		infile = openfile(infilename)
-		print("NOWHANDLINGFILE: {}".format(infilename))
+		# ~ print("NOWHANDLINGFILE: {}".format(infilename))
 		for line in infile:
 			tokens = line.strip().split("\t")
 			bl = { x : string_or_int_or_float(tokens[self._blasttsv_columnnames[x]]) if type(self._blasttsv_columnnames[x]) == int else None for x in self._blasttsv_columnnames}
@@ -685,7 +686,7 @@ def _run_any_blast(query, db, path_appl, outname, threads, force = False):
 	appl = os.path.basename(path_appl)
 	#print("\nblasting --> {}".format(outname))
 	if os.path.isfile(outname) and force == False:
-		sys.stderr.write("\nWARNING: blast result file '{}' already exists and 'force' not set to True --> skipping this blast\n".format(outname))
+		sys.stderr.write("\n\tWARNING: blast result file '{}' already exists and 'force' not set to True --> skipping this blast\n".format(outname))
 		return outname
 	assert appl in ["blastp", "blastn", "diamond"], "\nError: unknown aligner '{}'\n".format(appl)
 	_command_available(command=path_appl)
@@ -701,7 +702,7 @@ def _run_any_blast(query, db, path_appl, outname, threads, force = False):
 def _distribute_threads_over_jobs(total_threads, num_jobs): # to distribute N threads over M groups as evenly as possible, put (N/M) +1 in (N mod M) groups, and (N/M) in the rest
 	##TODO: test using misc.run_multiple_functions_parallel() for this instead! DELETE THIS IF MISC VERSION WORKS!
 	if num_jobs == 0:
-		sys.stderr.write("nothing to do...\n")
+		sys.stderr.write("\tnothing to do...\n")
 		return [], total_threads
 	if num_jobs < total_threads:
 		more_threads_list = [ (total_threads / num_jobs) + 1 ] * (total_threads % num_jobs) #these should go to the lower priority markers, as there will be more of them
@@ -713,13 +714,13 @@ def run_multiple_blasts_parallel(basic_blastarg_list, outbasename, total_threads
 	# ~ import pdb; pdb.set_trace()
 	#TODO: test using misc.run_multiple_functions_parallel() for this instead! DELETE THIS IF MISC VERSION WORKS!
 	if len(basic_blastarg_list) == 0:
-		sys.stderr.write("nothing to blast...")
+		sys.stderr.write("\tnothing to blast...")
 	from multiprocessing import Pool
 	thread_args, no_processes = _distribute_threads_over_jobs(total_threads, len(basic_blastarg_list))
 	arglist = []
 	for i in range(len(basic_blastarg_list)):
 		if type(basic_blastarg_list[i][0]) == list:
-			print("blast input is a list with {} entries".format(len(basic_blastarg_list[i][0])))
+			# ~ print("blast input is a list with {} entries".format(len(basic_blastarg_list[i][0])))
 			querystring = "auxblasts"
 		else:
 			querystring = os.path.basename(basic_blastarg_list[i][0])

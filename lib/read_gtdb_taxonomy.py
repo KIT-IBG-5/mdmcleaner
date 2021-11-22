@@ -971,7 +971,7 @@ def _prepare_dbdata_nonncbi(targetdir, progressdump, verbose=False): #Todo:add c
 def test_or_create_targetdir(targetdir):
 	try:
 		if os.path.exists(targetdir) and os.path.isdir(targetdir):
-			if not os.access('/path/to/folder', os.W_OK):
+			if not os.access(targetdir, os.W_OK):
 				raise PermissionError
 		else:
 			os.makedirs(targetdir)
@@ -1063,14 +1063,14 @@ def cleanupwhenfinished(progressdump, targetdir, verbose=False):
 	os.remove(lastprogressmarker)
 #todo: DROP download of ncbi2gtdb and vice versa mapping files will not use them anyway!
 
-def main():
-	import argparse
-	myparser = argparse.ArgumentParser(prog=os.path.basename(sys.argv[0]), description = "Download and prepare GTDB- and SILVA-data for MDMcleaner")
-	myparser.add_argument("-o", "--outdir", action = "store", dest = "outdir", default = "./db/gtdb", help = "target directory for gtdb-/silva-data. may not be the current working directory. Default = './db/gtdb'")
-	myparser.add_argument("--verbose", action = "store_true", dest = "verbose", default = False, help = "verbose output (download progress etc)") #todo: finish implementing
-	myparser.add_argument("--quiet", action = "store_true", dest = "quiet", default = False, help = "quiet mode (suppress any status messages except Errors and Warnings)") #todo: implement
-	args = myparser.parse_args()
+def main(args, configs): #todo: make option to read targetdir from configfile or to WRITE targetdir to configfile when finished
 	getNprepare_dbdata_nonncbi(args.outdir, verbose=args.verbose)
 
-if __name__ == '__main__':
-	main()
+# ~ if __name__ == '__main__':
+	# ~ import argparse
+	# ~ myparser = argparse.ArgumentParser(prog=os.path.basename(sys.argv[0]), description = "Download and prepare GTDB- and SILVA-data for MDMcleaner")
+	# ~ myparser.add_argument("-o", "--outdir", action = "store", dest = "outdir", default = "./db/gtdb", help = "target directory for gtdb-/silva-data. may not be the current working directory. Default = './db/gtdb'")
+	# ~ myparser.add_argument("--verbose", action = "store_true", dest = "verbose", default = False, help = "verbose output (download progress etc)") #todo: finish implementing
+	# ~ myparser.add_argument("--quiet", action = "store_true", dest = "quiet", default = False, help = "quiet mode (suppress any status messages except Errors and Warnings)") #todo: implement
+	# ~ args = myparser.parse_args()
+	# ~ main(args)

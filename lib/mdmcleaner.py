@@ -17,44 +17,6 @@ from _version import __version__
 
 progressdump_filename = "mdmprogress.json"
 
-def find_global_configfile():
-	moduledir = os.path.dirname(os.path.abspath(__file__))
-	if os.path.exists(os.path.join(moduledir, "mdmcleaner.config")) and os.path.isfile(os.path.join(moduledir, "mdmcleaner.config")):
-		return os.path.join(moduledir, "mdmcleaner.config")
-	raise Exception("\nError: a \"mdmcleaner.config\" file should exist under {}, but doesnt!\n".format(moduledir))
-
-def find_local_configfile():
-	cwd = os.getcwd()
-	moduledir = os.path.dirname(os.path.abspath(__file__))
-	if os.path.exists(os.path.join(cwd, "mdmcleaner.config")) and os.path.isfile(os.path.join(cwd, "mdmcleaner.config")):
-		return os.path.join(cwd, "mdmcleaner.config")	
-
-def read_configs(configfilelist, args): #todo: switch to config object instead of dictionary #todo: 
-	"""
-	Reads the config files in hierarchical order (first global, then local), with the later configs always overriding the previous in case of conflicts
-	Config files must be tab-seperated text files (may be compressed though), with setting names in the first column, and the corresponding setting value(s) in subsequent columns.
-	Setting values are always read as lists
-	Unknown setting names will just be ignored. However, comments should optimally be marked with "#"
-	"""
-	setting_keys = ["blastp", "blastn", "diamond", "barrnap", "rnammer", "hmmsearch", "aragorn", "db_basedir","db_type", "blastdb_diamond", "blastdb_blastp", "blastdb_blastn", "threads"] # todo: complete this list 
-	settings = {}
-	for config in configfilelist:
-		sys.stderr.write("\nreading settings from configfile: \"{}\"\n".format(config))
-		with openfile(config) as configfile:
-			for line in configfile:
-				tokens = line.strip().split("#",1)[0].strip().split("\t")
-				if len(tokens) <= 1:
-					continue
-				if tokens[0] in setting_keys:
-					settings[tokens[0]] = tokens[1:]
-				else:
-					sys.stderr.write("\nWARNING: unknown setting key \"{}\" --> ignoring it!\n")
-	if args.threads:
-		settings["threads"] = args.threads
-	else:
-		settings["threads"] = int(settings["threads"][0])
-	return settings
-
 def check_progressdump(outfolder, infastas):
 	if os.path.exists(outfolder):
 		assert os.path.isdir(outfolder), "\nError: specified output-folder name cannot be used, because there already is a file with the same name!\n"
@@ -62,30 +24,31 @@ def check_progressdump(outfolder, infastas):
 		return getdb.jsonfile2dict(progressfile)
 	return { os.path.basename(i) : None for i in infastas} 
 	
-def main():
+def main(args, configs):
 	#todo: barrnap should be skipped if rRNA.fastas already exist
 	#todo: protein classification should be the fast version (AND multithreaded)
 	import traceback
 	import time
 	#todo: consider using "fromfile_prefix_chars" from ArgumentParser to optionally read arguments from file
-	myparser = argparse.ArgumentParser(prog=os.path.basename(sys.argv[0]), description= "identifies and removes potential contamination in draft genomes and metagenomic bins, based on a hierarchically ranked contig classification pipeline")
-	myparser.add_argument("-i", "--input_fastas", action = "store", dest = "input_fastas", nargs = "+", required = True, help = "input fastas of genomes and/or bins")  #todo: also allow genbanks
-	myparser.add_argument("-o", "--output_folder", action = "store", dest = "output_folder", default = "mdmcleaner_output", help = "output-folder for MDMcleaner results. Default = 'mdmcleaner_output'")
-	myparser.add_argument("-v", "--version", action = "version", version='%(prog)s {version}'.format(version=__version__))
-	myparser.add_argument("--config", action = "store", dest = "configfile", default = find_local_configfile(), help = "provide a local config file with basic settings (such as the location of database-files). default: looks for config files named 'mdmcleaner.config' in current working directory. settings in the local config file will override settings in the global config file '{}'".format(os.path.join(os.path.dirname(os.path.abspath(__file__)), "mdmcleaner.config")))
-	myparser.add_argument("-t", "--threads", action = "store", dest = "threads", type = int, default = None, help = "Number of threads to use. Can also be set in the  mdmcleaner.config file")
-	myparser.add_argument("-f", "--force", action = "store_true", dest = "force", default = False, help = "Force reclassification of pre-existing blast-results")
-	# ~ myparser.add_argument("--blast2pass", action = "store_true", dest = "blast2pass", default = "False", help = "add a second-pass blastx blast-run for all contigs without any classification on blastp level (default: False)")
-	myparser.add_argument("--overview_files_basename", action = "store", dest = "overview_basename", default = "overview", help = "basename for overviewfiles (default=\"overview\"")
-	myparser.add_argument("--ignorelistfile", action = "store", dest = "ignorelistfile", default = None, help = "File listing reference-DB sequence-names that should be ignored during blast-analyses (e.g. known refDB-contaminations...")
-	myparser.add_argument("--no_filterfasta", action = "store_true", dest = "no_filterfasta", default = False, help = "Do not write filtered contigs to final output fastas (Default = False)")
-	args = myparser.parse_args()
+	# ~ myparser = argparse.ArgumentParser(prog=os.path.basename(sys.argv[0]), description= "identifies and removes potential contamination in draft genomes and metagenomic bins, based on a hierarchically ranked contig classification pipeline")
+	# ~ myparser.add_argument("-i", "--input_fastas", action = "store", dest = "input_fastas", nargs = "+", required = True, help = "input fastas of genomes and/or bins")  #todo: also allow genbanks
+	# ~ myparser.add_argument("-o", "--output_folder", action = "store", dest = "output_folder", default = "mdmcleaner_output", help = "output-folder for MDMcleaner results. Default = 'mdmcleaner_output'")
+	# ~ myparser.add_argument("-v", "--version", action = "version", version='%(prog)s {version}'.format(version=__version__))
+	# ~ myparser.add_argument("--config", action = "store", dest = "configfile", default = find_local_configfile(), help = "provide a local config file with basic settings (such as the location of database-files). default: looks for config files named 'mdmcleaner.config' in current working directory. settings in the local config file will override settings in the global config file '{}'".format(os.path.join(os.path.dirname(os.path.abspath(__file__)), "mdmcleaner.config")))
+	# ~ myparser.add_argument("-t", "--threads", action = "store", dest = "threads", type = int, default = None, help = "Number of threads to use. Can also be set in the  mdmcleaner.config file")
+	# ~ myparser.add_argument("-f", "--force", action = "store_true", dest = "force", default = False, help = "Force reclassification of pre-existing blast-results")
+	# ~ #myparser.add_argument("--blast2pass", action = "store_true", dest = "blast2pass", default = "False", help = "add a second-pass blastx blast-run for all contigs without any classification on blastp level (default: False)")
+	# ~ myparser.add_argument("--overview_files_basename", action = "store", dest = "overview_basename", default = "overview", help = "basename for overviewfiles (default=\"overview\"")
+	# ~ myparser.add_argument("--ignorelistfile", action = "store", dest = "ignorelistfile", default = None, help = "File listing reference-DB sequence-names that should be ignored during blast-analyses (e.g. known refDB-contaminations...")
+	# ~ myparser.add_argument("--no_filterfasta", action = "store_true", dest = "no_filterfasta", default = False, help = "Do not write filtered contigs to final output fastas (Default = False)")
+	# ~ args = myparser.parse_args()
 	#print(args.configfile)
 	
-	configfile_hierarchy = [ cf for cf in [find_global_configfile(), args.configfile] if cf != None ]
+	# ~ configfile_hierarchy = [ cf for cf in [find_global_configfile(), args.configfile] if cf != None ]
 	# ~ print(configfile_hierarchy)
-	configs = read_configs(configfile_hierarchy, args) #todo finish this
+	# ~ configs = read_configs(configfile_hierarchy, args) #todo finish this
 	#initialize blastdbs
+	assert "db_basedir" in configs and "db_type" in configs, "\n\nERROR: 'db_basedir' and 'db_type' need to be specified in the configs file!\n" 
 	ssu_nucblastdblist = [os.path.join(configs["db_basedir"][0], configs["db_type"][0], nbdb) for nbdb in getdb.dbfiles[configs["db_type"][0]]["ssu_nucblastdbs"]]
 	lsu_nucblastdblist = [os.path.join(configs["db_basedir"][0], configs["db_type"][0], nbdb) for nbdb in getdb.dbfiles[configs["db_type"][0]]["lsu_nucblastdbs"]] #used for lsu and "tsu" rRNAs
 	trna_nucblastdblist = [os.path.join(configs["db_basedir"][0], configs["db_type"][0], nbdb) for nbdb in getdb.dbfiles[configs["db_type"][0]]["trna_nucblastdbs"]]		#todo: implement tRNA_blasts		
@@ -164,7 +127,7 @@ def main():
 
 
 			############## getting LCA classifications
-			sys.stderr.write("-->LCA classifications\n")
+			sys.stderr.write("\n-->LCA classifications\n")
 			if os.path.exists(bindata.pickle_progressfile):
 				sys.stderr.write("\tskipping LCA classification, because already present in pickle file\n") #todo: add check for toplevel_taxlevel set in contigdict and setting it if not
 			else:
@@ -208,6 +171,7 @@ def main():
 				#todo: instead of using eukaryotic proteins, do a bacterial stile ORF prediction on eukaryotic genome fragments, use THOSE as protein referencces and all fragments WITHOUT a CDS as nucleotide references!
 
 			bindata.get_topleveltax(db)
+			# ~ import pdb; pdb.set_trace()
 			#next steps:
 			# list all contigs that have NO toplevel_tax but have auxiliary RNAs ("tsu"-rRNAs or trnas)
 			#unclass_auxrna_genes = bindata.get_auxrna_from_unclass_contigs()
@@ -223,9 +187,11 @@ def main():
 
 			bindata.evaluate_and_flag_all_contigs(db=db, protblasts=protblasts, nucblasts=nucblasts)
 			
+			sys.stderr.write("\n--> writing to output files\n")
+			
 			refdb_ambiguity_report = reporting.write_refdb_ambiguity_report(bindata.bin_tempname, bindata.ref_db_ambiguity_overview, refdb_ambiguity_report)
 			# ~ bindata.print_contigdict(os.path.join(bindata.bin_resultfolder, "contigdict.tsv"))
-
+			
 			sys.stderr.flush()
 
 			reporting.write_full_bindata(bindata, os.path.join(bindata.bin_resultfolder, "fullcontiginfos_beforecleanup.tsv"))
@@ -242,17 +208,17 @@ def main():
 			
 		except Exception as e:
 			sys.stderr.write("\nTHERE WAS A EXCEPTION WHILE HANDLING {}\n".format(infasta))
-			print(e)
+			sys.stderr.write("\n{}\n".format(e))
 			traceback.print_exc()
 			errorlistfile.write(infasta + "\n")
 	import io
 	for f in [overview_before, overview_after, refdb_ambiguity_report]:
 		if isinstance(f, io.IOBase):
 			f.close() #make sure whole buffer is written to files before script terminates!
-	sys.stderr.write("\nfinished\n")
+	sys.stderr.write("\n{line}finished{line}\n".format(line="-"*30))
 
-main()			
+if __name__ == '__main__':
+	main()		
 
 #todo: add more argparse options and multiple parsers
-# todo: add check for existing database and instructins on how to get one
 	

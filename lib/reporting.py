@@ -13,20 +13,9 @@ def dict2tsvline(indictionary, lineprefix = "", key_header = "contig", onlyheade
 	if onlyheader:
 		return "{}{}\t{}\n".format(lineprefix, key_header, "\t".join([key for key in indictionary[list(indictionary.keys())[0]]]))
 	else:
-		# ~ print("HAHA")
-		# ~ print(indictionary.keys())
 		outlines = []
-		# ~ print("huuuuuuu")
 		for i in indictionary.keys():
-			# ~ print(i)
-			# ~ print(indictionary[i].keys())
-			# ~ print("ööööööööö")
-			# ~ print(indictionary[i].values())
-			# ~ print("*"*40)
-			# ~ print("\t".join([str(v) for v in indictionary[i].values()]))
-
 			outlines.append("{}{}\t{}".format(lineprefix, str(i), "\t".join([str(v) for v in indictionary[i].values()])))
-			# ~ print(outlines)
 		return "{}\n".format("\n".join(outlines))
 
 def write_refdb_ambiguity_report(magsag, ambiguities, outfile):
@@ -35,37 +24,20 @@ def write_refdb_ambiguity_report(magsag, ambiguities, outfile):
 	if len(ambiguities) > 0:
 		header = dict2tsvline(ambiguities, lineprefix = "magsag\t", key_header = "contig", onlyheader=True)
 		if isinstance(outfile, str):
-			# ~ print("isastering")
 			outfile = openfile(outfile, "wt")
 			output += header
-			# ~ outfile.write(header)
 		if isinstance(outfile, io.IOBase):
-			# ~ print("isafile")
-			# ~ print("00000000000000000==")
-			# ~ print(ambiguities)
-			# ~ print("--")
-			# ~ print(output)
-			# ~ print("=====================")
 			output += dict2tsvline(ambiguities, lineprefix = "{}\t".format(magsag), key_header = "contig", onlyheader=False)
-			# ~ line = "{}\t{}\t{}\n".format(magsag, i, "\t".join([str(v) for v in ambiguities[i].values()]))
-		# ~ print("huhu")
-		# ~ print(output)
-		# ~ print("----")
+		sys.stderr.write("\tappending refDB-ambiguitiy infos to {}\n".format(outfile.name))
 		outfile.write(output)
-		# ~ print(outfile)
-		# ~ import pdb; pdb.set_trace()
 	return outfile
 	
 def write_full_bindata(bindata, outfilename):
 	outfile = openfile(outfilename, "wt")
-	sys.stderr.write("\n" + outfile.name + "\n")
 	if len(bindata.contigdict) >= 1:
-		sys.stderr.write("\nwriting results\n")
+		sys.stderr.write("\twriting detailed contig infos to {}\n".format(outfilename))
 		outfile.write("contig\t{}\n".format("\t".join([x for x in bindata.contigdict[list(bindata.contigdict.keys())[0]]])))
 		for contig in bindata.contigdict:
-			#print("")
-			#print(bindata.contigdict[contig]["totalprots"])
-			#print("="*20)
 			line = "{}\t{}\n".format(contig, "\t".join([";".join([str(y) for y in bindata.contigdict[contig][x]]) if type(bindata.contigdict[contig][x]) == list else str(bindata.contigdict[contig][x]) for x in bindata.contigdict[contig] ])) #todo: in protmarkerdicts change "protid" to "seqid". Add "seqid" and "marker" keys to ssu and lsu entries
 			outfile.write(line)	
 	else:
@@ -80,12 +52,12 @@ def gather_extended_bin_metrics(bindata, outfile, cutoff=5): #todo: make a simpl
 			outfile = openfile(outfile, "wt")
 			outfile.write("#{}\n".format("\t".join(list(indict.keys()))))
 		if isinstance(outfile, io.IOBase):
+			sys.stderr.write("\tappending overview data to {}\n".format(outfile.name))
 			line = "{}\n".format("\t".join([";".join([str(y) for y in indict[x]]) if type(indict[x]) == list else str(indict[x]) for x in indict ]))
 			outfile.write(line)
 		return outfile
 	
 	
-	print("WRITING TO OVERVIEWFILE")
 	#bc_ = before cleanup
 	#ac_ = after cleanup
 	import statistics
