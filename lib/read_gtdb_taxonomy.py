@@ -1042,14 +1042,16 @@ def cleanupwhenfinished(progressdump, targetdir, verbose=False):
 	lastprogressmarker = "progress_step{}.json".format(laststep)
 	progressdump["step"] = _progress_steps["finished"][-1]
 	currentprogressmarker = "progress_step{}.json".format(progressdump["step"])
-	delcategories = ["silva_download_dict", "gtdb_download_dict", "gtdb_genomefiles", "gtdb_proteinfiles"]
+	delcategories = ["silva_download_dict", "gtdb_download_dict", "gtdb_genomefiles", "gtdb_proteinfiles", "refseq_files", "concatprotfasta", "concatgenomefasta"]
 	for dc in delcategories:
 		# ~ print("---{}".format(dc))
 		if isinstance(progressdump[dc], dict):
 			dellists = [ x for x in NestedDictValues(progressdump[dc])]
 			flattened_dellist = [y for x in dellists for y in x] + [y + ".md5" for x in dellists for y in x]
-		else:
+		elif isinstance(progressdump[dc], list):
 			flattened_dellist = progressdump[dc]
+		else:
+			flattened_dellist = [progressdump[dc]]
 		deletefiles(flattened_dellist)
 		deletedirs(sorted(flattened_dellist, key=lambda x:len(x), reverse=True))
 		progressdump[dc] = ""
@@ -1060,7 +1062,7 @@ def cleanupwhenfinished(progressdump, targetdir, verbose=False):
 	deletefiles([os.path.join(targetdir, x) for x in delversionfiles + delfastafiles])
 
 	getdb.dict2jsonfile(progressdump, os.path.join(targetdir, currentprogressmarker))
-	os.remove(lastprogressmarker)
+	os.remove(os.path.join(targetdir,lastprogressmarker))
 #todo: DROP download of ncbi2gtdb and vice versa mapping files will not use them anyway!
 
 def main(args, configs): #todo: make option to read targetdir from configfile or to WRITE targetdir to configfile when finished

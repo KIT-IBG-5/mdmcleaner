@@ -112,7 +112,7 @@ def main():
 	# ~ import pdb; pdb.set_trace()
 	if args.command == "clean":
 		import clean
-		mdmcleaner.main(args, configs)
+		clean.main(args, configs)
 	
 	if args.command == "makedb":
 		import read_gtdb_taxonomy
