@@ -68,18 +68,28 @@ def main():
 	makedb_args.add_argument("--verbose", action = "store_true", dest = "verbose", default = False, help = "verbose output (download progress etc)") #todo: finish implementing
 	makedb_args.add_argument("--quiet", action = "store_true", dest = "quiet", default = False, help = "quiet mode (suppress any status messages except Errors and Warnings)") #todo: implement
 	
-	get_trna_args = subparsers.add_parser("get_trnas", help = "extracts trna sequences using Aragorn")
-	get_trna_args.add_argument("infastas", nargs = "+", help = "input fasta(s). May be gzip-compressed")
-	get_trna_args.add_argument("--outdir", dest = "outdir", default = ".", help = "Output directory for temporary files, etc. Default = '.'")
-	get_trna_args.add_argument("-b", "--binary", default = "binary", help = "aragorn executable (with path if not in PATH). Default= assume aragorn is in PATH")
-	get_trna_args.add_argument("-t", "--threads", default = 1, type = int, help = "number of parallel threads. Is only used when multiple input files are passed")
+	get_marker_args = subparsers.add_parser("get_markers", help = "extracts protein coding and/or rRNA gene sequences from input genome(s)")
+	get_marker_args.add_argument("-i", "--input_fastas", action = "store", dest = "input_fastas", nargs = "+", help = "input fasta(s). May be gzip-compressed")
+	get_marker_args.add_argument("-m", "--markertype", action = "store", dest = "markertype", default = "all", choices = ["rrna", "trna", "totalprots", "markerprots", "all"], help = "type of marker gene that should be extracted (default = 'all')")
+	get_marker_args.add_argument("-o", "--outdir", dest = "outdir", default = ".", help = "Output directory (will be created if it does not exist). Default = '.'")
+	get_marker_args.add_argument("-c", "--config", action = "store", dest = "configfile", default = find_local_configfile(), help = "provide a local config file with the target location to store database-files. default: looks for config files named 'mdmcleaner.config' in current working directory. settings in the local config file will override settings in the global config file '{}'".format(os.path.join(os.path.dirname(os.path.abspath(__file__)), "mdmcleaner.config")))
+	get_marker_args.add_argument("-t", "--threads", action="store", dest="threads", type = int, default = 1, help = "number of threads to use (default = 1)")
+	get_marker_args.add_argument("-M", "--mincontiglngth", action="store", dest="mincontiglength", type = int, default = 0, help = "minimum contig length (contigs shorter than this will be ignored)")	
+
+	# ~ get_trna_args = subparsers.add_parser("get_trnas", help = "extracts trna sequences using Aragorn")
+	# ~ get_trna_args.add_argument("infastas", nargs = "+", help = "input fasta(s). May be gzip-compressed")
+	# ~ get_trna_args.add_argument("-o", "--outbasename", action="store", dest="outfilebasename", default = "rRNA_barrnap", help = "basename of output files (default = 'tRNA_aragorn')")
+	# ~ get_trna_args.add_argument("--outdir", dest = "outdir", default = ".", help = "Output directory (will be created if it does not exist). Default = '.'")
+	# ~ get_trna_args.add_argument("-b", "--binary", default = "binary", help = "aragorn executable (with path if not in PATH). Default= assume aragorn is in PATH")
+	# ~ get_trna_args.add_argument("-t", "--threads", default = 1, type = int, help = "number of parallel threads. Is only used when multiple input files are passed")
 	
-	get_rrnas_args = subparsers.add_parser("get_rrnas", help = "extract_rRNA sequences using barrnap")
-	get_rrnas_args.add_argument("infasta", help = "input fasta. May be gzip-compressed")
-	get_rrnas_args.add_argument("-o", "--outbasename", action="store", dest="outfilebasename", default = "rRNA_barrnap", help = "basename of output files (default = 'rRNA_barrnap')")
-	get_rrnas_args.add_argument("-t", "--threads", action="store", dest="threads", type = int, default = 1, help = "number of threads to use (default = 1)")
-	get_rrnas_args.add_argument("-b", "--binary", action="store", dest="barrnap", default = "barrnap", help = "path to barrnap binaries (if not in PATH)")
-	get_rrnas_args.add_argument("--outdir", dest = "outdir", default = ".", help = "Output directory for temporary files, etc. Default = '.'")
+	# ~ get_rrnas_args = subparsers.add_parser("get_rrnas", help = "extract_rRNA sequences using barrnap")
+	# ~ get_rrnas_args.add_argument("-i", "--input_fastas", action = "store", dest = "input_fastas", nargs = "+", help = "input fasta(s). May be gzip-compressed")
+	# ~ get_rrnas_args.add_argument("-o", "--outbasename", action="store", dest="outfilebasename", default = "rRNA_barrnap", help = "basename of output files (default = 'rRNA_barrnap')")
+	# ~ get_rrnas_args.add_argument("--outdir", dest = "outdir", default = ".", help = "Output basedirectory (will be created if it does not exist; and subdirectories will be created for every input genome). Default = '.'")
+	# ~ get_rrnas_args.add_argument("-t", "--threads", action="store", dest="threads", type = int, default = 1, help = "number of threads to use (default = 1)")
+	# ~ get_rrnas_args.add_argument("-m", "--mincontiglngth", action="store", dest="mincontiglength", type = int, default = 0, help = "minimum contig length (contigs shorter than this will be ignored)")
+	# ~ get_rrnas_args.add_argument("-b", "--binary", action="store", dest="barrnap", default = "barrnap", help = "path to barrnap binaries (if not in PATH)")
 
 	set_configs_args = subparsers.add_parser("set_configs", help = "setting or changing settings in config files")
 	set_configs_args.add_argument("-s", "--scope", action = "store", dest = "scope", choices = ["local", "global"], default = "local", help = "change settings in local or global config file. 'global' likely require admin privileges. 'local' will modify or create a mdmcleaner.config file in the current working directory. default = 'local'")
@@ -105,7 +115,7 @@ def main():
 	if args.command == "version":
 		sys.stderr.write("MDMcleaner v{}\n".format(__version__))
 
-	if args.command in ["clean", "makedb", "show_configs"]:
+	if args.command in ["clean", "makedb", "show_configs", "get_markers"]:
 		configfile_hierarchy = [ cf for cf in [find_global_configfile(), args.configfile] if cf != None ]
 		configs, settings_source = read_configs(configfile_hierarchy, args)
 	
@@ -122,7 +132,18 @@ def main():
 		else:
 			args.outdir = os.path.join(args.outdir, configs["db_type"][0])
 		read_gtdb_taxonomy.main(args, configs)
-	
+		
+	# ~ if args.command == "get_rrnas":
+		# ~ import getmarkers
+		# ~ getmarkers.get_rrnas_only(args)
+		
+	# ~ if args.command == "get_rrnas":
+		# ~ pass
+		
+	if args.command == "get_markers":
+		import getmarkers
+		getmarkers.get_only_marker_seqs(args, configs)
+
 	if args.command == "set_configs":
 		# ~ import pdb; pdb.set_trace()
 		if args.scope == "global":

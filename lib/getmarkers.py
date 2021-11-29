@@ -191,7 +191,7 @@ def _parse_aragorn_output(outstringlist, verbose=False): #todo:implement verbosi
 				sys.stderr.flush()
 			outlist.append(genename)
 			trnaset.add(trna)
-	sys.stderr.write("\tfound {} of {} tRNAs --> {}%\n".format(len(trnaset), len(full_tRNA_species), len(trnaset)/len(full_tRNA_species)*100)) #todo: change to an actual completeness function that takes into consideration that only about 22% or sequenced bacteria encode SeC-tRNAs
+	sys.stderr.write("\tfound {} of {} tRNAs --> estimated completeness = {:.2f}% (when assuming prototrophy. Actual completeness is probably higher!)\n".format(len(trnaset), len(full_tRNA_species), len(trnaset)/len(full_tRNA_species)*100)) #todo: change to an actual completeness function that takes into consideration that only about 22% or sequenced bacteria encode SeC-tRNAs
 	if verbose:
 		sys.stderr.write("{}\n".format("\t-".join(outlist)))
 	return outlist
@@ -306,7 +306,7 @@ def deduplicate_barrnap_results(tempfastas, gff_outputs, verbose=False): #todo: 
 	for fasta in tempfastas: #currently doing this AFTER the previous loop, to make sure the files are only deleted when everything went well (debugging purposes)
 		os.remove(fasta)
 	# ~ if verbose: #todo: implement verbosity
-	sys.stderr.write("\n\tfound {} rRNA sequences\n".format(sum([ len(finalfastadict[ghj]) for ghj in finalfastadict])))
+	sys.stderr.write("\tfound {} rRNA sequences\n".format(sum([ len(finalfastadict[ghj]) for ghj in finalfastadict])))
 	return finalfastadict, contig_rrna_dict		#todo: also return a dictionary with contignames as keys and type of marker as values?
 					
 def parse_barrnap_headers(header):
@@ -475,7 +475,7 @@ def __get_markerprotseqs(proteinfastafile, markerdict): #todo: implement piping 
 			markerlist.append(prot)
 	return markerlist
 
-def get_markerprots(proteinfastafile, cutoff_dict = cutofftablefile, cmode = "moderate", level = "prok", outfile_basename = "markerprots", threads = 1): #todo: turn list of markerdicts into dict of markerdits
+def get_markerprots(proteinfastafile, cutoff_dict = cutofftablefile, hmmsearch = "hmmsearch", cmode = "moderate", level = "prok", outfile_basename = "markerprots", threads = 1): #todo: turn list of markerdicts into dict of markerdits
 	"""
 	writes fasta sequences of detected markergenes in fasta format to outfile, with marker-designation and hmm score value in description
 	'cmode' refers to "cutoff_mode" and can be one of ["strict", "moderate", or "sensitive"]. Sets the score cutoff_values to use for selecting hits. For each marker-designation and cutoff-mode 
@@ -488,7 +488,7 @@ def get_markerprots(proteinfastafile, cutoff_dict = cutofftablefile, cmode = "mo
 	if type(cutoff_dict) != dict: #alternative for parsing cutoff_dict will be read from a file (better to pass it as dict, though)
 		#TODO: add logger message that cutoff dict is being read from file
 		cutoff_dict = get_cutoff_dict(cutoff_dict)
-	list_of_markerdicts = get_markerprotnames(proteinfastafile, cutoff_dict, hmmsearch = "hmmsearch", outdir = outdir, cmode = "moderate", level = level, threads = threads)
+	list_of_markerdicts = get_markerprotnames(proteinfastafile, cutoff_dict, hmmsearch = hmmsearch, outdir = outdir, cmode = "moderate", level = level, threads = threads)
 	outfilelist = []
 	for i in range(len(list_of_markerdicts)):
 		markerseqs = __get_markerprotseqs(proteinfastafile, list_of_markerdicts[i])
@@ -497,7 +497,7 @@ def get_markerprots(proteinfastafile, cutoff_dict = cutofftablefile, cmode = "mo
 		SeqIO.write(markerseqs, outfile, "fasta")
 		outfile.close()
 		outfilelist.append(outfilename)
-	return outfilelist
+	return outfilelist, list_of_markerdicts
 
 	
 def write_markerdict(markerdict, outfilename):# todo: improve markerdict #todo: confusingly names multiple unrelated dicts "markerdict" sort this out!!
@@ -596,121 +596,35 @@ def add_rrnamarker_to_contigdict_and_markerdict(rrnamarkerdict, contigdict, mark
 			for rRNA_instance in rrnamarkerdict[contig][rRNA_type]:
 				markerdict[rRNA_instance]={"stype" : rRNA_type, "tax" : None}
 	return contigdict, markerdict
-
-class bindata(object): #meant for gathering all contig/protein/marker info
-	def __init__(self, contigfile, threads = 1, outbasedir = "mdmcleaner_results", mincontiglength = 0, cutofftable = cutofftablefile): #todo: enable init with additional precalculated infos
+#######################
+class gdata(object): #meant for gathering all contig/protein/marker info
+	def __init__(self, contigfile, threads = 1, outbasedir = "mdmcleaner_results", mincontiglength = 0, outprefix="MDM_"): #todo: enable init with additional precalculated infos
 		import re
+		self.threads = threads
 		self.barrnap_pattern = re.compile("^\d{1,2}S_rRNA::(.+):\d+-\d+\([+-]\)")
 		self.rnammer_pattern = re.compile("^rRNA_(.+)_\d+-\d+_DIR[+-]")
 		self.binfastafile = contigfile
 		bin_tempname = os.path.basename(contigfile)
-		assert len(bin_tempname) <= 176, "ERROR: input-filename may not be longer than 176 characters (sorry)!" #todo: qucik and dirty fix for a stupid problem: can't produce outputfiles with filenames longer than 256 chars. considering the longest pre- and suffixes, the limit is for 176 chars for the input-filename (without path or suffix). Better long-term solution: shorten output-filenames if necessary (but ensure that tehy are unique)!
-		self.trnadict = {}
 		for suffix in [".gz", ".fa", ".fasta", ".fna", ".fas", ".fsa"]:
 			if bin_tempname.endswith(suffix):
 				bin_tempname = bin_tempname[:-len(suffix)]
-
 		self.outbasedir = outbasedir		
 		self.bin_tempname = bin_tempname
-		sys.stderr.write("\n\n{}\nNow processing genome: {}\n\n".format("="*60, self.bin_tempname))
 		self.bin_resultfolder = os.path.join(self.outbasedir, self.bin_tempname)
-		self.pickle_progressfile = os.path.join(self.bin_resultfolder, "bindata_progress.pickle") #todo: change to better system
-		self.trna_jsonfile = os.path.join(self.bin_resultfolder, "bindata_trna_progress.json.gz") #todo: REALLY start implementing a better system!
 		self.trnafastafile = os.path.join(self.bin_resultfolder, self.bin_tempname + "_tRNAs.fasta.gz")
-		self.filteroutputfiles = { 	"keep" : os.path.join(self.bin_resultfolder, self.bin_tempname + "_filtered_kept_contigs.fasta.gz"),\
-								"evaluate_low" : os.path.join(self.bin_resultfolder, self.bin_tempname + "_filtered_need_evaluation_low.fasta.gz"),\
-								"evaluate_high" : os.path.join(self.bin_resultfolder, self.bin_tempname + "_filtered_need_evaluation_high.fasta.gz"),\
-								"delete" : os.path.join(self.bin_resultfolder, self.bin_tempname + "_filtered_removed.fasta.gz") }
-		self.krona_input = os.path.join(self.bin_resultfolder, self.bin_tempname + "_kronainput.tsv")
-		
-		self.ref_db_ambiguity_overview = {}
+		self.totalprotsfile = os.path.join(self.bin_resultfolder, self.bin_tempname + "_totalprots.faa")
+		sys.stderr.write("\n\n{}\nNow processing genome: {}\n".format("="*60, self.bin_tempname))
+		self.markerdict = {}
+		assert len(bin_tempname) <= 176, "ERROR: input-filename may not be longer than 176 characters (sorry)!" #todo: qucik and dirty fix for a stupid problem: can't produce outputfiles with filenames longer than 256 chars. considering the longest pre- and suffixes, the limit is for 176 chars for the input-filename (without path or suffix). Better long-term solution: shorten output-filenames if necessary (but ensure that tehy are unique)!
+		self.trnadict = {}
+
+	
 		for d in [self.outbasedir, self.bin_resultfolder]:
 			try:
 				if not os.path.exists(d):
 					os.mkdir(d)
 			except FileExistsError:
 					raise Exception("\nERROR: there seems to be a broken symlink present for the target output-folder: '{}' --> skipping this magsag\n".format(d))
-					
-		self.taxondict = None
-		self.majortaxdict = None 
-		self.consensustax = None
-		self.totalprotsfile = os.path.join(self.bin_resultfolder, self.bin_tempname + "_totalprots.faa")
-		sys.stderr.write("\n-->doing ORF-calling\n")
-		self._get_all_markers(threads, mincontiglength, cutofftable)
-	
-
-		
-	    #todo: simplify all those dicts
-	    # todo: inititate all dicts/variables set in _get_all_markers as None here, so that an overview remains possible
-	     
-	def _get_all_markers(self, threads, mincontiglength, cutofftable, from_json = True): #todo: split into a.) get totalprots b.) get_markerprots c.) get rRNA genes! #todo: delete the "from_json argument or set default to False
-		#todo: make a more elegant checkpoint system. This convoluted stuff here may only be temporary because of shortage of time 
-		if os.path.exists(self.totalprotsfile):
-			sys.stderr.write("\t{} already exists. --> skipping ORF-calling!\n".format(self.totalprotsfile))
-			self._prep_onlycontigs(mincontiglength, threads)
-		else:
-			self._prep_contigsANDtotalprots(mincontiglength, threads)
-		self.protmarkerdictlist = get_markerprotnames(self.totalprotsfile, cutofftable, hmmsearch = "hmmsearch", outdir = self.bin_resultfolder, cmode = "moderate", level = "all", threads = threads) #todo: delete hmm_intermediate_results
-		#todo: protmarkerdictlists probably not needed in that form. just save a general markerdict and a contigdict
-
-		for pml in range(len(self.protmarkerdictlist)): #todo: contigdict is maybe not needed in this form. choose simpler dicts ?
-			self.contigdict = parse_protmarkerdict(self.protmarkerdictlist[pml], self.contigdict, pml, self.markerdict)
-		if from_json and os.path.exists(self.pickle_progressfile): #todo: for debugging. hacky solution to preserve LCA from previous runs. can be done better (complete progress_dict like during db-downlad). this here is only temporary!
-			sys.stderr.write("\tloading bindata from pickle\n") #todo: get rid of pickles. only use json
-			markerprogress_dict = misc.from_pickle(self.pickle_progressfile)
-			self.rRNA_fasta_dict = markerprogress_dict["rRNA_fasta_dict"]
-			self.rrnamarkerdict = markerprogress_dict["rrnamarkerdict"]
-			self.contigdict = markerprogress_dict["contigdict"]
-			self.markerdict = markerprogress_dict["markerdict"]
-		else:
-			self.rRNA_fasta_dict, self.rrnamarkerdict = runbarrnap_all(infasta=self.binfastafile, outfilebasename=os.path.join(self.bin_resultfolder, self.bin_tempname + "_rRNA"), barrnap="barrnap", output_directory = self.bin_resultfolder, threads=threads) #todo add option for rnammer (using the subdivided fastafiles)?
-			self.contigdict, self.markerdict = add_rrnamarker_to_contigdict_and_markerdict(self.rrnamarkerdict, self.contigdict, self.markerdict) #todo: contigdict is probably not needed in this form. choose simpler dicts?
-		if from_json and os.path.exists(self.trna_jsonfile):
-			trna_list = misc.from_json(self.trna_jsonfile)
-		else:
-			trna_list = get_trnas(self.binfastafile) #todo: aragorn does not accept input from stdin (WHY!?) --> multithreading a bit more complicated. find a solution for mutiprocessing later, that does not break current workflow! --> probably switch to trnascanSE after all?
-			trna_records = self.get_trna_sequences_from_contigs(trna_list)
-			SeqIO.write(trna_records, openfile(self.trnafastafile, "wt"), "fasta")
-			misc.to_json(trna_list, self.trna_jsonfile)
-		for trna in trna_list:
-			contig = self.marker2contig(trna)
-			self.trnadict[trna] = contig
-			self.markerdict[trna] = {"stype": "trna", "tax": None }
-			self.contigdict[contig]["tRNAs"].append(trna) 
-			
-		#todo: create progressdict like in db-setup (pickling won't work with this kid of object)
-
-	def _save_current_status(self): #todo: for debugging. find better solution later. had to use pickle rather than json, because json does not recognize named_tuples
-		markerprogress_dict = {"rRNA_fasta_dict": self.rRNA_fasta_dict, "rrnamarkerdict": self.rrnamarkerdict, "contigdict": self.contigdict, "markerdict": self. markerdict}
-		misc.to_pickle(markerprogress_dict, self.pickle_progressfile)
-	
-	def _prep_contigsANDtotalprots(self, mincontiglength, threads):
-		subfastas, self.contigdict = split_fasta_for_parallelruns(self.binfastafile, minlength = mincontiglength, number_of_fractions = threads)
-		commandlist = [("getmarkers", "runprodigal", {"infasta" : subfastas[i], "outfilename" : os.path.join(self.bin_resultfolder, "tempfile_{}_prodigal_{}.faa".format(self.bin_tempname, i)) }) for i in range(len(subfastas))]
-		tempprotfiles = misc.run_multiple_functions_parallel(commandlist, threads)
-		# ~ tempdict = get_trnas(subfastas, threads=threads) #todo: aragorn does not accept input from stdin. find a solution for mutiprocessing later!
-		# ~ self.trnadict = { trna[0]: contig for trna in tempdict[contig] for contig in tempdict} 
-		# ~ for contig in self.contigdict:
-			# ~ self.contigdict[contig]["tRNAs"] = tempdict[contig] 
-		self.totalprotsfile, self.markerdict = combine_multiple_fastas(tempprotfiles, outfilename = self.totalprotsfile, delete_original = True, contigdict = self.contigdict,return_markerdict = True)
-	
-	def _prep_protmarker(self):
-		self.protmarkerdictlist = get_markerprotnames(self.totalprotfile, cutofftable, hmmsearch = "hmmsearch", outdir = self.bin_resultfolder, cmode = "moderate", level = "all", threads = "4") #todo: delete hmm_intermediate_results
-		for pml in range(len(self.protmarkerdictlist)):
-			self.contigdict = parse_protmarkerdict(self.protmarkerdictlist[pml], self.contigdict, pml)	
-
-	def _prep_rRNAmarker(self):
-		self.rRNA_fasta_dict, self.rrnamarkerdict = runbarrnap_all(infasta=self.binfastafile, outfilebasename=os.path.join(self.bin_resultfolder, self.bin_tempname + "_rRNA"), barrnap="barrnap", output_directory = self.bin_resultfolder, threads=threads) #todo add option for rnammer (using the subdivided fastafiles)? #todo: parse resultfolder from basename. or rather basename from resultfolder!
-		self.contigdict = add_rrnamarker_to_contigdict(self.rrnamarkerdict, self.contigdict)
-				
-	def _prep_onlycontigs(self, mincontiglength, threads):
-		#todo: add trna-scan
-		infile = openfile(self.binfastafile)
-		self.contigdict = {}
-		for record in SeqIO.parse(infile, "fasta"):
-			if len(record) >= mincontiglength:
-				self.contigdict[record.id] = _get_new_contigdict_entry(record)
-		_, self.markerdict = combine_multiple_fastas([self.totalprotsfile], outfilename = None, delete_original = False, contigdict = self.contigdict, return_markerdict = True)
 		
 	def get_contig_records(self, contiglist=None):
 		"""
@@ -743,10 +657,7 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 		contigname = prodigalprot2contig(protid)
 		assert contigname in self.contigdict, "Protein id \"{}\" should correspond to a contig \"{}\", but no such contig in bindata!".format(protid, contigname)
 		return contigname
-		
-	# ~ def get_contig2prot_dict(self): #todo: check if actually needed usful in any case... seems uneccessary as long as proteins can be assigned to contigs based on prodigal naming scheme. But MAY be useful in the futire, if planned to allow including ready made (e.g. Prokka) annotations?
-		# ~ pass #todo: make this
-	
+			
 	def get_prot2contig_dict(self): #todo: check if actually needed usful in any case... seems uneccessary as long as proteins can be assigned to contigs based on prodigal naming scheme. But MAY be useful in the futire, if planned to allow including ready made (e.g. Prokka) annotations?
 		prot2contigdict = {}
 		for contig in self.contigdict:
@@ -754,6 +665,176 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 				prot2contigdict[protein] = contig
 		return prot2contigdict
 	
+	def verify_arcNbac_marker(self, db):
+		"""
+		removes "bacterial" markers that are not bacterial and "archaeal" markers that are not archaeal from the list of specific markers
+		"""
+		for contig in self.contigdict:
+			wrongmarkerlist = []
+			for bacmarker in self.contigdict[contig]["bac_marker"]:
+				if self.markerdict[bacmarker]["tax"] == None or db.isnot_bacteria(self.markerdict[bacmarker]["tax"].taxid):
+					wrongmarkerlist.append(bacmarker)
+			self.contigdict[contig]["bac_marker"] = [m for m in self.contigdict[contig]["bac_marker"] if m not in wrongmarkerlist ]
+			wrongmarkerlist = []
+			for arcmarker in self.contigdict[contig]["arc_marker"]:
+				if self.markerdict[arcmarker]["tax"] == None or db.isnot_archaea(self.markerdict[arcmarker]["tax"].taxid):
+					wrongmarkerlist.append(arcmarker)
+			self.contigdict[contig]["arc_marker"] = [m for m in self.contigdict[contig]["arc_marker"] if m not in wrongmarkerlist ]	
+	
+	def _prep_contigsANDtotalprots(self, mincontiglength, threads):
+		subfastas, self.contigdict = split_fasta_for_parallelruns(self.binfastafile, minlength = mincontiglength, number_of_fractions = threads)
+		commandlist = [("getmarkers", "runprodigal", {"infasta" : subfastas[i], "outfilename" : os.path.join(self.bin_resultfolder, "tempfile_{}_prodigal_{}.faa".format(self.bin_tempname, i)) }) for i in range(len(subfastas))]
+		tempprotfiles = misc.run_multiple_functions_parallel(commandlist, threads)
+		# ~ tempdict = get_trnas(subfastas, threads=threads) #todo: aragorn does not accept input from stdin. find a solution for mutiprocessing later!
+		# ~ self.trnadict = { trna[0]: contig for trna in tempdict[contig] for contig in tempdict} 
+		# ~ for contig in self.contigdict:
+			# ~ self.contigdict[contig]["tRNAs"] = tempdict[contig] 
+		self.totalprotsfile, self.markerdict = combine_multiple_fastas(tempprotfiles, outfilename = self.totalprotsfile, delete_original = True, contigdict = self.contigdict,return_markerdict = True)
+	
+	def _prep_protmarker(self):
+		self.protmarkerdictlist = get_markerprotnames(self.totalprotfile, hmmsearch = "hmmsearch", outdir = self.bin_resultfolder, cmode = "moderate", level = "all", threads = "4") #todo: delete hmm_intermediate_results
+		for pml in range(len(self.protmarkerdictlist)):
+			self.contigdict = parse_protmarkerdict(self.protmarkerdictlist[pml], self.contigdict, pml)	
+
+	def _prep_rRNAmarker(self):
+		self.rRNA_fasta_dict, self.rrnamarkerdict = runbarrnap_all(infasta=self.binfastafile, outfilebasename=os.path.join(self.bin_resultfolder, self.bin_tempname + "_rRNA"), barrnap="barrnap", output_directory = self.bin_resultfolder, threads=self.threads) #todo add option for rnammer (using the subdivided fastafiles)? #todo: parse resultfolder from basename. or rather basename from resultfolder!
+		self.contigdict, self.markerdict = add_rrnamarker_to_contigdict_and_markerdict(self.rrnamarkerdict, self.contigdict, self.markerdict)
+				
+	def _prep_onlycontigs(self, mincontiglength, threads):
+		#todo: add trna-scan
+		infile = openfile(self.binfastafile)
+		self.contigdict = {}
+		for record in SeqIO.parse(infile, "fasta"):
+			if len(record) >= mincontiglength:
+				self.contigdict[record.id] = _get_new_contigdict_entry(record)
+
+	def _get_all_markers(self, threads, mincontiglength): #todo: split into a.) get totalprots b.) get_markerprots c.) get rRNA genes! #todo: delete the "from_json argument or set default to False
+		#todo: make a more elegant checkpoint system. This convoluted stuff here may only be temporary because of shortage of time 
+		if os.path.exists(self.totalprotsfile):
+			sys.stderr.write("\t{} already exists. --> skipping ORF-calling!\n".format(self.totalprotsfile))
+			self._prep_onlycontigs(mincontiglength, threads)
+			_, self.markerdict = combine_multiple_fastas([self.totalprotsfile], outfilename = None, delete_original = False, contigdict = self.contigdict, return_markerdict = True)
+		else:
+			self._prep_contigsANDtotalprots(mincontiglength, threads)
+		protmarkerfiles, self.protmarkerdictlist = get_markerprots(self.totalprotsfile, hmmsearch = "hmmsearch", outfile_basename = os.path.join(self.bin_resultfolder, self.bin_tempname + "_markerprots"), cmode = "moderate", level = "all", threads = threads) #todo: delete hmm_intermediate_results
+		
+		#todo: protmarkerdictlists probably not needed in that form. just save a general markerdict and a contigdict
+
+		for pml in range(len(self.protmarkerdictlist)): #todo: contigdict is maybe not needed in this form. choose simpler dicts ?
+			self.contigdict = parse_protmarkerdict(self.protmarkerdictlist[pml], self.contigdict, pml, self.markerdict)
+		self._prep_rRNAmarker()
+		trna_list = get_trnas(self.binfastafile) #todo: aragorn does not accept input from stdin (WHY!?) --> makes multithreading a bit more complicated. find a solution for mutiprocessing later, that does not break current workflow! --> probably switch to trnascanSE after all? (EDIT: trnascanSE ALSO does not accept input from stdin (WHY?!)
+		trna_records = self.get_trna_sequences_from_contigs(trna_list)
+		SeqIO.write(trna_records, openfile(self.trnafastafile, "wt"), "fasta")
+
+		# ~ import pdb; pdb.set_trace()
+		for trna in trna_list:
+			contig = self.marker2contig(trna)
+			self.trnadict[trna] = contig
+			self.markerdict[trna] = {"stype": "trna", "tax": None }
+			self.contigdict[contig]["tRNAs"].append(trna) 	
+
+	def get_trna_coordinates(self, trna_name):
+		import re
+		locationpattern = "c?\[(\d+),(\d+)\]"
+		locationstring = re.match(_trnapattern, trna_name).group(3)
+		coordinatematch = re.match(locationpattern, locationstring)
+		if locationstring.startswith("c"):
+			direction = -1
+			start = int(coordinatematch.group(2))
+			stop = int(coordinatematch.group(1))
+		else:
+			direction = 1
+			start = int(coordinatematch.group(1))
+			stop = int(coordinatematch.group(2))
+		return start, stop, direction
+	
+	def get_trna_sequences_from_contigs(self, trna_namelist):
+		# ~ sys.stderr.write("\ngetting trna sequences\n")
+		trna_namelist = sorted(trna_namelist)
+		contignamelist = list(set([self.marker2contig(trna_name) for trna_name in trna_namelist]))
+		contigrecords = { record.id : record for record in self.get_contig_records(contignamelist) }
+		outrecords = []
+		for trna in trna_namelist:
+			sys.stdout.flush()
+			sys.stderr.flush()
+			contig = self.marker2contig(trna)
+			start, stop, direction = self.get_trna_coordinates(trna)
+			newrecord = contigrecords[contig][start:stop:direction]
+			newrecord.id = trna
+			newrecord.name = trna
+			newrecord.description = trna
+			outrecords.append(newrecord)
+		return outrecords
+
+########################
+class bindata(gdata): #meant for gathering all contig/protein/marker info
+	def __init__(self, contigfile, threads = 1, outbasedir = "mdmcleaner_results", mincontiglength = 0, cutofftable = cutofftablefile): #todo: enable init with additional precalculated infos. #todo: cutofftablefile is actually decapricated (cutoffs are stated in the hmm-files themselves). kept here only to keep the option open to maybe use individual hmms instead...
+		gdata.__init__(self,contigfile, threads = 1, outbasedir = "mdmcleaner_results", mincontiglength = 0, outprefix="")
+		self.pickle_progressfile = os.path.join(self.bin_resultfolder, "bindata_progress.pickle") #todo: change to better system
+		self.trna_jsonfile = os.path.join(self.bin_resultfolder, "bindata_trna_progress.json.gz") #todo: REALLY start implementing a better system!
+		self.filteroutputfiles = { 	"keep" : os.path.join(self.bin_resultfolder, self.bin_tempname + "_filtered_kept_contigs.fasta.gz"),\
+								"evaluate_low" : os.path.join(self.bin_resultfolder, self.bin_tempname + "_filtered_need_evaluation_low.fasta.gz"),\
+								"evaluate_high" : os.path.join(self.bin_resultfolder, self.bin_tempname + "_filtered_need_evaluation_high.fasta.gz"),\
+								"delete" : os.path.join(self.bin_resultfolder, self.bin_tempname + "_filtered_removed.fasta.gz") }
+		self.krona_input = os.path.join(self.bin_resultfolder, self.bin_tempname + "_kronainput.tsv")
+		
+		self.ref_db_ambiguity_overview = {}
+					
+		self.taxondict = None
+		self.majortaxdict = None 
+		self.consensustax = None
+		sys.stderr.write("\n-->doing ORF-calling\n")
+		self._get_all_markers(threads, mincontiglength, cutofftable)
+	
+
+		
+	    #todo: simplify all those dicts
+	    # todo: inititate all dicts/variables set in _get_all_markers as None here, so that an overview remains possible
+	     
+	def _get_all_markers(self, threads, mincontiglength, cutofftable, from_json = True): #todo: split into a.) get totalprots b.) get_markerprots c.) get rRNA genes! #todo: delete the "from_json argument or set default to False
+		#todo: make a more elegant checkpoint system. This convoluted stuff here may only be temporary because of shortage of time 
+		if os.path.exists(self.totalprotsfile):
+			sys.stderr.write("\t{} already exists. --> skipping ORF-calling!\n".format(self.totalprotsfile))
+			self._prep_onlycontigs(mincontiglength, threads)
+			_, self.markerdict = combine_multiple_fastas([self.totalprotsfile], outfilename = None, delete_original = False, contigdict = self.contigdict, return_markerdict = True)
+		else:
+			self._prep_contigsANDtotalprots(mincontiglength, threads)
+		self.protmarkerdictlist = get_markerprotnames(self.totalprotsfile, cutofftable, hmmsearch = "hmmsearch", outdir = self.bin_resultfolder, cmode = "moderate", level = "all", threads = threads) #todo: delete hmm_intermediate_results
+		#todo: protmarkerdictlists probably not needed in that form. just save a general markerdict and a contigdict
+
+		for pml in range(len(self.protmarkerdictlist)): #todo: contigdict is maybe not needed in this form. choose simpler dicts ?
+			self.contigdict = parse_protmarkerdict(self.protmarkerdictlist[pml], self.contigdict, pml, self.markerdict)
+		if from_json and os.path.exists(self.pickle_progressfile): #todo: for debugging. hacky solution to preserve LCA from previous runs. can be done better (complete progress_dict like during db-downlad). this here is only temporary!
+			sys.stderr.write("\tloading bindata from pickle\n") #todo: get rid of pickles. only use json
+			markerprogress_dict = misc.from_pickle(self.pickle_progressfile)
+			self.rRNA_fasta_dict = markerprogress_dict["rRNA_fasta_dict"]
+			self.rrnamarkerdict = markerprogress_dict["rrnamarkerdict"]
+			self.contigdict = markerprogress_dict["contigdict"]
+			self.markerdict = markerprogress_dict["markerdict"]
+		else:
+			self._prep_rRNAmarker()
+		if from_json and os.path.exists(self.trna_jsonfile):
+			trna_list = misc.from_json(self.trna_jsonfile)
+		else:
+			trna_list = get_trnas(self.binfastafile) #todo: aragorn does not accept input from stdin (WHY!?) --> makes multithreading a bit more complicated. find a solution for mutiprocessing later, that does not break current workflow! --> probably switch to trnascanSE after all? (EDIT: trnascanSE ALSO does not accept input from stdin (WHY?!)
+			trna_records = self.get_trna_sequences_from_contigs(trna_list)
+			SeqIO.write(trna_records, openfile(self.trnafastafile, "wt"), "fasta")
+			misc.to_json(trna_list, self.trna_jsonfile)
+		# ~ import pdb; pdb.set_trace()
+		for trna in trna_list:
+			contig = self.marker2contig(trna)
+			self.trnadict[trna] = contig
+			self.markerdict[trna] = {"stype": "trna", "tax": None }
+			self.contigdict[contig]["tRNAs"].append(trna) 
+			
+		#todo: create progressdict like in db-setup (pickling won't work with this kid of object)
+#ASPA01000002.1
+	def _save_current_status(self): #todo: for debugging. find better solution later. had to use pickle rather than json, because json does not recognize named_tuples
+		markerprogress_dict = {"rRNA_fasta_dict": self.rRNA_fasta_dict, "rrnamarkerdict": self.rrnamarkerdict, "contigdict": self.contigdict, "markerdict": self. markerdict}
+		misc.to_pickle(markerprogress_dict, self.pickle_progressfile)
+	
+
 	# ~ def get_prot2marker_dict(self):
 		# ~ pass #todo: make this
 
@@ -785,26 +866,6 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 		# ~ print("total lca time was : {}".format(stop -start))
 		sys.stdout.flush()
 		
-	
-	def verify_arcNbac_marker(self, db):
-		"""
-		removes "bacterial" markers that are not bacterial and "archaeal" markers that are not archaeal from the list of specific markers
-		"""
-		for contig in self.contigdict:
-			wrongmarkerlist = []
-			for bacmarker in self.contigdict[contig]["bac_marker"]:
-				if self.markerdict[bacmarker]["tax"] == None or db.isnot_bacteria(self.markerdict[bacmarker]["tax"].taxid):
-					wrongmarkerlist.append(bacmarker)
-			# ~ if len(wrongmarkerlist) > 0:
-				# ~ print("removing the following 'bacterial' markers from contig {} : {}".format(contig, ", ".join(wrongmarkerlist)))
-			self.contigdict[contig]["bac_marker"] = [m for m in self.contigdict[contig]["bac_marker"] if m not in wrongmarkerlist ]
-			wrongmarkerlist = []
-			for arcmarker in self.contigdict[contig]["arc_marker"]:
-				if self.markerdict[arcmarker]["tax"] == None or db.isnot_archaea(self.markerdict[arcmarker]["tax"].taxid):
-					wrongmarkerlist.append(arcmarker)
-			# ~ if len(wrongmarkerlist) > 0:
-				# ~ print("removing the following 'archaeal' markers from contig {} : {}".format(contig, ", ".join(wrongmarkerlist)))
-			self.contigdict[contig]["arc_marker"] = [m for m in self.contigdict[contig]["arc_marker"] if m not in wrongmarkerlist ]	
 	
 	def get_topleveltax(self, db):
 		def levels_difference(querytax, majortax): #querytax and majortax can be either taxtuplelists or majortaxdicts, doesnt matter
@@ -1193,39 +1254,6 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 
 	def get_fraction_infoflag(self, infoflag):
 		return sum([ self.contigdict[contig]["contiglen"] for contig in self.get_infoflag_contignames(infoflag) ]) / self.get_total_size()
-
-	def get_trna_coordinates(self, trna_name):
-		import re
-		locationpattern = "c?\[(\d+),(\d+)\]"
-		locationstring = re.match(_trnapattern, trna_name).group(3)
-		coordinatematch = re.match(locationpattern, locationstring)
-		if locationstring.startswith("c"):
-			direction = -1
-			start = int(coordinatematch.group(2))
-			stop = int(coordinatematch.group(1))
-		else:
-			direction = 1
-			start = int(coordinatematch.group(1))
-			stop = int(coordinatematch.group(2))
-		return start, stop, direction
-	
-	def get_trna_sequences_from_contigs(self, trna_namelist):
-		# ~ sys.stderr.write("\ngetting trna sequences\n")
-		trna_namelist = sorted(trna_namelist)
-		contignamelist = list(set([self.marker2contig(trna_name) for trna_name in trna_namelist]))
-		contigrecords = { record.id : record for record in self.get_contig_records(contignamelist) }
-		outrecords = []
-		for trna in trna_namelist:
-			sys.stdout.flush()
-			sys.stderr.flush()
-			contig = self.marker2contig(trna)
-			start, stop, direction = self.get_trna_coordinates(trna)
-			newrecord = contigrecords[contig][start:stop:direction]
-			newrecord.id = trna
-			newrecord.name = trna
-			newrecord.description = trna
-			outrecords.append(newrecord)
-		return outrecords
 		
 	def write_krona_inputtable(self, db):
 		sys.stderr.write("\tcreating krona input-table\n")
@@ -1267,6 +1295,26 @@ class bindata(object): #meant for gathering all contig/protein/marker info
 		for  contig in self.get_untrusted_contignames(trustcutoff=trustcutoff): #todo: actually have to make sure that all corresponding marker entries in markerdict, that belong to those removed conitgs are also removed. But skipping for now (time issues)
 			self.contigdict.pop(contig, None)
 
+def get_only_marker_seqs(args, configs):
+	for infasta in args.input_fastas:
+		genomedata = gdata(infasta, args.threads, outbasedir = args.outdir, outprefix="args.outprefix")
+		if args.markertype in ["rrna", "trna"]:
+			genomedata._prep_onlycontigs(args.mincontiglength, args.threads)
+			if args.markertype == "rrna":
+				genomedata._prep_rRNAmarker()
+			elif args.markertype == "trna":
+				trna_list = get_trnas(genomedata.binfastafile) #todo: aragorn does not accept input from stdin (WHY!?) --> makes multithreading a bit more complicated. find a solution for mutiprocessing later, that does not break current workflow! --> probably switch to trnascanSE after all? (EDIT: trnascanSE ALSO does not accept input from stdin (WHY?!)
+				trna_records = genomedata.get_trna_sequences_from_contigs(trna_list)
+				SeqIO.write(trna_records, openfile(genomedata.trnafastafile, "wt"), "fasta")
+		elif args.markertype in ["totalprots", "markerprots", "all"]:
+			genomedata._prep_contigsANDtotalprots(args.mincontiglength, args.threads)
+			if args.markertype == "all":
+				genomedata._get_all_markers(threads = args.threads, mincontiglength = args.mincontiglength)
+			elif args.markertype == "markerprots":
+				markerprotfiles, genomedata.protmarkerdictlist = get_markerprots(genomedata.totalprotsfile, hmmsearch = configs["hmmsearch"][0], outfile_basename = os.path.join(genomedata.bin_resultfolder, genomedata.bin_tempname + "_markerprots"), cmode = "moderate", level = "all", threads = args.threads) #todo: delete hmm_intermediate_results
+		else:
+			raise Exception("\nERROR: markertype '{}' not implemented yet!\n".format(mtype))
+		
 ######################################################
 
 

@@ -80,7 +80,7 @@ def main(args, configs):
 
 				protblasts = blasthandler.blastdata(protblastjsonfilename, score_cutoff_fraction = 0.75, continue_from_json = True, seqtype = "prot", ignorelistfile = args.ignorelistfile)
 			else:
-				sys.stderr.write("-->blasting protein data\n")
+				sys.stderr.write("\n-->blasting protein data\n")
 				protblastfiles = []
 				for blastdb in protblastdblist: #for protmarkers, every db is blasted one after another with full threads #todo: set list of pbdb names during initialization!
 					pbdb = os.path.basename(blastdb)
@@ -110,7 +110,7 @@ def main(args, configs):
 				ssublastquerylist = [bindata.rRNA_fasta_dict["ssu_rRNA"]]
 				# ~ trnablastquerylist = [bindata.trnafile]
 	
-				sys.stderr.write("-->blasting rRNA data\n") 
+				sys.stderr.write("\n-->blasting rRNA data\n") 
 				#todo: the following blasts all against all (including 16S vs 23S database). But blasting 16S only makes sense against a 16S dabatase... --> ensure blasts are only against appropriate dbs![
 				lsu_blast_combinations = blasthandler.get_blast_combinations(lsu_nucblastdblist, lsublastquerylist, blast = "blastn")
 				ssu_blast_combinations = blasthandler.get_blast_combinations(ssu_nucblastdblist, ssublastquerylist, blast = "blastn")

@@ -182,7 +182,7 @@ class blastdata(object): #todo: define differently for protein or nucleotide bla
 	def add_info_to_blastlines(self, bindata_obj, taxdb_obj = None):
 		# ~ import time #todo: remove this later
 		sys.stderr.write("\tadding info to blastlines (old version)")
-		starttime = time.time()
+		# ~ starttime = time.time()
 		for i in range(len(self.blastlinelist)):
 			self.blastlinelist[i]["contig"] = bindata_obj.marker2contig(self.blastlinelist[i]["query"])
 			self.blastlinelist[i]["stype"] = bindata_obj.markerdict[self.blastlinelist[i]["query"]]["stype"]
