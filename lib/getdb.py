@@ -270,6 +270,9 @@ class taxdb(object):
 			# ~ print("queryacc: {}".format(queryacc))
 			# ~ print("startline={}, stopline={}, currline={}".format(startline, stopline, currentline))
 			# ~ print("---")
+			if tokens == [""]:
+				sys.stderr.write("\nWARNING: do not recognize accession '{}'\n".format(queryacc))
+				break
 			subjectacc = tokens[0]
 			subjecttaxid = tokens[1]
 			if subjectacc == queryacc:
@@ -278,7 +281,7 @@ class taxdb(object):
 				stop = currentpos
 			else:
 				start = currentpos
-		return none, 0
+		return None, 0
 	
 	def acclist2taxiddict(self, queryacclist): #may still reconsider whether i actually want to output a dictionary or not
 		start = 0
@@ -346,7 +349,8 @@ class taxdb(object):
 	def taxid2pathstring(self, taxid):
 		"""returns semicolon-seperated string-representation of the full taxpath for a given taxid
 		"""
-		return ";".join([ p.taxname for p in self.taxid2taxpath(taxid) ]) #todo: correct p.taxname to p[0] after next commit
+		if taxid:
+			return ";".join([ p[0] if type(p) == tuple else p.taxname for p in self.taxid2taxpath(taxid)]) #unnecessarily flexible, as taxid2taxpath returns tuples, not namedtuples. But may avoid confugion in the furture (when i switch to ONE sytem for storing taxpaths)
 
 
 	def taxid2taxpath(self, taxid, fullpath = True, unofficials = False): #may skip the outformat and return all levels as tuples (taxname, taxid, rank). MAy change fullpath default to False AFTER i checked how to best deal with "unofficial candidate phyla"
@@ -376,7 +380,8 @@ class taxdb(object):
 		assert self.taxdict != None, "\nError in taxid2taxpath: you must provide a taxdb-file\n"
 		assert isinstance(fullpath, bool), "\nError in taxid2taxpath: 'fullpath' must be either True or False\n"
 		assert isinstance(unofficials, bool), "\nError in taxid2taxpath: 'unofficials' must be either True or False\n"
-
+		if not taxid:
+			return
 		taxpath = []
 		# ~ is_candidate_phylum = False
 		# ~ is_incertae_sedis = False

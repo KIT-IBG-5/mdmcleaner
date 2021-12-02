@@ -76,21 +76,11 @@ def main():
 	get_marker_args.add_argument("-t", "--threads", action="store", dest="threads", type = int, default = 1, help = "number of threads to use (default = 1)")
 	get_marker_args.add_argument("-M", "--mincontiglngth", action="store", dest="mincontiglength", type = int, default = 0, help = "minimum contig length (contigs shorter than this will be ignored)")	
 
-	# ~ get_trna_args = subparsers.add_parser("get_trnas", help = "extracts trna sequences using Aragorn")
-	# ~ get_trna_args.add_argument("infastas", nargs = "+", help = "input fasta(s). May be gzip-compressed")
-	# ~ get_trna_args.add_argument("-o", "--outbasename", action="store", dest="outfilebasename", default = "rRNA_barrnap", help = "basename of output files (default = 'tRNA_aragorn')")
-	# ~ get_trna_args.add_argument("--outdir", dest = "outdir", default = ".", help = "Output directory (will be created if it does not exist). Default = '.'")
-	# ~ get_trna_args.add_argument("-b", "--binary", default = "binary", help = "aragorn executable (with path if not in PATH). Default= assume aragorn is in PATH")
-	# ~ get_trna_args.add_argument("-t", "--threads", default = 1, type = int, help = "number of parallel threads. Is only used when multiple input files are passed")
-	
-	# ~ get_rrnas_args = subparsers.add_parser("get_rrnas", help = "extract_rRNA sequences using barrnap")
-	# ~ get_rrnas_args.add_argument("-i", "--input_fastas", action = "store", dest = "input_fastas", nargs = "+", help = "input fasta(s). May be gzip-compressed")
-	# ~ get_rrnas_args.add_argument("-o", "--outbasename", action="store", dest="outfilebasename", default = "rRNA_barrnap", help = "basename of output files (default = 'rRNA_barrnap')")
-	# ~ get_rrnas_args.add_argument("--outdir", dest = "outdir", default = ".", help = "Output basedirectory (will be created if it does not exist; and subdirectories will be created for every input genome). Default = '.'")
-	# ~ get_rrnas_args.add_argument("-t", "--threads", action="store", dest="threads", type = int, default = 1, help = "number of threads to use (default = 1)")
-	# ~ get_rrnas_args.add_argument("-m", "--mincontiglngth", action="store", dest="mincontiglength", type = int, default = 0, help = "minimum contig length (contigs shorter than this will be ignored)")
-	# ~ get_rrnas_args.add_argument("-b", "--binary", action="store", dest="barrnap", default = "barrnap", help = "path to barrnap binaries (if not in PATH)")
+	acc2taxpath = subparsers.add_parser("acc2taxpath", help = "Get full taxonomic path assorciated with a specific acession number")
+	acc2taxpath.add_argument("accessions", action = "store", nargs = "+", help = "(space seperated list of) input accessions. Or just pass \"interactive\" for interactive mode")
+	acc2taxpath.add_argument("-c", "--config", action = "store", dest = "configfile", default = find_local_configfile(), help = "provide a local config file with the target location to store database-files. default: looks for config files named 'mdmcleaner.config' in current working directory. settings in the local config file will override settings in the global config file '{}'".format(os.path.join(os.path.dirname(os.path.abspath(__file__)), "mdmcleaner.config")))
 
+	
 	set_configs_args = subparsers.add_parser("set_configs", help = "setting or changing settings in config files")
 	set_configs_args.add_argument("-s", "--scope", action = "store", dest = "scope", choices = ["local", "global"], default = "local", help = "change settings in local or global config file. 'global' likely require admin privileges. 'local' will modify or create a mdmcleaner.config file in the current working directory. default = 'local'")
 	set_configs_args.add_argument("--blastp", action = "store", dest = "blastp", help = "path to blastp binaries (if not in PATH)")
@@ -115,7 +105,7 @@ def main():
 	if args.command == "version":
 		sys.stderr.write("MDMcleaner v{}\n".format(__version__))
 
-	if args.command in ["clean", "makedb", "show_configs", "get_markers"]:
+	if args.command in ["clean", "makedb", "show_configs", "get_markers", "acc2taxpath"]:
 		configfile_hierarchy = [ cf for cf in [find_global_configfile(), args.configfile] if cf != None ]
 		configs, settings_source = read_configs(configfile_hierarchy, args)
 	
@@ -169,4 +159,30 @@ def main():
 		for c in configs:
 			sys.stderr.write("{}\t{}\t{}\n".format(c,configs[c],settings_source[c]))
 
+	if args.command == "acc2taxpath":
+		import getdb
+		db = getdb.taxdb(configs)
+		if args.accessions[0] == "interactive":
+			sys.stderr.write("\n\nrunning {} acc2taxpath {} in interactive mode. type \"exit\" or press \"ctrl+D\" to exit\n\n".format(os.path.basename(sys.argv[0]), __version__))
+			userinput = ""
+			while True:
+				try:
+					userinput = input("enter accession here:")
+					if userinput == "":
+						continue
+					elif userinput == "exit":
+						break
+					sys.stderr.write("\n--{}--\n".format(userinput))
+					taxid, _ = db.acc2taxid(userinput)
+					taxpath = db.taxid2pathstring(taxid)
+					sys.stderr.write("{}\n".format(taxpath))
+				except EOFError:
+					break
+		else:
+			for acc in args.accessions:
+				taxid, _ = db.acc2taxid(acc)
+				# ~ sys.stderr.write("=={}==".format(taxid))
+				taxpath = db.taxid2pathstring(taxid)
+				sys.stderr.write("{}\t{}".format(taxid, taxpath))
+		sys.stderr.write("\n")
 main()
