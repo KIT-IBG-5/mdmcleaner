@@ -759,7 +759,7 @@ def make_blast_db(infasta, outfilename, makeblastdb="makeblastdb", db_type="nucl
 	assert db_type in ["nucl", "prot"],  "dbtype has to be either 'nucl' or 'prot'"
 	sys.stderr.write("\n\tcreating blastdb {}...".format(outfilename))
 	sys.stderr.flush()
-	mkdbcmd = [ makeblastdb, "-in", infasta, "-title", outfilename, "-out", outfilename, "-dbtype", db_type, "-max_file_sz", "4GB"] #hash_index apparently not possible for very large datasets
+	mkdbcmd = [ makeblastdb, "-in", infasta, "-title", outfilename, "-parse_seqids", "-out", outfilename, "-dbtype", db_type, "-max_file_sz", "4GB"] #hash_index apparently not possible for very large datasets
 	# ~ print(" ".join(mkdbcmd)) #todo: add verbose option and print mkdbcmd it TRUE
 	mkdbproc = subprocess.run(mkdbcmd, stdout = subprocess.PIPE, stderr = subprocess.PIPE, text = True)
 	try:
@@ -783,7 +783,7 @@ def make_blast_db_from_gz(infasta, outfilename, makeblastdb="makeblastdb", db_ty
 	sys.stderr.write("\n\tcreating blastdb {}...".format(outfilename))
 	sys.stderr.flush()
 	zcatcmd = [ "zcat", infasta]
-	mkdbcmd = [ makeblastdb, "-title", outfilename, "-out", outfilename, "-dbtype", db_type, "-max_file_sz", "4GB"] #hash_index apparently not possible for very large datasets
+	mkdbcmd = [ makeblastdb, "-title", outfilename, "-parse_seqids", "-out", outfilename, "-dbtype", db_type, "-max_file_sz", "4GB"] #hash_index apparently not possible for very large datasets
 	# ~ import time
 	# ~ start = time.time()
 	zcatproc = subprocess.Popen(zcatcmd, stdout = subprocess.PIPE, stderr = subprocess.PIPE, text = True)
