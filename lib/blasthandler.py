@@ -633,7 +633,7 @@ def _add_taxid2blasthits_later(blastlinelist, db_obj): #todo: probably obsolte..
 		blastlinelist[bl]["taxid"] = db_obj.acc2taxid(blastlinelist[bl]["taxid"]["subject"])
 	return blastlinelist
 
-def run_single_blast(query, db, blast, outname, threads = 1): 
+def run_single_blast(query, db, blast, outname, outfmt = "6", threads = 1): 
 	import subprocess
 	assert os.path.basename(blast) in ["blastn", "blastp", "blastx"]
 	if type(query) == str and os.path.isfile(query):
@@ -644,7 +644,7 @@ def run_single_blast(query, db, blast, outname, threads = 1):
 	else:
 		raise IOError("\nERROR: don't recognize query argument\n")
 	blastcmd = subprocess.run([blast, "-query", query, "-db", db, "-evalue", "1e-10",\
-							   "-outfmt", "6", "-num_threads", str(int(threads)), "-out", outname + ".tmp"], \
+							   "-outfmt", outfmt, "-num_threads", str(int(threads)), "-out", outname + ".tmp"], \
 							  input = inputarg, stdout = subprocess.PIPE, stderr = subprocess.PIPE, text = True)
 	try:
 		blastcmd.check_returncode()
@@ -654,17 +654,17 @@ def run_single_blast(query, db, blast, outname, threads = 1):
 		raise RuntimeError
 	return outname
 
-def run_single_blastp(query, db, blast, outname, threads = 1):
+def run_single_blastp(query, db, blast, outname, outfmt = "6", threads = 1):
 	assert os.path.basename(blast) == "blastp" 
-	return run_single_blast(query, db, blast, outname, threads)
+	return run_single_blast(query, db, blast, outname, outfmt, threads)
 
-def run_single_blastn(query, db, blast, outname, threads = 1):
+def run_single_blastn(query, db, blast, outname, outfmt = "6", threads = 1):
 	assert os.path.basename(blast) == "blastn"
-	return run_single_blast(query, db, blast, outname, threads)
+	return run_single_blast(query, db, blast, outname, outfmt, threads)
 
-def run_single_blastx(query, db, blast, outname, threads = 1):
+def run_single_blastx(query, db, blast, outname, outfmt = "6", threads = 1):
 	assert os.path.basename(blast) == "blastx"
-	return run_single_blast(query, db, blast, outname, threads)
+	return run_single_blast(query, db, blast, outname, outfmt, threads)
 	
 def run_single_diamondblastp(query, db, diamond, outname, threads = 1): #TODO: currently not setting "--tmpdir" & "--parallel-tmpdir" here! figure something out if this turns out to be problematic on hpc systems
 	#TODO: add a maxmem arguemt that states how much memory can be used. use this to determine optimal blocksize and chunks for more efficient blasting. BLOCKSIZE=INT(MEMORY/6) CHUNKS=4/2/1 IF MEMORY >=12/24/48
