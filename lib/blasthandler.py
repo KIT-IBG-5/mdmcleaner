@@ -666,11 +666,11 @@ def run_single_blastx(query, db, blast, outname, outfmt = "6", threads = 1):
 	assert os.path.basename(blast) == "blastx"
 	return run_single_blast(query, db, blast, outname, outfmt, threads)
 	
-def run_single_diamondblastp(query, db, diamond, outname, threads = 1): #TODO: currently not setting "--tmpdir" & "--parallel-tmpdir" here! figure something out if this turns out to be problematic on hpc systems
+def run_single_diamondblastp(query, db, diamond, outname, outfmt = "6", threads = 1): #TODO: currently not setting "--tmpdir" & "--parallel-tmpdir" here! figure something out if this turns out to be problematic on hpc systems
 	#TODO: add a maxmem arguemt that states how much memory can be used. use this to determine optimal blocksize and chunks for more efficient blasting. BLOCKSIZE=INT(MEMORY/6) CHUNKS=4/2/1 IF MEMORY >=12/24/48
 	import subprocess
 	blastcmd = subprocess.run([diamond, "blastp", "--query", query, "--db", db, "--evalue", "1e-10",\
-							   "--outfmt", "6", "--threads", str(int(threads)), "--out", outname + ".tmp"], \
+							   "--outfmt", outfmt, "--threads", str(int(threads)), "--out", outname + ".tmp"], \
 							   stdout = subprocess.PIPE, stderr = subprocess.PIPE, text = True)
 	try:
 		print(" ".join(blastcmd.args))
@@ -680,22 +680,40 @@ def run_single_diamondblastp(query, db, diamond, outname, threads = 1): #TODO: c
 		sys.stderr.write("{}\n".format(blastcmd.stderr))
 		raise RuntimeError
 	return outname
-	
+
+def run_single_diamondblastx(query, db, diamond, outname, outfmt = "6", threads = 1): #TODO: currently not setting "--tmpdir" & "--parallel-tmpdir" here! figure something out if this turns out to be problematic on hpc systems
+	#TODO: add a maxmem arguemt that states how much memory can be used. use this to determine optimal blocksize and chunks for more efficient blasting. BLOCKSIZE=INT(MEMORY/6) CHUNKS=4/2/1 IF MEMORY >=12/24/48
+	import subprocess
+	blastcmd = subprocess.run([diamond, "blastx", "--query", query, "--db", db, "--evalue", "1e-10",\
+							   "--outfmt", outfmt, "--threads", str(int(threads)), "--out", outname + ".tmp"], \
+							   stdout = subprocess.PIPE, stderr = subprocess.PIPE, text = True)
+	try:
+		print(" ".join(blastcmd.args))
+		blastcmd.check_returncode()
+	except Exception:
+		sys.stderr.write("\nAn error occured during diamond blastp run with query '{}'\n".format(query))
+		sys.stderr.write("{}\n".format(blastcmd.stderr))
+		raise RuntimeError
+	return outname
+
 def _run_any_blast(query, db, path_appl, outname, threads, force = False):
 	#TODO: fix stupid problem that blast (unfortunately) cannot handle gzipped query files. solution read in compressed fastas, pipe records to blast-functions via stdin (TODO: add this function also to diamond (already present in ncbi-blast)
 	appl = os.path.basename(path_appl)
+	appl_onlypath = os.path.dirname(path_appl)
 	#print("\nblasting --> {}".format(outname))
 	if os.path.isfile(outname) and force == False:
 		sys.stderr.write("\n\tWARNING: blast result file '{}' already exists and 'force' not set to True --> skipping this blast\n".format(outname))
 		return outname
-	assert appl in ["blastp", "blastn", "diamond"], "\nError: unknown aligner '{}'\n".format(appl)
+	assert appl in ["blastp", "blastn", "diamond", "diamond blastp", "diamond blastx"], "\nError: unknown aligner '{}'\n".format(appl)
 	_command_available(command=path_appl)
 	if appl == "blastp":
 		outname = run_single_blastp(query, db, path_appl, outname, threads)
 	elif appl == "blastn":
 		outname = run_single_blastn(query, db, path_appl, outname, threads)
-	elif appl == "diamond":
-		run_single_diamondblastp(query, db, path_appl, outname, threads)
+	elif appl in ["diamond", "diamond blastp"]:
+		run_single_diamondblastp(query, db, os.path.join(appl_onlypath, "diamond"), outname, threads)
+	elif appl == "diamond_blastx":
+		run_single_diamondblastx(query, db, os.path.join(appl_onlypath, "diamond"), outname, threads)
 	os.rename(outname + ".tmp", outname)
 	return outname
 
