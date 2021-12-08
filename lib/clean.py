@@ -51,7 +51,7 @@ def main(args, configs):
 	assert "db_basedir" in configs and "db_type" in configs, "\n\nERROR: 'db_basedir' and 'db_type' need to be specified in the configs file!\n" 
 	ssu_nucblastdblist = [os.path.join(configs["db_basedir"][0], configs["db_type"][0], nbdb) for nbdb in getdb.dbfiles[configs["db_type"][0]]["ssu_nucblastdbs"]]
 	lsu_nucblastdblist = [os.path.join(configs["db_basedir"][0], configs["db_type"][0], nbdb) for nbdb in getdb.dbfiles[configs["db_type"][0]]["lsu_nucblastdbs"]] #used for lsu and "tsu" rRNAs
-	trna_nucblastdblist = [os.path.join(configs["db_basedir"][0], configs["db_type"][0], nbdb) for nbdb in getdb.dbfiles[configs["db_type"][0]]["trna_nucblastdbs"]]		#todo: implement tRNA_blasts		
+	# ~ trna_nucblastdblist = [os.path.join(configs["db_basedir"][0], configs["db_type"][0], nbdb) for nbdb in getdb.dbfiles[configs["db_type"][0]]["genome_nucblastdbs"]]		#todo: implement tRNA_blasts		
 	protblastdblist = [os.path.join(configs["db_basedir"][0], configs["db_type"][0], pbdb) for pbdb in getdb.dbfiles[configs["db_type"][0]]["protblastdbs"]]
 	
 	sys.stderr.write("\n\nSETTINGS:\n" + pprint.pformat(configs)+ "\n\n")
@@ -77,7 +77,7 @@ def main(args, configs):
 			sys.stdout.flush()
 			sys.stderr.flush()	
 			if os.path.isfile(protblastjsonfilename) and args.force != True: #for debugging. allows picking up AFTER blastlines were already classified when re-running
-
+				sys.stderr.write("\n-->using preexisting protein blast results in resultfolder!\n")
 				protblasts = blasthandler.blastdata(protblastjsonfilename, score_cutoff_fraction = 0.75, continue_from_json = True, seqtype = "prot", ignorelistfile = args.ignorelistfile)
 			else:
 				sys.stderr.write("\n-->blasting protein data\n")
@@ -87,7 +87,7 @@ def main(args, configs):
 					sys.stdout.flush()
 					sys.stderr.flush()	
 					# ~ starttime = time.time()
-					protblastfiles.append(blasthandler._run_any_blast(bindata.totalprotsfile, blastdb, "diamond", os.path.join(bindata.bin_resultfolder, "{}_totalprots_vs_{}.blast.tsv".format(bindata.bin_tempname, pbdb)), configs["threads"]))  #todo make choce of blast tool flexible. perhaps dependent on db (add tool/db tuple pairs to configs-dict)
+					protblastfiles.append(blasthandler._run_any_blast(bindata.totalprotsfile, blastdb, "diamond", outname=os.path.join(bindata.bin_resultfolder, "{}_totalprots_vs_{}.blast.tsv".format(bindata.bin_tempname, pbdb)), threads=configs["threads"]))  #todo make choce of blast tool flexible. perhaps dependent on db (add tool/db tuple pairs to configs-dict)
 					# ~ endtime = time.time()
 					# ~ print("\nthis blast took {} seconds\n".format(endtime - starttime))
 				sys.stderr.write("\treading in protblast files...\n")
@@ -98,6 +98,7 @@ def main(args, configs):
 				protblasts.to_json(protblastjsonfilename)
 			##### then rnablasts
 			if os.path.isfile(nucblastjsonfilename) and args.force != True: #for debugging. allows picking up AFTER blastlines were already classified when re-running
+				sys.stderr.write("\n-->using preexisting ribosomal rRNA blast results in resultfolder!\n")
 				nucblasts = blasthandler.blastdata(nucblastjsonfilename, score_cutoff_fraction = 0.8, continue_from_json = True, seqtype = "nuc", ignorelistfile=args.ignorelistfile)
 			else:
 				rnablastfiles = []
@@ -116,7 +117,7 @@ def main(args, configs):
 				ssu_blast_combinations = blasthandler.get_blast_combinations(ssu_nucblastdblist, ssublastquerylist, blast = "blastn")
 			# ~ trna_blast_combinations = blasthandler.get_blast_combinations(trna_nucblastdblist, trnablastquerylist, blast = "blastn")
 				all_blast_combinations = lsu_blast_combinations + ssu_blast_combinations
-				rnablastfiles = blasthandler.run_multiple_blasts_parallel(all_blast_combinations, os.path.join(bindata.bin_resultfolder, "blastn"), configs["threads"])
+				rnablastfiles = blasthandler.run_multiple_blasts_parallel(all_blast_combinations, outbasename=os.path.join(bindata.bin_resultfolder, "blastn"), total_threads=configs["threads"])
 				# ~ endtime = time.time()
 				# ~ print("\nthis blast took {} seconds\n".format(endtime - starttime))
 				nucblasts = blasthandler.blastdata(*rnablastfiles, score_cutoff_fraction = 0.8, seqtype = "nuc", ignorelistfile = args.ignorelistfile) #stricter cutoff for nucleotide blasts
