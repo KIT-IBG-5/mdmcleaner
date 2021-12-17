@@ -50,13 +50,13 @@ dbfiles = { "gtdb" : {	"protblastdbs" : ["gtdbplus_protdb.dmnd"], \
 						"nucblastdbs" : ["concat_refgenomes", "SILVA_138.1_SSURef_NR99_tax_silva", "SILVA_138.1_LSURef_NR99_tax_silva"] ,\
 						"ssu_nucblastdbs" : ["concat_refgenomes", "SILVA_138.1_SSURef_NR99_tax_silva"], \
 						"lsu_nucblastdbs" : ["concat_refgenomes", "SILVA_138.1_LSURef_NR99_tax_silva"], \
-						"trna_nucblastdbs" : ["concat_refgenomes"], \
+						"genome_nucblastdbs" : ["concat_refgenomes"], \
 						"mdmdbs" : ["gtdb_all.accession2taxid.sorted", "gtdb_taxonomy_br.json.gz", "gtdb_lcawalkdb_br.db"] },\
-			"ncbi" : { "protblastdbs" : ["nr"], \
+			"ncbi" : {  "protblastdbs" : ["nr"], \
 						"nucblastdbs" : ["nt"], \
 						"ssu_nucblastdbs" : ["nt"], \
 						"lsu_nucblastdbs" : ["nt"], \
-						"trna_nucblastdbs" : ["nt"], \
+						"genome_nucblastdbs" : ["nt"], \
 						"mdmdbs" : [ "ncbi_accession2taxid", "ncbi_taxonomy_br.json.gz", "ncbi_lcawalkdb_br.db"] } }
 
 
@@ -165,7 +165,15 @@ class taxdb(object):
 		self.acc2taxid_lookupfile = os.path.join(self.dbpath, dbfiles[configs["db_type"][0]]["mdmdbs"][0])
 		self.taxdbfile = os.path.join(self.dbpath, dbfiles[configs["db_type"][0]]["mdmdbs"][1])
 		self.lca_pathsfile = os.path.join(self.dbpath, dbfiles[configs["db_type"][0]]["mdmdbs"][2])
-
+		
+		self.nucdbs_ssu_rRNA = [os.path.join(self.dbpath, x) for x in dbfiles[configs["db_type"][0]]["ssu_nucblastdbs"]]
+		self.nucdbs_lsu_rRNA = [os.path.join(self.dbpath, x) for x in dbfiles[configs["db_type"][0]]["lsu_nucblastdbs"]]
+		self.nucdbs_genome = [os.path.join(self.dbpath, x) for x in dbfiles[configs["db_type"][0]]["genome_nucblastdbs"]]
+		self.nucdbs_all = [os.path.join(self.dbpath, x) for x in dbfiles[configs["db_type"][0]]["nucblastdbs"]]
+		
+		self.protdbs_all = [os.path.join(self.dbpath, x) for x in dbfiles[configs["db_type"][0]]["protblastdbs"]]
+		
+		
 		self.versionfile = os.path.join(self.dbpath, "DB_versions.txt")
 		self.check_db_folder()
 		self.read_db_versions()
@@ -313,6 +321,17 @@ class taxdb(object):
 		if len(tp) >= 1 and tp[1][0] == "Eukaryota": #todo: make sure this simplified index-based lookup still works if using taxpaths that include non-official ranks (but probably should, at least for "root" and "domain/superkingdom"-levels
 			return True
 		return False	
+
+	def get_domain_phylum(self, taxid):
+		'''
+		returns a tuple containing only the domain and phylum designation associated with the given taxid (if any)
+		'''
+		domain_phylum = [None, None]
+		tp = self.taxid2taxpath(taxid)[1:3]
+		for i in range(len(tp)):
+			domain_phylum[i] = tp[i][0]
+		return tuple(domain_phylum)
+		
 
 	def get_specific_taxlevel_subtaxid(self, taxid, taxlevel="domain", returnvalue="taxid"):
 		"""

@@ -94,7 +94,7 @@ def read_lookup_table(lookup_table, table_format = None): #should be able to rea
 
 
 class blastdata(object): #todo: define differently for protein or nucleotide blasts (need different score/identity cutoffs)
-	_blasttsv_columnnames = {"query" : 0, "subject" : 1, "ident" : 2, "alignlen" : 3, "qstart": 6, "qend" : 7, "sstart" : 8, "ssend" : 9, "evalue" : 10, "score" : 11, "qlen" : 12, "slen": 13, "contig" : None, "stype" : None, "taxid": None} #reading in all fields, in case functionality is added later that also uses the sstat send etc fields
+	_blasttsv_columnnames = {"query" : 0, "subject" : 1, "ident" : 2, "alignlen" : 3, "qstart": 6, "qend" : 7, "sstart" : 8, "send" : 9, "evalue" : 10, "score" : 11, "qlen" : 12, "slen": 13, "contig" : None, "stype" : None, "taxid": None} #reading in all fields, in case functionality is added later that also uses the sstat send etc fields
 	# ~ _nuc_stypelist = ["ssu_rRNA", "lsu_rRNA"]
 	# ~ _prot_stypelist = ["total", "bac_marker", "prok_marker", "arc_marker"]
 	def __init__(self, *blastfiles, max_evalue = None, min_ident = None, score_cutoff_fraction = 0.75, keep_max_hit_fraction = 0.5, keep_min_hit_count = 2, continue_from_json = False, auxilliary = False, seqtype=None, ignorelistfile=None):
@@ -179,6 +179,40 @@ class blastdata(object): #todo: define differently for protein or nucleotide bla
 		if len(query_templist) > 0: #after finished looping, append the final gene also...
 			filtered_blastlinelist.extend(query_templist[:max(int(len(query_templist)*keep_max_hit_fraction), keep_min_hit_count)])
 		self.blastlinelist = filtered_blastlinelist
+
+	def filter_blasthits_by_cov_and_ident(self, *, mincov=50.0, minident=90.0, filterbylen = "min"):
+		'''
+		meant for filtering potential refDB contaminations. 
+		'mincov' and 'minident' should be given as percentages between 0-100.
+		alignment-length filtering can be done based on "query" or "subject" length or the "min" or "max" of those values 
+ 
+		'''
+		def get_comparelen(line, filterbylen):
+			if filterbylen == "min":
+				return min(line["qlen"], line["slen"])
+			elif filterbylen == "max":
+				return max(line["qlen"], line["slen"])
+			else:
+				return line[filterbylen]
+		
+		filterbylen_options = ["min","max","query","subject"]
+		assert filterbylen in filterbylen_options, "\n\nERROR: 'filterbylen' must be one of {}\n\n".fotmat(filterbylen_options)
+		filteredlist = [ line for line in self.blastlinelist if ((line["alignlen"]/get_comparelen(line, filterbylen))*100 >= mincov and line["ident"] >= minident) ] 
+		# the following was dropped. delete it when absolutely sure not implementing it again
+		# ~ if filterbyoverlap == True: #if the contigs don't overlap completely, make sure the aligning part is not just some conserbed region in the middle of the contigs, but positionoed so that it at least looks like a possible overlap
+			# ~ i = 0
+			# ~ while i < (len(filteredlist)):
+				# ~ if filteredlist[i]["alignlen"] < min(filteredlist[i]["qlen"], filteredlist[i]["slen"]) * 0.95: #allowing difference for up to 5% of contig
+					# ~ qmin = min(filteredlist[i]["qstart"],filteredlist[i]["qend"] )
+					# ~ qmax = max(filteredlist[i]["qstart"],filteredlist[i]["qend"])
+					# ~ smin = min(filteredlist[i]["sstart"],filteredlist[i]["send"])
+					# ~ smax = max(filteredlist[i]["sstart"],filteredlist[i]["send"])
+					
+					# ~ if (qmin > end_mismatch_allowance and qmax < filteredlist[i]["qlen"] - end_mismatch_allowance) or (smin > end_mismatch_allowance and smax < filteredlist[i]["slen"] - end_mismatch_allowance):
+						# ~ filteredlist.pop(i)
+						# ~ continue
+				# ~ i += 1
+		self.blastlinelist = filteredlist
 	
 	def add_info_to_blastlines(self, bindata_obj = None, taxdb_obj = None):
 		# ~ import time #todo: remove this later
@@ -543,7 +577,7 @@ def read_blast_tsv(infilename, max_evalue = None, min_ident = None, dbobj = None
 	each blast will later be assigned to a contig and to a "subject-type" (=stype), which can be either of ["16S", "23S", "univ_marker", "proc_marker", "bact_marker", "arch_marker", "other"]
 	"""
 	#note to self: wanted to use namedtuples here, but namedtuples won't work well here, because i may need them to be mutable.
-	columninfos = {"query" : 0, "subject" : 1, "ident" : 2, "alignlen" : 3, "qstart": 6, "qend" : 7, "sstart" : 8, "ssend" : 9, "evalue" : 10, "score" : 11, "contig" : None, "stype" : None, "taxid": None} #Since python 3.7 all dicts are now ordered by default (YAY!). So the order of keys is maintained, without having to keep a seperate "orderlist". --> THEREFORE:  Ensure/Enforce python 3.7+ !!!
+	columninfos = {"query" : 0, "subject" : 1, "ident" : 2, "alignlen" : 3, "qstart": 6, "qend" : 7, "sstart" : 8, "send" : 9, "evalue" : 10, "score" : 11, "contig" : None, "stype" : None, "taxid": None} #Since python 3.7 all dicts are now ordered by default (YAY!). So the order of keys is maintained, without having to keep a seperate "orderlist". --> THEREFORE:  Ensure/Enforce python 3.7+ !!!
 	infile = openfile(infilename)
 	blastlinelist = []
 	for line in infile:
@@ -562,6 +596,31 @@ def read_blast_tsv(infilename, max_evalue = None, min_ident = None, dbobj = None
 def _blastlines2blasthits(blastlinelist):
 	return [ hit(accession=q["subject"], taxid=q["taxid"], identity=q["ident"], score=q["score"]) for q in blastlinelist ]
 
+
+def get_contig_from_blastdb(seqid, blastdb, blastdbcmd = "blastdbcmd"): #todo: move this funciton to blasthandler
+	'''
+	todo: a different functions should also be added to the databaseobject created at getdb, that then calls this blasthandler funciton for the correct blastdb
+	seqid may be a single seqid or a list of seqids
+	returns a list of Seqrecords
+	'''
+	import subprocess
+	from io import StringIO
+	from Bio import SeqIO
+	if type(seqid) == list:
+		seqid = ",".join(seqid)
+	cmd_blastdbcmd = ["blastdbcmd", "-entry", seqid, "-db", blastdb] # todo: add 'blastdbcmd' to dependencies and to configs
+	print("huhuhuhuhu")
+	print(cmd_blastdbcmd)
+	print("hehehehehe")
+	p_blastdbcmd = subprocess.run(cmd_blastdbcmd, stdout = subprocess.PIPE, stderr = subprocess.PIPE, text = True)
+	try:
+		p_blastdbcmd.check_returncode()
+	except Exception:
+		sys.stderr.write("\nAn error occured when trying to extract seqids {} from blast database {}\n".format(seqid, blastdb))
+		sys.stderr.write("{}\n".format(p_blastdbcmd.stderr))
+		raise RuntimeError
+	fasta_io = StringIO(p_blastdbcmd.stdout)
+	return(list(SeqIO.parse(fasta_io, "fasta")))
 
 def _add_contigs2blasthits_later(blastlinelist, parsetype = "prodigal", lookup_table = None): #todo: probably obsolete...
 	"""
@@ -635,7 +694,7 @@ def _add_taxid2blasthits_later(blastlinelist, db_obj): #todo: probably obsolte..
 		blastlinelist[bl]["taxid"] = db_obj.acc2taxid(blastlinelist[bl]["taxid"]["subject"])
 	return blastlinelist
 
-def run_single_blast(query, db, blast, outfmt = "6", outname = None, threads = 1): 
+def run_single_blast(query, db, blast, outfmt = "6", outname = None, threads = 1): #todo: add 'max_target_seqs" to optinal arguments (with 500 as default value)
 	import subprocess
 	assert os.path.basename(blast) in ["blastn", "blastp", "blastx"]
 	assert outname, "\n\tERROR: must supply an outfilename!\n"
@@ -672,6 +731,7 @@ def run_single_blastx(query, db, blast, outfmt = "6", outname = None, threads = 
 	
 def run_single_diamondblastp(query, db, diamond, outfmt = "6", outname = None, threads = 1): #TODO: currently not setting "--tmpdir" & "--parallel-tmpdir" here! figure something out if this turns out to be problematic on hpc systems
 	#TODO: add a maxmem arguemt that states how much memory can be used. use this to determine optimal blocksize and chunks for more efficient blasting. BLOCKSIZE=INT(MEMORY/6) CHUNKS=4/2/1 IF MEMORY >=12/24/48
+	#todo: increase default number of max_target hits stored to ~ 500 (and make it an optional argument)
 	import subprocess
 	assert outname, "\n\tERROR: must supply an outfilename!\n"
 	assert outfmt in supported_outfmts, "\n\tError: outfmt '{}' not supported! can only be one of : {}".format(outfmt, ", ".join(supported_outfmts))
@@ -692,15 +752,30 @@ def run_single_diamondblastx(query, db, diamond, outfmt = "6", outname = None, t
 	import subprocess
 	assert outname, "\n\tERROR: must supply an outfilename!\n"
 	assert outfmt in supported_outfmts, "\n\tError: outfmt '{}' not supported! can only be one of : {}".format(outfmt, ", ".join(supported_outfmts))
-	blastcmd = subprocess.run([diamond, "blastx", "--query", query, "--db", db, "--evalue", "1e-10",\
-							   "--outfmt", outfmt, "--threads", str(int(threads)), "--out", outname + ".tmp"], \
-							   stdout = subprocess.PIPE, stderr = subprocess.PIPE, text = True)
+	tempname = None
+	import re
+	outfmt = re.sub(" std ", " qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore ", outfmt).strip().split() #blast allows "std" keyword in outfmt, diamond doesn't
+	if type(query) == list: #list indicates a list of seqrecords
+		print("QUERY IS A LIST")
+		tempname="delme_tempinput_mdmcleaner_diamondblastx.faa" # todo: figure out a better solution until a future diamond version hopefully may accept input from stdin...
+		misc.write_fasta(query, tempname)
+		query = tempname
+	else:
+		print("QUERY IS OF TYPE '{}'".format(type(query)))
+	cmdlist = [diamond, "blastx", "--query", query, "--db", db, "--evalue", "1e-10",\
+			"--outfmt", *outfmt, "--threads", str(int(threads)), "--out", outname + ".tmp"]
+	print(cmdlist)
+	blastcmd = subprocess.run(cmdlist, stdout = subprocess.PIPE, stderr = subprocess.PIPE, text = True)
 	try:
 		print(" ".join(blastcmd.args))
 		blastcmd.check_returncode()
+		if tempname:
+			os.remove(tempname)
 	except Exception:
 		sys.stderr.write("\nAn error occured during diamond blastp run with query '{}'\n".format(query))
 		sys.stderr.write("{}\n".format(blastcmd.stderr))
+		if tempname:
+			os.remove(tempname)
 		raise RuntimeError
 	return outname
 
@@ -722,7 +797,7 @@ def _run_any_blast(query, db, path_appl, outfmt = "6",outname = None ,threads = 
 		outname = run_single_blastn(query, db, path_appl, outfmt, outname, threads)
 	elif appl in ["diamond", "diamond blastp"]:
 		outname = run_single_diamondblastp(query, db, os.path.join(appl_onlypath, "diamond"), outfmt, outname, threads)
-	elif appl == "diamond_blastx":
+	elif appl == "diamond blastx":
 		outname = run_single_diamondblastx(query, db, os.path.join(appl_onlypath, "diamond"), outfmt, outname, threads)
 	os.rename(outname + ".tmp", outname)
 	return outname
@@ -847,7 +922,7 @@ def _command_available(command="diamond"): #todo: move this to misc, maybe?
 	'''
 	import subprocess
 	try:
-		subprocess.call([command],stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+		subprocess.call([command.split()[0]],stderr=subprocess.PIPE, stdout=subprocess.PIPE)
 	except FileNotFoundError:
 		raise FileNotFoundError("\nError: can't run command '{}'. Maybe it is not installen in PATH, or you do not have the right conda environment activated?\n")
 	else:

@@ -5,7 +5,7 @@ import argparse
 import misc
 from misc import openfile
 
-setting_keys = ["blastp", "blastn", "diamond", "barrnap", "rnammer", "hmmsearch", "aragorn", "db_basedir","db_type", "blastdb_diamond", "blastdb_blastp", "blastdb_blastn", "threads"] # todo: complete this list 
+setting_keys = ["blastp", "blastn", "blastdbcmd", "diamond", "barrnap", "rnammer", "hmmsearch", "aragorn", "db_basedir","db_type", "blastdb_diamond", "blastdb_blastp", "blastdb_blastn", "threads"] # todo: complete this list 
 from _version import __version__
 
 def find_global_configfile():
@@ -80,6 +80,10 @@ def main():
 	acc2taxpath.add_argument("accessions", action = "store", nargs = "+", help = "(space seperated list of) input accessions. Or just pass \"interactive\" for interactive mode")
 	acc2taxpath.add_argument("-c", "--config", action = "store", dest = "configfile", default = find_local_configfile(), help = "provide a local config file with the target location to store database-files. default: looks for config files named 'mdmcleaner.config' in current working directory. settings in the local config file will override settings in the global config file '{}'".format(os.path.join(os.path.dirname(os.path.abspath(__file__)), "mdmcleaner.config")))
 
+	evaluate_refdbcontam_args = subparsers.add_parser("refdb_contams", help = "EXPERIMENTAL: evaluate potentiel refDB-contaminations")
+	evaluate_refdbcontam_args.add_argument("ambiguity_report", nargs = "?", default = "./overview_refdb_ambiguities.tsv")
+	evaluate_refdbcontam_args.add_argument("-c", "--config", action = "store", dest = "configfile", default = find_local_configfile(), help = "provide a local config file with the target location to store database-files. default: looks for config files named 'mdmcleaner.config' in current working directory. settings in the local config file will override settings in the global config file '{}'".format(os.path.join(os.path.dirname(os.path.abspath(__file__)), "mdmcleaner.config")))
+	evaluate_refdbcontam_args.add_argument("-t", "--threads", action="store", dest="threads", type = int, default = 1, help = "number of threads to use (default = 1)")
 	
 	set_configs_args = subparsers.add_parser("set_configs", help = "setting or changing settings in config files")
 	set_configs_args.add_argument("-s", "--scope", action = "store", dest = "scope", choices = ["local", "global"], default = "local", help = "change settings in local or global config file. 'global' likely require admin privileges. 'local' will modify or create a mdmcleaner.config file in the current working directory. default = 'local'")
@@ -105,7 +109,7 @@ def main():
 	if args.command == "version":
 		sys.stderr.write("MDMcleaner v{}\n".format(__version__))
 
-	if args.command in ["clean", "makedb", "show_configs", "get_markers", "acc2taxpath"]:
+	if args.command in ["clean", "makedb", "show_configs", "get_markers", "acc2taxpath", "refdb_contams"]:
 		configfile_hierarchy = [ cf for cf in [find_global_configfile(), args.configfile] if cf != None ]
 		configs, settings_source = read_configs(configfile_hierarchy, args)
 	
@@ -185,4 +189,9 @@ def main():
 				taxpath = db.taxid2pathstring(taxid)
 				sys.stderr.write("{}\t{}".format(taxid, taxpath))
 		sys.stderr.write("\n")
+	
+	if args.command == "refdb_contams":
+		import review_refdbcontams
+		review_refdbcontams.read_ambiguity_report(args.ambiguity_report, configs, blacklist = None)
+		
 main()
