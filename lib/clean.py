@@ -8,7 +8,7 @@ from misc import openfile
 import getdb
 import getmarkers
 import blasthandler
-import pprint
+
 import lca
 import reporting
 import itertools
@@ -54,7 +54,7 @@ def main(args, configs):
 	# ~ trna_nucblastdblist = [os.path.join(configs["db_basedir"][0], configs["db_type"][0], nbdb) for nbdb in getdb.dbfiles[configs["db_type"][0]]["genome_nucblastdbs"]]		#todo: implement tRNA_blasts		
 	protblastdblist = [os.path.join(configs["db_basedir"][0], configs["db_type"][0], pbdb) for pbdb in getdb.dbfiles[configs["db_type"][0]]["protblastdbs"]]
 	
-	sys.stderr.write("\n\nSETTINGS:\n" + pprint.pformat(configs)+ "\n\n")
+	
 	progressdump = check_progressdump(args.output_folder, args.input_fastas) #todo: this is meant to implement a "major-progressdump", consisting of multiple "mini-progressdumps" (one for each input-fasta). for each input-fasta, it should list the current progress-state [None = not started yet, stepxx = currently unfinished, "Finished" = finished]
 	
 	db = getdb.taxdb(configs)
@@ -78,7 +78,7 @@ def main(args, configs):
 			sys.stderr.flush()	
 			if os.path.isfile(protblastjsonfilename) and args.force != True: #for debugging. allows picking up AFTER blastlines were already classified when re-running
 				sys.stderr.write("\n-->using preexisting protein blast results in resultfolder!\n")
-				protblasts = blasthandler.blastdata(protblastjsonfilename, score_cutoff_fraction = 0.75, continue_from_json = True, seqtype = "prot", ignorelistfile = args.ignorelistfile)
+				protblasts = blasthandler.blastdata(protblastjsonfilename, score_cutoff_fraction = 0.75, continue_from_json = True, seqtype = "prot", blacklist = configs["blacklist"])
 			else:
 				sys.stderr.write("\n-->blasting protein data\n")
 				protblastfiles = []
@@ -91,7 +91,7 @@ def main(args, configs):
 					# ~ endtime = time.time()
 					# ~ print("\nthis blast took {} seconds\n".format(endtime - starttime))
 				sys.stderr.write("\treading in protblast files...\n")
-				protblasts = blasthandler.blastdata(*protblastfiles, score_cutoff_fraction = 0.75, seqtype = "prot", ignorelistfile = args.ignorelistfile)
+				protblasts = blasthandler.blastdata(*protblastfiles, score_cutoff_fraction = 0.75, seqtype = "prot", blacklist = configs["blacklist"])
 				sys.stderr.write("\tlooking up taxids of protein blast hits...\n")
 				protblasts.add_info_to_blastlines(bindata, db)
 				sys.stderr.write("\tsaving protblasts for reuse\n") #todo: make this optional. is only for debugging now!
@@ -99,7 +99,7 @@ def main(args, configs):
 			##### then rnablasts
 			if os.path.isfile(nucblastjsonfilename) and args.force != True: #for debugging. allows picking up AFTER blastlines were already classified when re-running
 				sys.stderr.write("\n-->using preexisting ribosomal rRNA blast results in resultfolder!\n")
-				nucblasts = blasthandler.blastdata(nucblastjsonfilename, score_cutoff_fraction = 0.8, continue_from_json = True, seqtype = "nuc", ignorelistfile=args.ignorelistfile)
+				nucblasts = blasthandler.blastdata(nucblastjsonfilename, score_cutoff_fraction = 0.8, continue_from_json = True, seqtype = "nuc", blacklist = configs["blacklist"])
 			else:
 				rnablastfiles = []
 				# ~ starttime = time.time()
@@ -120,7 +120,7 @@ def main(args, configs):
 				rnablastfiles = blasthandler.run_multiple_blasts_parallel(all_blast_combinations, outbasename=os.path.join(bindata.bin_resultfolder, "blastn"), total_threads=configs["threads"])
 				# ~ endtime = time.time()
 				# ~ print("\nthis blast took {} seconds\n".format(endtime - starttime))
-				nucblasts = blasthandler.blastdata(*rnablastfiles, score_cutoff_fraction = 0.8, seqtype = "nuc", ignorelistfile = args.ignorelistfile) #stricter cutoff for nucleotide blasts
+				nucblasts = blasthandler.blastdata(*rnablastfiles, score_cutoff_fraction = 0.8, seqtype = "nuc", blacklist = configs["blacklist"]) #stricter cutoff for nucleotide blasts
 				sys.stderr.write("\tlooking up taxids of nucleotide blast hits...\n")
 				nucblasts.add_info_to_blastlines(bindata, db)
 				sys.stderr.write("\tsaving nuclasts for reuse\n") #todo: make this optional. is only for debugging now!

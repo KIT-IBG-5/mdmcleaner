@@ -4,6 +4,7 @@ import os
 import argparse
 import misc
 from misc import openfile
+import pprint
 
 setting_keys = ["blastp", "blastn", "blastdbcmd", "diamond", "barrnap", "rnammer", "hmmsearch", "aragorn", "db_basedir","db_type", "blastdb_diamond", "blastdb_blastp", "blastdb_blastn", "threads"] # todo: complete this list 
 from _version import __version__
@@ -28,6 +29,7 @@ def read_configs(configfilelist, args): #todo: switch to config object instead o
 	Unknown setting names will just be ignored. However, comments should optimally be marked with "#"
 	"""
 	settings, settings_source = {}, {}
+	settings["blacklistfile"] = []
 	for config in configfilelist:
 		sys.stderr.write("\nreading settings from configfile: \"{}\"\n".format(config))
 		with openfile(config) as configfile:
@@ -44,7 +46,19 @@ def read_configs(configfilelist, args): #todo: switch to config object instead o
 		settings["threads"] = args.threads
 	else:
 		settings["threads"] = int(settings["threads"][0])
+	if "blacklistfile" in vars(args):
+		settings["blacklistfile"].append(args.blacklistfile)
 	return settings, settings_source
+
+def _read_blacklistfiles(blacklistfilelist):
+	blacklist = set()
+	for blacklistfile in blacklistfilelist:
+		with openfile(blacklistfile) as blf:
+			for line in blf:
+				tokens = line.strip().split("#")
+				if len(tokens) >0 and tokens[0] != "":
+					blacklist.add(tokens[0])
+	return blacklist
 
 def main():
 	myparser = argparse.ArgumentParser(prog=os.path.basename(sys.argv[0]), description= "MDMcleaner pipeline v{} for decontaminating and classifying microbial dark matter MAGs and SAGs".format(__version__))
@@ -59,7 +73,7 @@ def main():
 	cleansagmag_args.add_argument("-f", "--force", action = "store_true", dest = "force", default = False, help = "Force reclassification of pre-existing blast-results")
 	# ~ cleansagmag_args.add_argument("--blast2pass", action = "store_true", dest = "blast2pass", default = "False", help = "add a second-pass blastx blast-run for all contigs without any classification on blastp level (default: False)")
 	cleansagmag_args.add_argument("--overview_files_basename", action = "store", dest = "overview_basename", default = "overview", help = "basename for overviewfiles (default=\"overview\"")
-	cleansagmag_args.add_argument("-I", "--ignorelistfile", action = "store", dest = "ignorelistfile", default = None, help = "File listing reference-DB sequence-names that should be ignored during blast-analyses (e.g. known refDB-contaminations...")
+	cleansagmag_args.add_argument("-I", "--ignorelistfile", action = "store", dest = "ignorelistfile", default = None, help = "File listing reference-DB sequence-names that should be ignored during blast-analyses (e.g. known refDB-contaminations...") #todo: rename to blacklistfile
 	cleansagmag_args.add_argument("--no_filterfasta", action = "store_true", dest = "no_filterfasta", default = False, help = "Do not write filtered contigs to final output fastas (Default = False)")
 
 	makedb_args = subparsers.add_parser("makedb", help = "Download and create MDMcleaner database")
@@ -112,6 +126,9 @@ def main():
 	if args.command in ["clean", "makedb", "show_configs", "get_markers", "acc2taxpath", "refdb_contams"]:
 		configfile_hierarchy = [ cf for cf in [find_global_configfile(), args.configfile] if cf != None ]
 		configs, settings_source = read_configs(configfile_hierarchy, args)
+		sys.stderr.write("\n\nSETTINGS:\n" + pprint.pformat(configs)+ "\n\n")
+		if args.command in ["clean", "get_markers", "refdb_contams"]:
+			configs["blacklist"] =  _read_blacklistfiles(configs["blacklistfile"])
 	
 	# ~ import pdb; pdb.set_trace()
 	if args.command == "clean":
@@ -192,6 +209,6 @@ def main():
 	
 	if args.command == "refdb_contams":
 		import review_refdbcontams
-		review_refdbcontams.read_ambiguity_report(args.ambiguity_report, configs, blacklist = None)
+		review_refdbcontams.read_ambiguity_report(args.ambiguity_report, configs, blacklist = blacklist)
 		
 main()

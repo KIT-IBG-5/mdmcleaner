@@ -97,7 +97,7 @@ class blastdata(object): #todo: define differently for protein or nucleotide bla
 	_blasttsv_columnnames = {"query" : 0, "subject" : 1, "ident" : 2, "alignlen" : 3, "qstart": 6, "qend" : 7, "sstart" : 8, "send" : 9, "evalue" : 10, "score" : 11, "qlen" : 12, "slen": 13, "contig" : None, "stype" : None, "taxid": None} #reading in all fields, in case functionality is added later that also uses the sstat send etc fields
 	# ~ _nuc_stypelist = ["ssu_rRNA", "lsu_rRNA"]
 	# ~ _prot_stypelist = ["total", "bac_marker", "prok_marker", "arc_marker"]
-	def __init__(self, *blastfiles, max_evalue = None, min_ident = None, score_cutoff_fraction = 0.75, keep_max_hit_fraction = 0.5, keep_min_hit_count = 2, continue_from_json = False, auxilliary = False, seqtype=None, ignorelistfile=None):
+	def __init__(self, *blastfiles, max_evalue = None, min_ident = None, score_cutoff_fraction = 0.75, keep_max_hit_fraction = 0.5, keep_min_hit_count = 2, continue_from_json = False, auxilliary = False, seqtype=None, blacklist=None):
 		#methods:
 		#	method 1: filter by query-genes. For each gene remove all hits with score below <score_cutoff_fraction> (default = 0.5) of maximum score for that gene
 		#			  from these keep the <keep_max_hit_fraction> of hits (default = 0.5), but keep at least <keep_min_fraction> (default = 2) in every case if possible
@@ -106,23 +106,22 @@ class blastdata(object): #todo: define differently for protein or nucleotide bla
 		# ~ if from_pickle and len(blastfiles) == 1: #if from_pickle is set, that means input shuld NOT be a list of blastfiles, but a single blastdata-object-pickle-file
 			# ~ print("blastdata object already exists! loading from pickle")
 			# ~ self.unpickleyourself(blastfiles[0])
-		# ~ print("blastdata:")
-		# ~ print(ignorelistfile)
 		assert seqtype in ["nuc", "prot", None], "\nERROR: seqtype must be either 'nuc', 'prot' or None (if unknown)\n"
+		assert blacklist == None or type(blacklist) == set, "\nERROR: blacklist must be of type == set\n"
 		self.seqtype = seqtype #todo: do something with this (e.g. set some cutoff)
 		self.min_ident = min_ident
 		self.max_evalue = max_evalue
 		self.score_cutoff_fraction = score_cutoff_fraction
 		self.keep_max_hit_fraction = keep_max_hit_fraction
 		self.keep_min_hit_count = keep_min_hit_count
-		self.ignoreset = set() #todo: rather than reading this for each bin seperately, this should only be read ONCE during the mdmcleaner pipeline and passed as set!
+		if blacklist == None:
+			self.blacklist = set()
+		else:
+			self.blacklist = blacklist
 		if continue_from_json:
 			assert len(blastfiles) == 1, "ERROR: if supposed to create blastdata-object from json, you can provide only one input file (the json)"
 			self.from_json(blastfiles[0])
 		else:
-			# ~ import pdb; pdb.set_trace()
-			self._read_ignorefile(ignorelistfile)
-			# ~ import pdb; pdb.set_trace()
 			self.blastlinelist = []
 			for bf in blastfiles:
 				self.read_blast_tsv(bf, max_evalue = max_evalue, min_ident = min_ident) #TODO: Note: not passing bindata-object right here. if it needs to be looped through later anyway (after condensing the list) it makes more sense to do all further assignments later at that point
@@ -137,16 +136,13 @@ class blastdata(object): #todo: define differently for protein or nucleotide bla
 		# ~ elif stype_query in self._prot_stypelist:
 			# ~ return "prot"
 		
-	def _read_ignorefile(self, ignorelistfile):
-		if ignorelistfile:
-			with openfile(ignorelistfile) as ilf:
-				for line in ilf:
-					# ~ print (line)
-					tokens = line.strip().split("#")
-					# ~ print(tokens)
-					if len(tokens) >0 and tokens[0] != "":
-						self.ignoreset.add(tokens[0])
-				# ~ import pdb; pdb.set_trace()
+	# ~ def _read_ignorefile(self, ignorelistfile):
+		# ~ if ignorelistfile:
+			# ~ with openfile(ignorelistfile) as ilf:
+				# ~ for line in ilf:
+					# ~ tokens = line.strip().split("#")
+					# ~ if len(tokens) >0 and tokens[0] != "":
+						# ~ self.ignoreset.add(tokens[0])
 				 
 	
 	def filter_hits_per_gene(self, score_cutoff_fraction = 0.75, keep_max_hit_fraction = 0.5, keep_min_hit_count = 2): #todo: allow additional filter settings for rRNA data (e.g. filter by identity not score)
@@ -331,7 +327,7 @@ class blastdata(object): #todo: define differently for protein or nucleotide bla
 				continue
 			if min_ident and bl["ident"] < min_ident: #bl.ident < min_ident:
 				continue
-			if bl["subject"] in self.ignoreset:
+			if bl["subject"] in self.blacklist:
 				continue
 			if bindata_obj != None:
 				bl["contig"] = bindata.marker2contig(bl["query"])
