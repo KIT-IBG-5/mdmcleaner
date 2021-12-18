@@ -52,7 +52,7 @@ class comparison_hit(object):
 			end = time.time()
 			print("blastfiles:\n\t{}\n\t".format("\n\t".join(resultfiles)))
 			print("\nthis blast took {:.4f} seconds\n\n".format(end-start))
-			self.blastdata = blasthandler.blastdata(*resultfiles, max_evalue = 1e-5, min_ident = 90, score_cutoff_fraction = 0, keep_max_hit_fraction = 1, keep_min_hit_count = 2, continue_from_json = False, auxilliary = False, seqtype=None, ignorelistfile=blacklist) #todo: ignlorelistfile should be changed to ignore list. Can be a list of a filepath. If filepath, read that file as list. if list, use that
+			self.blastdata = blasthandler.blastdata(*resultfiles, max_evalue = 1e-5, min_ident = 90, score_cutoff_fraction = 0, keep_max_hit_fraction = 1, keep_min_hit_count = 2, continue_from_json = False, auxilliary = False, seqtype=None, blacklist=blacklist) #todo: ignlorelistfile should be changed to ignore list. Can be a list of a filepath. If filepath, read that file as list. if list, use that
 			self.blastdata.add_info_to_blastlines(taxdb_obj=self.db)
 			# ~ delmeprint(self.blastdata.blastlinelist, self.db)
 			print("="*50)
@@ -60,11 +60,12 @@ class comparison_hit(object):
 				self.blastdata.filter_blasthits_by_cov_and_ident(mincov=90, filterbylen=subject)
 			else:
 				self.blastdata.filter_blasthits_by_cov_and_ident()		
-			print("afterfilter:")
-			delmeprint(self.blastdata.blastlinelist, self.db)
-			print("="*50)
-			count_contradictions(self.blastdata, self.db, self.domain, self.phylum, self.seqid)
+			# ~ print("afterfilter:")
+			# ~ delmeprint(self.blastdata.blastlinelist, self.db)
+			# ~ print("="*50)
+			return_category = count_contradictions(self.blastdata, self.db, self.domain, self.phylum, self.seqid)
 			print("*"*100)
+			return return_category
 
 class comp_refseqprot(comparison_hit): #specifically for eukaryotic and viral references that are currently still only stored as protein sequences...
 	def __init__(self,*, taxid, seqid, domain, phylum, db, markerlevel, configs):
@@ -118,6 +119,8 @@ class comparison_pair(object):
 	nuc_marker_types = ["ssu_rRNA_tax", "lsu_rRNA_tax"]
 	sm_lca_bh_pattern = re.compile("sm_best hit=\'([^\(\);\']+)\'\(([^;,\(\)]+),([^;,\(\)]+);\s*acc=\'([^;,\(\)]+)\'")
 	sm_lca_bc_pattern = re.compile("sm_best contradiction=\'([^\(\);\']+)\'\(([^;,\(\)]+),([^;,\(\)]+);\s*acc=\'([^;,\(\)]+)\'")
+	blacklist = None
+	added2blacklistcount = 0
 	# \1 = taxid, \2 = domain; \3= phylum, \4= accession, 
 	# virus_indicator_pattern = re.compile("=\'eukcat__viral'") #in case it is needed to differentiate viral besthits/contradictions from those of other sources that also happen to yield "domain = None" (I don't think there are any such cases...)
 
@@ -126,8 +129,16 @@ class comparison_pair(object):
 		self.markerlevel = markerlevel
 		self.amb_evidence = amb_evidence
 		self.best_hit, self.best_contradiction = self.parse_evidence(configs)
+		if type(self).blacklist == None:
+			if blacklist == None:
+				type(self).blacklist = set()
+			else:
+				type(self).blacklist = blacklist
 		for i in self.best_hit, self.best_contradiction: #todo. do this in calling function. if diamond blastx is planned, collect instances and blast together
-			i.blast_contigs(threads = configs["threads"], blacklist=blacklist, outfileprefix = outfileprefix)
+			return_category = i.blast_contigs(threads = configs["threads"], blacklist=blacklist, outfileprefix = outfileprefix)
+			if return_category == "contamination":
+				type(self).blacklist.add(i.seqid)
+				type(self).added2blacklistcount += 1
 		
 	def parse_evidence(self, configs): #todo: this should move to a compare_group_object
 		return_list = []
@@ -182,7 +193,8 @@ def read_ambiguity_report(ambiguity_report, configs, blacklist = None):
 	sm_contam_pattern = re.compile("potential refDB-contamination \[\w+ indication sm-LCA level\]")
 
 	print("\nREADING: {}\n\n".format(ambiguity_report))
-	db = getdb.taxdb(configs)			
+	db = getdb.taxdb(configs)
+	collect_diamond_querys = {}	
 	with openfile(ambiguity_report) as infile:
 		counter = 0
 		for line in infile:
@@ -200,6 +212,8 @@ def read_ambiguity_report(ambiguity_report, configs, blacklist = None):
 			cp = comparison_pair(amb_evidence, markerlevel, db, configs=configs)
 			if cp.best_hit == cp.best_contradiction == None:
 				continue
+			print("\nadded {} new entries to blacklist!\n".format(cp.added2blacklistcount))
+			print("current blacklist : \n\t{}".format("\n\t".join([x for x in cp.blacklist])))
 			#TODO: NOTE: extraction protein sequences from diamond DBs is rather inefficient. so this will be skipped for now (mayble iplemented in a later version if it turns out it is needed). Will only analyse proteins for now
 			#todo: blast comparison seqs against appropriate blastdb (e.g. blastx vs combined_refprots if one is eukaryotic, otherwise concat_refgenomes (with appropriate program))
 			#todo: choose contig that yields higher summed-hitscores to domain/phylum other than annotated as contamination. YIeld warnfing if BOTH show such an result
@@ -207,11 +221,7 @@ def read_ambiguity_report(ambiguity_report, configs, blacklist = None):
 			#todo: 1.) parse & filter blast results, 2.) assign taxa per blastline, 3.) count domains and phyla
 			# ~ print("blastfiles:\n\t{}\n\t".format("\n\t".join(blastfiles))
 			# ~ blastdata = blasthandler.blastdata(blastfiles, max_evalue = 1e-5, min_ident = 90, score_cutoff_fraction = 0, keep_max_hit_fraction = 1, keep_min_hit_count = 2, continue_from_json = False, auxilliary = False, seqtype=None, ignorelistfile=None) #todo: ignlorelistfile should be changed to ignore list. Can be a list of a filepath. If filepath, read that file as list. if list, use that
-			import pdb; pdb.set_trace()
-
-
-# ~ def takealook(blastdatalist, comparison_seqdicts, db):
-	# ~ pass
+			# ~ import pdb; pdb.set_trace()
 
 def count_contradictions(blastdata, db, comparison_domain, comparison_phylum, query_acc): #todo. add query-id to required arguments, so that hits to original query can be more safely recognized and ignored! 
 	import re
@@ -222,8 +232,8 @@ def count_contradictions(blastdata, db, comparison_domain, comparison_phylum, qu
 	best_selfscore = 0
 	firstline = True
 	for line in blastdata.blastlinelist:
-		print(line)
-		print(firstline)
+		# ~ print(line)
+		# ~ print(firstline)
 		dp_tuple = db.get_domain_phylum(line["taxid"])
 		if firstline and line["subject"] == query_acc:
 			best_selfscore = line["score"]
@@ -287,6 +297,7 @@ def count_contradictions(blastdata, db, comparison_domain, comparison_phylum, qu
 		print("NO sufficient proof for '{}' being a contminant. assuming it is OK!".format(query_acc))
 		return "OK"
 	print("there is a case i have not considered, and THIS is it!")
+	#todo: add detailed evidence strings to 'contamination' and 'ambiguity' classifications...
 	import pdb; pdb.set_trace()
 
 
@@ -300,9 +311,3 @@ def count_contradictions(blastdata, db, comparison_domain, comparison_phylum, qu
 				# ~ todo: in future the db should keep track which genomes are fom isolates, and wich are from MAGs/SAGs. Isolates should count double. Ideally, fully close genome should count triple
 			# ~ IGNORE weighted -LCA instances for now. create specific chimera check for those later!	'''
 	# ~ pass
-
-
-# ~ def main():
-	# ~ overview_refdb_ambiguities.tsv
-
-# ~ main()

@@ -51,14 +51,14 @@ def read_configs(configfilelist, args): #todo: switch to config object instead o
 	return settings, settings_source
 
 def _read_blacklistfiles(blacklistfilelist):
-	blacklist = set()
+	blacklist = []
 	for blacklistfile in blacklistfilelist:
 		with openfile(blacklistfile) as blf:
 			for line in blf:
 				tokens = line.strip().split("#")
 				if len(tokens) >0 and tokens[0] != "":
-					blacklist.add(tokens[0])
-	return blacklist
+					blacklist.append(tokens[0])
+	return set(blacklist)
 
 def main():
 	myparser = argparse.ArgumentParser(prog=os.path.basename(sys.argv[0]), description= "MDMcleaner pipeline v{} for decontaminating and classifying microbial dark matter MAGs and SAGs".format(__version__))
@@ -209,6 +209,6 @@ def main():
 	
 	if args.command == "refdb_contams":
 		import review_refdbcontams
-		review_refdbcontams.read_ambiguity_report(args.ambiguity_report, configs, blacklist = blacklist)
+		review_refdbcontams.read_ambiguity_report(args.ambiguity_report, configs, blacklist = configs["blacklist"])
 		
 main()

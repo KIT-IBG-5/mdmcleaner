@@ -605,9 +605,9 @@ def get_contig_from_blastdb(seqid, blastdb, blastdbcmd = "blastdbcmd"): #todo: m
 	if type(seqid) == list:
 		seqid = ",".join(seqid)
 	cmd_blastdbcmd = ["blastdbcmd", "-entry", seqid, "-db", blastdb] # todo: add 'blastdbcmd' to dependencies and to configs
-	print("huhuhuhuhu")
-	print(cmd_blastdbcmd)
-	print("hehehehehe")
+	# ~ print("huhuhuhuhu")
+	# ~ print(cmd_blastdbcmd)
+	# ~ print("hehehehehe")
 	p_blastdbcmd = subprocess.run(cmd_blastdbcmd, stdout = subprocess.PIPE, stderr = subprocess.PIPE, text = True)
 	try:
 		p_blastdbcmd.check_returncode()
