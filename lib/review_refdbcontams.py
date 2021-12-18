@@ -97,7 +97,8 @@ class comp_prokprotcontig(comparison_hit):
 class comp_ssurrna(comparison_hit):
 	def __init__(self,*, taxid, seqid, domain, phylum, db, markerlevel, configs):
 		super().__init__(taxid=taxid,seqid=seqid, domain=domain, phylum=phylum, db=db, markerlevel=markerlevel)
-		self.extractdb = db.nucdbs_ssu_rRNA[-1] #todo: may need to terate through genomic db also in some cases?
+		self.set_extractdb()
+		# ~ self.extractdb = db.nucdbs_ssu_rRNA[-1] #todo: may need to terate through genomic db also in some cases?
 		self.blastdbs = db.nucdbs_ssu_rRNA
 		self.seqtype = "nucl"
 		self.blast = "blastn"
@@ -107,7 +108,8 @@ class comp_ssurrna(comparison_hit):
 class comp_lsurrna(comparison_hit):
 	def __init__(self,*, taxid, seqid, domain, phylum, db, markerlevel, configs):
 		super().__init__(taxid=taxid,seqid=seqid, domain=domain, phylum=phylum, db=db, markerlevel=markerlevel)
-		self.extractdb = db.nucdbs_lsu_rRNA[-1] #todo: may need to terate through genomic db also in some cases?
+		self.set_extractdb()
+		# ~ self.extractdb = db.nucdbs_lsu_rRNA[-1] #todo: may need to terate through genomic db also in some cases?
 		self.blastdbs = db.nucdbs_lsu_rRNA
 		self.seqtype = "nucl"
 		self.blast = "blastn"
@@ -117,8 +119,8 @@ class comp_lsurrna(comparison_hit):
 class comparison_pair(object):
 	prot_domain_types = ["d__Eukaryota", "None"] #Eukaryotes and Viruses (the latter yield Domain = "None") currently only have protein DBs
 	nuc_marker_types = ["ssu_rRNA_tax", "lsu_rRNA_tax"]
-	sm_lca_bh_pattern = re.compile("sm_best hit=\'([^\(\);\']+)\'\(([^;,\(\)]+),([^;,\(\)]+);\s*acc=\'([^;,\(\)]+)\'")
-	sm_lca_bc_pattern = re.compile("sm_best contradiction=\'([^\(\);\']+)\'\(([^;,\(\)]+),([^;,\(\)]+);\s*acc=\'([^;,\(\)]+)\'")
+	sm_lca_bh_pattern = re.compile("sm_best hit=[a-z; ]{0,7}\'([^\(\);\']+)\'\(([^;,\(\)]+),([^;,\(\)]+);\s*acc=\'([^;,\(\)]+)\'")
+	sm_lca_bc_pattern = re.compile("sm_best contradiction=[a-z; ]{0,7}\'([^\(\);\']+)\'\(([^;,\(\)]+),([^;,\(\)]+);\s*acc=\'([^;,\(\)]+)\'")
 	blacklist = None
 	added2blacklistcount = 0
 	# \1 = taxid, \2 = domain; \3= phylum, \4= accession, 
@@ -142,8 +144,11 @@ class comparison_pair(object):
 		
 	def parse_evidence(self, configs): #todo: this should move to a compare_group_object
 		return_list = []
+		print(self.amb_evidence)
 		for p in [self.sm_lca_bh_pattern, self.sm_lca_bc_pattern]:
+			print(p)
 			patternhit = re.search(p, self.amb_evidence)
+			print(patternhit)
 			seqid = patternhit.group(4)
 			domain = patternhit.group(2)
 			phylum = patternhit.group(3)
@@ -212,8 +217,8 @@ def read_ambiguity_report(ambiguity_report, configs, blacklist = None):
 			cp = comparison_pair(amb_evidence, markerlevel, db, configs=configs)
 			if cp.best_hit == cp.best_contradiction == None:
 				continue
-			print("\nadded {} new entries to blacklist!\n".format(cp.added2blacklistcount))
-			print("current blacklist : \n\t{}".format("\n\t".join([x for x in cp.blacklist])))
+		print("\nadded {} new entries to blacklist!\n".format(cp.added2blacklistcount))
+		print("current blacklist : \n\t{}".format("\n\t".join([x for x in cp.blacklist])))
 			#TODO: NOTE: extraction protein sequences from diamond DBs is rather inefficient. so this will be skipped for now (mayble iplemented in a later version if it turns out it is needed). Will only analyse proteins for now
 			#todo: blast comparison seqs against appropriate blastdb (e.g. blastx vs combined_refprots if one is eukaryotic, otherwise concat_refgenomes (with appropriate program))
 			#todo: choose contig that yields higher summed-hitscores to domain/phylum other than annotated as contamination. YIeld warnfing if BOTH show such an result
