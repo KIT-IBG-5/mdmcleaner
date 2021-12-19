@@ -176,7 +176,7 @@ class blastdata(object): #todo: define differently for protein or nucleotide bla
 			filtered_blastlinelist.extend(query_templist[:max(int(len(query_templist)*keep_max_hit_fraction), keep_min_hit_count)])
 		self.blastlinelist = filtered_blastlinelist
 
-	def filter_blasthits_by_cov_and_ident(self, *, mincov=50.0, minident=90.0, filterbylen = "min"):
+	def filter_blasthits_by_cov_and_ident(self, *, mincov=50.0, minident=90.0, filterbylen = "min", combine_hsps = True):
 		'''
 		meant for filtering potential refDB contaminations. 
 		'mincov' and 'minident' should be given as percentages between 0-100.
@@ -192,7 +192,43 @@ class blastdata(object): #todo: define differently for protein or nucleotide bla
 				return line[filterbylen]
 		
 		filterbylen_options = ["min","max","query","subject"]
-		assert filterbylen in filterbylen_options, "\n\nERROR: 'filterbylen' must be one of {}\n\n".fotmat(filterbylen_options)
+		assert filterbylen in filterbylen_options, "\n\nERROR: 'filterbylen' must be one of {}\n\n".format(filterbylen_options)
+
+		# ~ import pdb; pdb.set_trace()
+
+		if combine_hsps:
+			outlines = []
+			query_subject_dict = {}
+			for line in self.blastlinelist:
+				lkey = (line["query"],line["subject"])
+				if lkey in query_subject_dict:
+					query_subject_dict[lkey].append(line)
+				else:
+					query_subject_dict[lkey] = [line]
+			for lkey in query_subject_dict.keys():
+				sorted_line_sublist = sorted(query_subject_dict[lkey], key = lambda x : (min([x["qstart"],x["qend"]]), -max([x["qstart"], x["qend"]])))
+				while len(sorted_line_sublist) > 1:
+					a = sorted_line_sublist[0]
+					b = sorted_line_sublist[1]
+					if max([a["qstart"], a["qend"]]) > min([b["qstart"], b["qend"]]):
+						if a["score"] < b["score"]:
+							sorted_line_sublist.pop(0)
+						else:
+							sorted_line_sublist.pop(1)
+					else:
+						a["ident"] = sum([a["ident"]*a["alignlen"],b["ident"]*b["alignlen"]])/sum([a["alignlen"],b["alignlen"]])
+						a["alignlen"] += b["alignlen"]
+						a["qend"] = b["qend"]
+						a["sstart"] = None #not bothering about alignment orientatione here...(also this could serve to mark this as a "virtual HSP")
+						a["send"] = None #not bothering about alignment orientatione here...(also this could serve to mark this as a "virtual HSP")
+						a["evalue"] = sum([a["evalue"],b["evalue"]])/2
+						a["score"] += b["score"]
+						sorted_line_sublist[0] = a
+						sorted_line_sublist.pop(1)				
+				outlines += sorted_line_sublist
+				# ~ import pdb; pdb.set_trace()
+			self.blastlinelist = sorted(outlines, key = lambda x:x["score"], reverse=True)
+		# ~ import pdb; pdb.set_trace()
 		filteredlist = [ line for line in self.blastlinelist if ((line["alignlen"]/get_comparelen(line, filterbylen))*100 >= mincov and line["ident"] >= minident) ] 
 		# the following was dropped. delete it when absolutely sure not implementing it again
 		# ~ if filterbyoverlap == True: #if the contigs don't overlap completely, make sure the aligning part is not just some conserbed region in the middle of the contigs, but positionoed so that it at least looks like a possible overlap
@@ -209,6 +245,7 @@ class blastdata(object): #todo: define differently for protein or nucleotide bla
 						# ~ continue
 				# ~ i += 1
 		self.blastlinelist = filteredlist
+		# ~ import pdb; pdb.set_trace()
 	
 	def add_info_to_blastlines(self, bindata_obj = None, taxdb_obj = None):
 		# ~ import time #todo: remove this later
@@ -328,6 +365,7 @@ class blastdata(object): #todo: define differently for protein or nucleotide bla
 			if min_ident and bl["ident"] < min_ident: #bl.ident < min_ident:
 				continue
 			if bl["subject"] in self.blacklist:
+				print("' {}' is on blacklist --> ignoring!")
 				continue
 			if bindata_obj != None:
 				bl["contig"] = bindata.marker2contig(bl["query"])

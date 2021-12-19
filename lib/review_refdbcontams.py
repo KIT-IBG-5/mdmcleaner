@@ -53,8 +53,12 @@ class comparison_hit(object):
 			print("blastfiles:\n\t{}\n\t".format("\n\t".join(resultfiles)))
 			print("\nthis blast took {:.4f} seconds\n\n".format(end-start))
 			self.blastdata = blasthandler.blastdata(*resultfiles, max_evalue = 1e-5, min_ident = 90, score_cutoff_fraction = 0, keep_max_hit_fraction = 1, keep_min_hit_count = 2, continue_from_json = False, auxilliary = False, seqtype=None, blacklist=blacklist) #todo: ignlorelistfile should be changed to ignore list. Can be a list of a filepath. If filepath, read that file as list. if list, use that
+			# ~ if self.seqid == "GCA_002842085.1_PHCA01000074.1": #todo:only for debugging
+				# ~ import pdb; pdb.set_trace()		
 			self.blastdata.add_info_to_blastlines(taxdb_obj=self.db)
 			# ~ delmeprint(self.blastdata.blastlinelist, self.db)
+			# ~ if self.seqid == "GCA_002842085.1_PHCA01000074.1": #todo:only for debugging
+				# ~ import pdb; pdb.set_trace()		
 			print("="*50)
 			if self.blast == "blastx":
 				self.blastdata.filter_blasthits_by_cov_and_ident(mincov=90, filterbylen=subject)
@@ -63,6 +67,8 @@ class comparison_hit(object):
 			# ~ print("afterfilter:")
 			# ~ delmeprint(self.blastdata.blastlinelist, self.db)
 			# ~ print("="*50)
+			# ~ if self.seqid == "GCA_002842085.1_PHCA01000074.1": #todo:only for debugging
+				# ~ import pdb; pdb.set_trace()			
 			return_category = count_contradictions(self.blastdata, self.db, self.domain, self.phylum, self.seqid)
 			print("*"*100)
 			return return_category
@@ -213,6 +219,8 @@ def read_ambiguity_report(ambiguity_report, configs, blacklist = None):
 			ambtype = tokens[6]
 			if re.search(sm_contam_pattern, ambtype) == None: #ignore everything other than potential contaminations detected on singlemarker level for now (those exclusively found on weighted LCA level are more indicative for chimeras than refDB contaminations...)
 				continue
+			print("processing line {}".format(counter))
+			print("+"*100)
 			amb_evidence = tokens[8]
 			cp = comparison_pair(amb_evidence, markerlevel, db, configs=configs)
 			if cp.best_hit == cp.best_contradiction == None:
@@ -257,6 +265,8 @@ def count_contradictions(blastdata, db, comparison_domain, comparison_phylum, qu
 	print("actual counts:\n\t{}".format("\n\t".join(["{} : {}".format(key, counts[key]) for key in counts.keys() ])))
 	print("actual weights:\n\t{}".format("\n\t".join(["{} : {}".format(key, weights[key]) for key in weights.keys() ])))
 	print("----------------------------")
+	# ~ if query_acc == "GCA_002842085.1_PHCA01000074.1": #todo:only for debugging
+		# ~ import pdb; pdb.set_trace()
 	domain_counts = { domain: sum([counts[x] for x in counts.keys() if x[0] == domain]) for domain in set([y[0] for y in counts.keys()]) }
 	domain_weights = { domain: sum([weights[x] for x in weights.keys() if x[0] == domain]) for domain in set([y[0] for y in weights.keys()]) }
 	print("domain_counts:\n\t{}".format("\n\t".join(["{} : {}".format(key, domain_counts[key]) for key in domain_counts.keys() ])))
@@ -284,22 +294,22 @@ def count_contradictions(blastdata, db, comparison_domain, comparison_phylum, qu
 	print("phylum_weights contradicting == {}".format(phylum_weights_contradicting))
 	# if contradicting counts larger than expectedhitcounts AND contradicting weights >= 2x expectedhitcounts: --> contamination
 	if domain_counts_contradicting > domain_counts_expected and domain_weights_contradicting >= (domain_weights_expected * 2) and domain_weights_contradicting >= (best_selfscore * 0.2): #the last requirement ensures that random matchtes of very small contigs representing e.g. partial transposases etc do not cause misclassification of very large contigs that match only in those short regions (in other words: very large contigs are only seen as contaminants if other large contigs match)
-		print(" ---> '{}' is a contamination on domain level! --> ADD TO BLACKLIST!".format(query_acc))
+		print(" ---> '{}' shows indication of being a contamination on domain level! --> ADD TO BLACKLIST!".format(query_acc))
 		return "contamination"
 	# if contradcting counts >=  expectedhitcounts AND contradicting weights >= expectedhitwights: suspicious ambiguity! one may be contamination, but not sure which
 	if domain_counts_contradicting >= domain_counts_expected and domain_weights_contradicting >= domain_weights_expected and domain_weights_contradicting >= (best_selfscore * 0.1):
 		print(" '{}' has hits to genomes of other domains! either it is a contamination, or the matching contigs in other domains are! --> evaluate independently (e.g. blast against refseq or uniprot)".format(query_acc))
 		return "ambiguity"
 	if phylum_counts_contradicting > phylum_counts_expected and phylum_weights_contradicting >= (phylum_weights_expected * 2) and phylum_weights_contradicting >= (best_selfscore * 0.2): #the last requirement ensures that random matchtes of very small contigs representing e.g. partial transposases etc do not cause misclassification of very large contigs that match only in those short regions (in other words: very large contigs are only seen as contaminants if other large contigs match)
-		print(" ---> '{}' is a contamination on phylum level! --> ADD TO BLACKLIST!".format(query_acc))
+		print(" ---> '{}' shows indication of being a contamination on phylum level! --> ADD TO BLACKLIST!".format(query_acc))
 		return "contamination"
 	# if contradcting counts >=  expectedhitcounts AND contradicting weights >= expectedhitwights: suspicious ambiguity! one may be contamination, but not sure which
 	if phylum_counts_contradicting >= phylum_counts_expected and phylum_weights_contradicting >= phylum_weights_expected and phylum_weights_contradicting >= (best_selfscore * 0.1):
-		print(" '{}' has hits to genomes of other phyla! either it is a contamination, or the matching contigs in other phyla are! --> evaluate independently (e.g. blast against refseq or uniprot)".format(query_acc))
+		print(" '{}' has hits to genomes of other phyla! either it or the matching contigs in other phyla may be contaminations! --> evaluate independently (e.g. blast against refseq or uniprot)".format(query_acc))
 		return "ambiguity"
 	# if contradicting counts < expectedhitcounts OR contrdicting weights < expectedhitweights: actually ok! --> drop ambiguity
-	if phylum_counts_contradicting < phylum_counts_expected or phylum_counts_contradicting < phylum_weights_expected:
-		print("NO sufficient proof for '{}' being a contminant. assuming it is OK!".format(query_acc))
+	if phylum_counts_contradicting < phylum_counts_expected or phylum_weights_contradicting < phylum_weights_expected or phylum_weights_contradicting < (best_selfscore * 0.1):
+		print("NO sufficient proof for '{}' being a contaminant. assuming it is OK!".format(query_acc))
 		return "OK"
 	print("there is a case i have not considered, and THIS is it!")
 	#todo: add detailed evidence strings to 'contamination' and 'ambiguity' classifications...
