@@ -254,8 +254,10 @@ class taxdb(object):
 		linenumber = myproc.stdout.split(":")[0]
 		return linenumber
 	
-	def acc2taxid(self, queryacc,start = 0):			
+	def acc2taxid(self, queryacc,start = 0):		
 		#for using binary search on a simple sorted textfile #reminer to self: do NOT use compressed acc2taxid_lookupfile. It increases time for binary search ca 200x!
+		import locale
+		locale.setlocale(locale.LC_ALL, "C")
 		stop = self.acc_lookup_handle_filesize
 		# ~ finalstop = stop #todo: only for debugging
 		# ~ totallinecount = 35602626 #todo: only for debugging
@@ -283,9 +285,9 @@ class taxdb(object):
 				break
 			subjectacc = tokens[0]
 			subjecttaxid = tokens[1]
-			if subjectacc == queryacc:
+			if locale.strcoll(subjectacc, queryacc) == 0:
 				return subjecttaxid, start
-			if subjectacc > queryacc:
+			if locale.strcoll(subjectacc, queryacc) >= 1:
 				stop = currentpos
 			else:
 				start = currentpos
