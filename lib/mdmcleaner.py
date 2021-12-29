@@ -9,6 +9,11 @@ import pprint
 setting_keys = ["blastp", "blastn", "blastdbcmd", "diamond", "barrnap", "rnammer", "hmmsearch", "aragorn", "db_basedir","db_type", "blastdb_diamond", "blastdb_blastp", "blastdb_blastn", "threads"] # todo: complete this list 
 from _version import __version__
 
+def write_blacklist(blacklist, outfilename):
+	with misc.openfile(outfilename, "at") as outfile:
+		for b in blacklist:
+			outfile.write("{}\n".format(b))
+
 def find_global_configfile():
 	moduledir = os.path.dirname(os.path.abspath(__file__))
 	if os.path.exists(os.path.join(moduledir, "mdmcleaner.config")) and os.path.isfile(os.path.join(moduledir, "mdmcleaner.config")):
@@ -98,6 +103,8 @@ def main():
 	evaluate_refdbcontam_args.add_argument("ambiguity_report", nargs = "?", default = "./overview_refdb_ambiguities.tsv")
 	evaluate_refdbcontam_args.add_argument("-c", "--config", action = "store", dest = "configfile", default = find_local_configfile(), help = "provide a local config file with the target location to store database-files. default: looks for config files named 'mdmcleaner.config' in current working directory. settings in the local config file will override settings in the global config file '{}'".format(os.path.join(os.path.dirname(os.path.abspath(__file__)), "mdmcleaner.config")))
 	evaluate_refdbcontam_args.add_argument("-t", "--threads", action="store", dest="threads", type = int, default = 1, help = "number of threads to use (default = 1)")
+	evaluate_refdbcontam_args.add_argument("-o", "--outblacklist", action="store", dest="outblacklist", default = "new_blacklist_additions.tsv", help = "Outputfile for new blacklist additions. If a preexisting file is selected, additions will be appended to end of that file")
+	
 	
 	set_configs_args = subparsers.add_parser("set_configs", help = "setting or changing settings in config files")
 	set_configs_args.add_argument("-s", "--scope", action = "store", dest = "scope", choices = ["local", "global"], default = "local", help = "change settings in local or global config file. 'global' likely require admin privileges. 'local' will modify or create a mdmcleaner.config file in the current working directory. default = 'local'")
@@ -210,6 +217,9 @@ def main():
 	
 	if args.command == "refdb_contams":
 		import review_refdbcontams
-		review_refdbcontams.read_ambiguity_report(args.ambiguity_report, configs, blacklist = configs["blacklist"])
-		
+		blacklist_additions = review_refdbcontams.read_ambiguity_report(args.ambiguity_report, configs, blacklist = configs["blacklist"])
+		print("\n------> writing {} blacklist additions to {}".format(len(blacklist_additions), args.outblacklist))
+		write_blacklist(blacklist_additions, args.outblacklist)
 main()
+
+			

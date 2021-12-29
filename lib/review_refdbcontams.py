@@ -226,6 +226,7 @@ class comparison_pair(object):
 	sm_lca_bh_pattern = re.compile("sm_best hit=[a-z; ]{0,7}\'([^\(\);\']+)\'\(([^;,\(\)]+),([^;,\(\)]+);\s*acc=\'([^;,\(\)]+)\'")
 	sm_lca_bc_pattern = re.compile("sm_best contradiction=[a-z; ]{0,7}\'([^\(\);\']+)\'\(([^;,\(\)]+),([^;,\(\)]+);\s*acc=\'([^;,\(\)]+)\'")
 	blacklist = None
+	blacklist_additions = set()
 	added2blacklistcount = 0
 	# \1 = taxid, \2 = domain; \3= phylum, \4= accession, 
 	# virus_indicator_pattern = re.compile("=\'eukcat__viral'") #in case it is needed to differentiate viral besthits/contradictions from those of other sources that also happen to yield "domain = None" (I don't think there are any such cases...)
@@ -241,9 +242,13 @@ class comparison_pair(object):
 			else:
 				type(self).blacklist = blacklist
 		for i in self.best_hit, self.best_contradiction: #todo. do this in calling function. if diamond blastx is planned, collect instances and blast together
+			if i.seqid in type(self).blacklist:
+				print("  {} is already in blacklist --> skipping!")
+				continue
 			return_category = i.blast_contigs(threads = configs["threads"], blacklist=blacklist, outfileprefix = outfileprefix)
 			if return_category == "contamination":
 				type(self).blacklist.add(i.seqid)
+				type(self).blacklist_additions.add(i.seqid)
 				type(self).added2blacklistcount += 1
 		
 	def parse_evidence(self, configs): #todo: this should move to a compare_group_object
@@ -325,6 +330,7 @@ def read_ambiguity_report(ambiguity_report, configs, blacklist = None):
 				continue
 		print("\nadded {} new entries to blacklist!\n".format(cp.added2blacklistcount))
 		print("current blacklist : \n\t{}".format("\n\t".join([x for x in cp.blacklist])))
+	return cp.blacklist_additions
 			#TODO: NOTE: extraction protein sequences from diamond DBs is rather inefficient. so this will be skipped for now (mayble iplemented in a later version if it turns out it is needed). Will only analyse proteins for now
 			#todo: blast comparison seqs against appropriate blastdb (e.g. blastx vs combined_refprots if one is eukaryotic, otherwise concat_refgenomes (with appropriate program))
 			#todo: choose contig that yields higher summed-hitscores to domain/phylum other than annotated as contamination. YIeld warnfing if BOTH show such an result
