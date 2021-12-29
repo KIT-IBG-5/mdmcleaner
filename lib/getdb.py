@@ -129,7 +129,7 @@ def _create_sorted_acc2taxid_lookup(acc2taxidfilelist, acc2taxid_outfilename):
 	presortcmd = "zcat {infile} | cut -f 2,3| grep -v accession | grep -v -P '^$'| env LC_ALL=C sort > {outfile}" #IMPORTANT! removes a sed substitution in accession field. check  if still works for nucleotide basts.  additional note: using shell commands probably way faster than anything i can do in pure python
 	#ALSO IMPORTANT: added removal of empty lines in the above command. This is because some input files contain empty lines. This resulted in empty lines in the sorted lookupfile, resulting in broken lookups. This is fixed now.
 	#ALSO IMPORTANT: added "env LC_ALL=C before the sort command, in a desperate attempt to ensure same localse seetings for creating and using the accession index. Sort behaves differently based on locale settings and that can cause problems
-	finalsortcmd = "sort -m {filelist} > {finaldb}"
+	finalsortcmd = "env LC_ALL=C sort -m {filelist} > {finaldb}"
 	tempfilelist = []
 	for f in acc2taxidfilelist:
 		if f.endswith(".gz"):
@@ -257,7 +257,7 @@ class taxdb(object):
 	def acc2taxid(self, queryacc,start = 0):			
 		#for using binary search on a simple sorted textfile #reminer to self: do NOT use compressed acc2taxid_lookupfile. It increases time for binary search ca 200x!
 		stop = self.acc_lookup_handle_filesize
-		finalstop = stop #todo: only for debugging
+		# ~ finalstop = stop #todo: only for debugging
 		# ~ totallinecount = 35602626 #todo: only for debugging
 		subjectacc = None
 		
