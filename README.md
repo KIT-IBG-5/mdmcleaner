@@ -13,6 +13,15 @@ It is based on the GTDB taxonomic system and uses GTDB representative genomes, a
 - barrnap v.0.9+ (detecting ribosomal RNA genes)
 - aragorn v 1.2.38+ (detecting tRNA genes)
 
+## Installation:
+Apart from downloading and running the soruce code from this repository directly, MDMcleaner can also be installed via **pip**:
+
+```pip install mdmcleaner```
+
+in both cases, when downloading this repository directly or when using pip, all dependencies must be installed seperately. If the respective binary-locations are present in PATH, they will be recongized automatically. Otherwise the locations to each dependency must be specified in a ```mdmcleaner.config``´ file (see below).
+
+**Bioconda** recipe will follow shortly!
+
 ## Configuration
 Several options can be passed directly as commandline arguments (see usage below), but basic settings, such as database location, should be provided in the form of ```mdmcleaner.config``` config files. The pipeline distinguishes between global (system/environment-wide settings) and local (individual) config files.
 
@@ -29,6 +38,17 @@ the settings that can be specified/adjusted in the config files are:
 
 To create a local config file in the current working directory, simply use ```mdmcleaner -s local [SETTING_ARGUMENTS]```
 This file can be moved and copied and will be automatically recognized if present in the current working directory when running MDMcleaner. Alternative the path to a local config file can be passed to mdmcleaner via the "-c" argument of the "clean" and "makedb" workflows.
+
+## overview of MDMcleaner commands
+A list of mdmcleaner commands is returned when invoking the help function of MCMcleaner as follows: ```mdmcleaner.py -h```. Each command has it's own help function that can be invoked with ```mdmcleaner.py <COMMAND> -h```. The available commands are:
+ - **set_configs** can be used to change global or local settings. Will modify or create 'mdmcleaner.config'-files
+ - **show_configs** lists the currently applicable MDMcleaner settings/configurations
+ - **makedb** downloads and processes reference data into a MDMclenaner reference database. May have a LONG run-time but can be aborted and resumed
+ - **clean** the major MDMcleaner workflow for assessing and filtering genome contamination
+ - **get_markers** an accessory command for extracting marker gene sequences from input genomes
+ - **refdb_contams** EXPERIMENTAL: evaluates refDBambiguity overviewfiles and adds obvious refDB contaminations to the blacklist
+ - **acc2taxpath** Get full taxonomic path associated with a specific input accession. Currently only works for MDMcleaner/GTDB accessions, but support for NCBI accession-numbers will follow soon
+ - **version** show version info and quit 
 
 #### usage of ```mdmcleaner set_configs```:
 ```
@@ -123,3 +143,9 @@ Additionally, general overview files are written to the current working director
 - overview_allbeforecleanup.tsv --> tab seperated table listing majority classification and general metrics per analyzed bin
 - overview_allbeforecleanup.tsv --> tab seperated table listing detected refDB ambiguities together with evidence information and preliminary MDMcleaner assessments
 - overview_errorlist.txt --> list of genomes that yielded errors during MDMcleaner assessments
+
+## How to cite:
+look out for our publication which has been submitted to Nucleic acids research and will hopefully be available soon.
+
+Vollmers et al. ***How clear is our current view on microbial dark-matter? (Re-)assessing public MAG & SAG-datasets with “MDMcleaner”*** (submitted)
+
