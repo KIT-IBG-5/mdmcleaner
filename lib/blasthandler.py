@@ -91,13 +91,12 @@ def read_lookup_table(lookup_table, table_format = None): #should be able to rea
 		return _parse_simpletable("\t")
 	if table_format("csv"):
 		return _parse_simpletable(",")
-
-
-class blastdata(object): #todo: define differently for protein or nucleotide blasts (need different score/identity cutoffs)
+			
+class blastdata_baseobject(object): #todo: define differently for protein or nucleotide blasts (need different score/identity cutoffs)
 	_blasttsv_columnnames = {"query" : 0, "subject" : 1, "ident" : 2, "alignlen" : 3, "qstart": 6, "qend" : 7, "sstart" : 8, "send" : 9, "evalue" : 10, "score" : 11, "qlen" : 12, "slen": 13, "contig" : None, "stype" : None, "taxid": None} #reading in all fields, in case functionality is added later that also uses the sstat send etc fields
 	# ~ _nuc_stypelist = ["ssu_rRNA", "lsu_rRNA"]
 	# ~ _prot_stypelist = ["total", "bac_marker", "prok_marker", "arc_marker"]
-	def __init__(self, *blastfiles, max_evalue = None, min_ident = None, score_cutoff_fraction = 0.75, keep_max_hit_fraction = 0.5, keep_min_hit_count = 2, continue_from_json = False, auxilliary = False, seqtype=None, blacklist=None):
+	def __init__(self, *args, max_evalue = None, min_ident = None, score_cutoff_fraction = 0.75, keep_max_hit_fraction = 0.5, keep_min_hit_count = 2,  auxilliary = False, seqtype=None, blacklist=None):
 		#methods:
 		#	method 1: filter by query-genes. For each gene remove all hits with score below <score_cutoff_fraction> (default = 0.5) of maximum score for that gene
 		#			  from these keep the <keep_max_hit_fraction> of hits (default = 0.5), but keep at least <keep_min_fraction> (default = 2) in every case if possible
@@ -118,16 +117,6 @@ class blastdata(object): #todo: define differently for protein or nucleotide bla
 			self.blacklist = set()
 		else:
 			self.blacklist = blacklist
-		if continue_from_json:
-			assert len(blastfiles) == 1, "ERROR: if supposed to create blastdata-object from json, you can provide only one input file (the json)"
-			self.from_json(blastfiles[0])
-		else:
-			self.blastlinelist = []
-			for bf in blastfiles:
-				self.read_blast_tsv(bf, max_evalue = max_evalue, min_ident = min_ident) #TODO: Note: not passing bindata-object right here. if it needs to be looped through later anyway (after condensing the list) it makes more sense to do all further assignments later at that point
-			self.blastlinelist = [ dict(t) for t in {tuple(bl.items()) for bl in self.blastlinelist} ] #remove duplicate blast hits that apparently turn up in gtdb and silva dbs ... alternatively i could simply only blast vs silva, but that could miss some potentially incorrectly called rna genes...
-			self.blastlinelist = self.sort_blastlines_by_gene()
-			self.filter_hits_per_gene(score_cutoff_fraction, keep_max_hit_fraction, keep_min_hit_count)
 	
 	# ~ def _prot_or_nuc(self, stype):
 		# ~ stype_query = stype.strip().split()[0]
@@ -135,19 +124,11 @@ class blastdata(object): #todo: define differently for protein or nucleotide bla
 			# ~ return "nuc"
 		# ~ elif stype_query in self._prot_stypelist:
 			# ~ return "prot"
-		
-	# ~ def _read_ignorefile(self, ignorelistfile):
-		# ~ if ignorelistfile:
-			# ~ with openfile(ignorelistfile) as ilf:
-				# ~ for line in ilf:
-					# ~ tokens = line.strip().split("#")
-					# ~ if len(tokens) >0 and tokens[0] != "":
-						# ~ self.ignoreset.add(tokens[0])
 				 
 	
 	def filter_hits_per_gene(self, score_cutoff_fraction = 0.75, keep_max_hit_fraction = 0.5, keep_min_hit_count = 2): #todo: allow additional filter settings for rRNA data (e.g. filter by identity not score)
 		"""
-		assumes the blastlinelist is already sorted by decreasind score!
+		assumes the blastlinelist is already sorted by decreasing score!
 		"""
 		assert 0<= score_cutoff_fraction <= 1, "score_cutoff_fraction must lie in the range 0.0 - 1.0 !"
 		assert 0< keep_max_hit_fraction <= 1, "score_cutoff_fraction must be larger than 0.0, and lower or equal to 1.0!"
@@ -247,7 +228,7 @@ class blastdata(object): #todo: define differently for protein or nucleotide bla
 		self.blastlinelist = filteredlist
 		# ~ import pdb; pdb.set_trace()
 	
-	def add_info_to_blastlines(self, bindata_obj = None, taxdb_obj = None):
+	def add_info_to_blastlines(self, bindata_obj = None, taxdb_obj = None): #todo: add verbose and/or quiet argument
 		# ~ import time #todo: remove this later
 		sys.stderr.write("\tadding info to blastlines (old version)\n")
 		# ~ starttime = time.time()
@@ -365,7 +346,7 @@ class blastdata(object): #todo: define differently for protein or nucleotide bla
 			if min_ident and bl["ident"] < min_ident: #bl.ident < min_ident:
 				continue
 			if bl["subject"] in self.blacklist:
-				print("' {}' is on blacklist --> ignoring!")
+				print("' {}' is on blacklist --> ignoring!".format(bl["subject"]))
 				continue
 			if bindata_obj != None:
 				bl["contig"] = bindata.marker2contig(bl["query"])
@@ -381,6 +362,20 @@ class blastdata(object): #todo: define differently for protein or nucleotide bla
 		query must be a single string representing a query-name or -accession-number
 		'''
 		return [ self.blastlinelist[x] for x in range(len(self.blastlinelist)) if self.blastlinelist[x]["query"] == queryname ]
+
+	def pop_blastlines_for_query(self, queryname):
+		'''
+		returns all blastlines with a certain value in "query" and simultaineously removes them from this blastdata-object
+		query must be a single string representing a query-name or -accession-number
+		'''
+		sublist = []
+		index = 0
+		while index < len(self.blastlinelist):
+			if self.blastlinelist[index]["query"] == queryname:
+				sublist.append(self.blastlinelist.pop(index))
+			else:
+				index += 1
+		return sublist
 	
 	def get_blastlines_for_contig(self, contigname):
 		'''
@@ -603,8 +598,34 @@ class blastdata(object): #todo: define differently for protein or nucleotide bla
 		# ~ if breakme: #todo: debugging only
 			# ~ import pdb; pdb.set_trace()
 		return outinfo
+		
+class blastdata_subset(blastdata_baseobject):
+	def __init__(self, blastdata_obj,*args, query_id, max_evalue = None, min_ident = None, score_cutoff_fraction = None, keep_max_hit_fraction = None, keep_min_hit_count = None, auxilliary = False, seqtype=None, blacklist=None):
+		assert isinstance(blastdata_obj, blastdata), "\nERROR: input must be an object of type 'blastdata', not '{}'\n".format(type(blastdata_obj))
+		super().__init__(max_evalue = max_evalue, min_ident = min_ident, score_cutoff_fraction = score_cutoff_fraction, keep_max_hit_fraction = keep_max_hit_fraction, keep_min_hit_count = keep_min_hit_count, auxilliary = auxilliary, seqtype = seqtype, blacklist = blacklist)
+		self.blastlinelist = blastdata_obj.pop_blastlines_for_query(query_id)
+		self.get_settings_from_blastdata_obj(blastdata_obj)
+		
+	def get_settings_from_blastdata_obj(self, blastdata_obj): #todo: TEST THIS
+		for x in ["max_evalue", "min_ident", "score_cutoff_fraction", "keep_max_hit_fraction", "keep_min_hit_count"]:
+			if getattr(self, x) == None:
+				setattr(self, x, getattr(blastdata_obj, x))
+		 
+class blastdata(blastdata_baseobject):
+	def __init__(self, *blastfiles, max_evalue = None, min_ident = None, score_cutoff_fraction = 0.75, keep_max_hit_fraction = 0.5, keep_min_hit_count = 2, continue_from_json = False, auxilliary = False, seqtype=None, blacklist=None):
+		super().__init__(max_evalue = max_evalue, min_ident = min_ident, score_cutoff_fraction = score_cutoff_fraction, keep_max_hit_fraction = keep_max_hit_fraction, keep_min_hit_count = keep_min_hit_count, auxilliary = auxilliary, seqtype = seqtype, blacklist = blacklist)
+		if continue_from_json:
+			assert len(blastfiles) == 1, "ERROR: if supposed to create blastdata-object from json, you can provide only one input file (the json)"
+			self.from_json(blastfiles[0])
+		else:
+			self.blastlinelist = []
+			for bf in blastfiles:
+				self.read_blast_tsv(bf, max_evalue = max_evalue, min_ident = min_ident) #TODO: Note: not passing bindata-object right here. if it needs to be looped through later anyway (after condensing the list) it makes more sense to do all further assignments later at that point
+			self.blastlinelist = [ dict(t) for t in {tuple(bl.items()) for bl in self.blastlinelist} ] #remove duplicate blast hits that apparently turn up in gtdb and silva dbs ... alternatively i could simply only blast vs silva, but that could miss some potentially incorrectly called rna genes...
+			self.blastlinelist = self.sort_blastlines_by_gene()
+			self.filter_hits_per_gene(score_cutoff_fraction, keep_max_hit_fraction, keep_min_hit_count)		
 				
-def read_blast_tsv(infilename, max_evalue = None, min_ident = None, dbobj = None, bindata_obj = None):
+def read_blast_tsv(infilename, max_evalue = None, min_ident = None, dbobj = None, bindata_obj = None): #todo: apaprently obsolete due to blastdata-ojects. delete this function here if that is true
 	""" 
 	returns a a list of dictionaries, each representing the data in a blast line
 	if max_evalue or min_ident are set, elines above or below these cutoffs are ignored
@@ -773,7 +794,7 @@ def run_single_diamondblastp(query, db, diamond, outfmt = "6", outname = None, t
 							   "--outfmt", outfmt, "--threads", str(int(threads)), "--out", outname + ".tmp"], \
 							   stdout = subprocess.PIPE, stderr = subprocess.PIPE, text = True)
 	try:
-		print(" ".join(blastcmd.args))
+		# ~ print(" ".join(blastcmd.args))
 		blastcmd.check_returncode()
 	except Exception:
 		sys.stderr.write("\nAn error occured during diamond blastp run with query '{}'\n".format(query))
@@ -790,18 +811,18 @@ def run_single_diamondblastx(query, db, diamond, outfmt = "6", outname = None, t
 	import re
 	outfmt = re.sub(" std ", " qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore ", outfmt).strip().split() #blast allows "std" keyword in outfmt, diamond doesn't
 	if type(query) == list: #list indicates a list of seqrecords
-		print("QUERY IS A LIST")
+		# ~ print("QUERY IS A LIST")
 		tempname="delme_tempinput_mdmcleaner_diamondblastx.faa" # todo: figure out a better solution until a future diamond version hopefully may accept input from stdin...
 		misc.write_fasta(query, tempname)
 		query = tempname
-	else:
-		print("QUERY IS OF TYPE '{}'".format(type(query)))
+	# ~ else:
+		# ~ print("QUERY IS OF TYPE '{}'".format(type(query)))
 	cmdlist = [diamond, "blastx", "--query", query, "--db", db, "--evalue", "1e-10",\
 			"--outfmt", *outfmt, "--threads", str(int(threads)), "--out", outname + ".tmp"]
-	print(cmdlist)
+	# ~ print(cmdlist)
 	blastcmd = subprocess.run(cmdlist, stdout = subprocess.PIPE, stderr = subprocess.PIPE, text = True)
 	try:
-		print(" ".join(blastcmd.args))
+		# ~ print(" ".join(blastcmd.args))
 		blastcmd.check_returncode()
 		if tempname:
 			os.remove(tempname)
@@ -865,12 +886,13 @@ def run_multiple_blasts_parallel(basic_blastarg_list, *, outfmt = "6", outbasena
 		else:
 			querystring = os.path.basename(basic_blastarg_list[i][0])
 		outname = "{prefix}_{counter:03d}{appl}_{query}_vs_{db}.tsv".format(prefix = outbasename, counter = i, \
-					appl = os.path.basename(basic_blastarg_list[i][2]), query = querystring, \
+					appl = os.path.basename(basic_blastarg_list[i][2]).replace(" ", "_"), query = querystring, \
 					db = os.path.basename(basic_blastarg_list[i][1]))
 		arglist.append(tuple(bba for bba in basic_blastarg_list[i]) + (outfmt, outname, thread_args[i]))
 		# ~ print(arglist[-1])
 	# ~ print(arglist)
 	masterblaster = Pool(processes = no_processes)
+	# ~ import pdb; pdb.set_trace()
 	outfile_list = masterblaster.starmap(_run_any_blast, arglist)
 	#print("finished blasting all")
 	#print(outfile_list)

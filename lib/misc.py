@@ -33,7 +33,9 @@ def read_fasta(infilename):
 
 def write_fasta(outrecords, outfilename):
 	from Bio import SeqIO
-	SeqIO.write(outrecords, openfile(outfilename, "wt"), "fasta")
+	# ~ import pdb; pdb.set_trace()
+	with openfile(outfilename, "wt") as outfile: 
+		SeqIO.write(outrecords, outfile, "fasta")
 	
 	
 def unixzcat(*infilelist, outfilename): #my guess is, that this is probably much faster than doing it natively with python...
