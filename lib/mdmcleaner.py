@@ -35,6 +35,7 @@ def read_configs(configfilelist, args): #todo: switch to config object instead o
 	"""
 	settings, settings_source = {}, {}
 	settings["blacklistfile"] = []
+	settings_source["blacklistfile"] = None
 	for config in configfilelist:
 		sys.stderr.write("\nreading settings from configfile: \"{}\"\n".format(config))
 		with openfile(config) as configfile:
@@ -78,7 +79,7 @@ def main():
 	cleansagmag_args.add_argument("-f", "--force", action = "store_true", dest = "force", default = False, help = "Force reclassification of pre-existing blast-results")
 	# ~ cleansagmag_args.add_argument("--blast2pass", action = "store_true", dest = "blast2pass", default = "False", help = "add a second-pass blastx blast-run for all contigs without any classification on blastp level (default: False)")
 	cleansagmag_args.add_argument("--overview_files_basename", action = "store", dest = "overview_basename", default = "overview", help = "basename for overviewfiles (default=\"overview\"")
-	cleansagmag_args.add_argument("-I", "--ignorelistfile", action = "store", dest = "ignorelistfile", default = None, help = "File listing reference-DB sequence-names that should be ignored during blast-analyses (e.g. known refDB-contaminations...") #todo: rename to blacklistfile
+	cleansagmag_args.add_argument("-b", "--blacklistfile", action = "store", dest = "blacklistfile", default = None, help = "File listing reference-DB sequence-names that should be ignored during blast-analyses (e.g. known refDB-contaminations...")
 	cleansagmag_args.add_argument("--no_filterfasta", action = "store_true", dest = "no_filterfasta", default = False, help = "Do not write filtered contigs to final output fastas (Default = False)")
 
 	makedb_args = subparsers.add_parser("makedb", help = "Download and create MDMcleaner database")
@@ -185,6 +186,9 @@ def main():
 	
 	if args.command == "show_configs":
 		sys.stderr.write("setting\tvalue\tsource\n")
+		# ~ print(configs)
+		# ~ print("*"*100)
+		# ~ print(settings_source)
 		for c in configs:
 			sys.stderr.write("{}\t{}\t{}\n".format(c,configs[c],settings_source[c]))
 
