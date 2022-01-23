@@ -58,9 +58,7 @@ class comparison_hit(object):
 		# ~ import time
 		if self.blast != None:
 			basic_blastarglist = [ (self.seqrecord, blastdb, self.blast) for blastdb in self.blastdbs ]
-			# ~ print(basic_blastarglist)
 			outbasename = "{}refblast_{}_".format(outfileprefix, self.seqid)
-			# ~ print(outbasename)
 			# ~ start = time.time()
 			resultfiles = blasthandler.run_multiple_blasts_parallel(basic_blastarglist, outfmt= "6 std qlen slen", outbasename=outbasename, total_threads=threads)
 			# ~ end = time.time()
@@ -68,35 +66,14 @@ class comparison_hit(object):
 			# ~ print("\nthis blast took {:.4f} seconds\n\n".format(end-start))
 			# ~ print(resultfiles)
 			self.blastdata = blasthandler.blastdata(*resultfiles, max_evalue = 1e-5, min_ident = 90, score_cutoff_fraction = 0, keep_max_hit_fraction = 1, keep_min_hit_count = 2, continue_from_json = False, auxilliary = False, seqtype=None, blacklist=blacklist) #todo: ignlorelistfile should be changed to ignore list. Can be a list of a filepath. If filepath, read that file as list. if list, use that
-			# ~ if self.seqid == "GCA_002842085.1_PHCA01000074.1": #todo:only for debugging
-				# ~ import pdb; pdb.set_trace()		
-			# ~ delmeprint(self.blastdata.blastlinelist, self.db)
-			# ~ if self.seqid == "GCA_002842085.1_PHCA01000074.1": #todo:only for debugging
-				# ~ import pdb; pdb.set_trace()		
-			# ~ print("="*50)
 			if self.blast == "blastx":
 				self.blastdata.filter_blasthits_by_cov_and_ident(mincov=90, filterbylen=subject)
 			else:
 				self.blastdata.filter_blasthits_by_cov_and_ident() #todo: stricter identity cutoffs for ssu-rRNA	
-			self.blastdata.add_info_to_blastlines(taxdb_obj=self.db, verbose=False)	
-			# ~ print("afterfilter:")
-			# ~ delmeprint(self.blastdata.blastlinelist, self.db)
-			# ~ print("="*50)
-			# ~ if self.seqid == "GCA_002842085.1_PHCA01000074.1": #todo:only for debugging
-				# ~ import pdb; pdb.set_trace()			
+			self.blastdata.add_info_to_blastlines(taxdb_obj=self.db, verbose=False)			
 			return_category, return_note = self.count_contradictions()
-			# ~ print("*"*100)
 			return {"evaluation": return_category, "markerlevel_checked": [self.markerlevel], "note": return_note} 
 
-	# ~ def grab_blasthits(): #todo finish this
-		# ~ #collect blast-jobs as dictionary : seqids as keys, record as values
-		# ~ # - collect all blastn-jobs as blastn-dictionary
-		# ~ #   --> run in parallel 1-tread-jobs
-		# ~ # - collect all blastx-jobs as diamond-dictionary
-		# ~ #   --> run as a single large blastx-job
-		# ~ # assign to besthit-objects via dictionary keys
-	# ~ pass
-	# ~ #todo: finish this
 
 	def count_contradictions(self): # argument "ch" should be a "comparison_hit"-object
 	#blastdata, db, comparison_domain, comparison_phylum, query_acc): #todo. add query-id to required arguments, so that hits to original query can be more safely recognized and ignored! 
@@ -112,8 +89,6 @@ class comparison_hit(object):
 		best_selfscore = 0
 		firstline = True
 		for line in self.blastdata.blastlinelist:
-			# ~ print(line)
-			# ~ print(firstline)
 			dp_tuple = self.db.get_domain_phylum(line["taxid"])
 			if firstline and line["subject"] == self.seqid:
 				best_selfscore = line["score"]
@@ -274,8 +249,6 @@ class suspicious_entries(object):
 		# ~ if comp.seqid in self.blacklist: #unnecessary, because this is already checked in the calling function
 			# ~ return #if it was already previously detected as contamination on any level, no need to do more blasts
 		if comp.seqid not in self.seqid2evaluation or (blastxdone and self.seqid2evaluation[comp.seqid] != "contamination"): # todo: convoluted --> simplify. if rRNA dbs searched, no need for additional search of genome-DBs (were already included). but if protein-blast --> search against eukaryotes not in nucleotide-genome-DB --> do again
-			# ~ print("now blasting {}".format(comp.seqid))
-			# ~ import pdb; pdb.set_trace()
 			if not blastxdone:
 				evaluation = comp.blast_contigs(self.threads, blacklist=self.blacklist, outfileprefix = "")
 			else:
@@ -295,7 +268,7 @@ class suspicious_entries(object):
 		print("{} potential diamond blasts".format(len(self.blastxjobs)))
 		if len(self.blastxjobs) > 0:
 			blastrecords = [self.blastxjobs[x].seqrecord[0] for x in self.blastxjobs if len(self.blastxjobs[x].seqrecord[0]) < 100000] #for now skipping reference contigs larger than 100 kb (takes too long to blastx). TODO: in such cases, search for ribosomal & other markergenes to verify classification!
-			print("blasting {} entires with blastx against reference proteins (another {} entries were too long to blastx efficiently".format(len(blastrecords), len(self.blastxjobs) - len(blastrecords)))
+			sys.stderr.write("\nblasting {} entires with blastx against reference proteins (another {} entries were too long to blastx efficiently\n".format(len(blastrecords), len(self.blastxjobs) - len(blastrecords)))
 			if len(blastrecords) == 0:
 				return
 			basic_blastarglist = [ (blastrecords, blastdb, "diamond blastx") for blastdb in self.blastxdbs ]
@@ -304,32 +277,18 @@ class suspicious_entries(object):
 			start = time.time()
 			resultfiles = blasthandler.run_multiple_blasts_parallel(basic_blastarglist, outfmt= "6 std qlen slen", outbasename=self.outbasename, total_threads=self.threads)
 			end = time.time()
-			print ("THIS BLAST TOOK {:.3f} seconds".format(end-start))
+			# ~ print ("THIS BLAST TOOK {:.3f} seconds".format(end-start))
 			collective_blastdata = blasthandler.blastdata(*resultfiles, max_evalue = 1e-5, min_ident = 90, score_cutoff_fraction = 0, keep_max_hit_fraction = 1, keep_min_hit_count = 2, continue_from_json = False, auxilliary = False, seqtype=None, blacklist=self.blacklist)
 			for x in self.blastxjobs:
-				print("-"*100)
-				print(x)
-				print(self.blastxjobs[x].seqid)
-				print(len(self.blastxjobs[x].seqrecord[0]))
 				if len(self.blastxjobs[x].seqrecord[0]) < 100000:
-					print("apparently smaller than 100000??")
 					self.blastxjobs[x].blastdata = blasthandler.blastdata_subset(collective_blastdata, query_id = x)
 					self.blastxjobs[x].blastdata.add_info_to_blastlines(taxdb_obj=self.blastxjobs[x].db, verbose=False)
-					# ~ try:
-					print(self.blastxjobs[x].blastdata.blastlinelist)
-					
 					self.evaluateornot(self.blastxjobs[x], blastxdone = True)
-					# ~ except Exception:
-						# ~ import pdb; pdb.set_trace()
-			
 				
 	def parse_evidence(self, amb_evidence, markerlevel): #todo: this should move to a compare_group_object
 		return_list = []
-		# ~ print(amb_evidence)
 		for p in [self.sm_lca_bh_pattern, self.sm_lca_bc_pattern]:
-			# ~ print(p)
 			patternhit = re.search(p, amb_evidence)
-			# ~ print(patternhit)
 			seqid = patternhit.group(4)
 			domain = patternhit.group(2)
 			phylum = patternhit.group(3)
@@ -349,11 +308,8 @@ class suspicious_entries(object):
 				comp = comp_prokprotcontig(taxid = taxid,seqid=seqid, domain=domain, phylum=phylum, db=self.db, markerlevel=markerlevel, configs=self.configs)
 			return_list.append(comp)
 		if "prot" in [ x.seqtype for x in return_list]:
-			# ~ print("PROTPROTPROT!!!")
 			for x in range(len(return_list)):
-				# ~ print("blast?")
 				if not isinstance(return_list[x], comp_refseqprot): #TODO: NOTE: extraction protein sequences from diamond DBs is rather inefficient. so this will be skipped for now, only noted here in case it should be implemented in a later version (if it turns out to be needed, which is unlikely considering only get the accession of one protein per referencecontig this way)
-					# ~ print("YES BLAST!!! {}".format(return_list[x].seqid))
 					return_list[x].changeblastmethod("diamond blastx")
 					self.blastxjobs[return_list[x].seqid] = return_list[x]
 					self.blastxdbs = return_list[x].blastdbs #todo: this works as long as there is only one protein-db or if ALWAYS ALL available protein dbs are used (--> for any protein balst, ALWAYS the same set of DBs is used as currently the case). If that changes, make sure this here still works! 
@@ -361,88 +317,6 @@ class suspicious_entries(object):
 		else:
 			for c in return_list:
 				self.evaluateornot(c)
-		
-	# ~ def run_blastns(self):
-		# ~ #run all blasts in parallel and then assign hits to correct hit_objects in self.blastjobs
-		# ~ pass
-
-class comparison_pair(object):
-	'''originally it was planned to pre-sreen each contradiction by first pairwise aligning only best-hit and best-contradticiton (hence these comparison-pair-objects).
-	however, it turned out to be better to check each hit seperately and independently.
-	therefore comparison_pair objects may not be needed in the long term.
-	keeping them here purely in case direct hit/contradiction comparisons may still be needed later on
-	'''
-	prot_domain_types = ["d__Eukaryota", "None"] #Eukaryotes and Viruses (the latter yield Domain = "None") currently only have protein DBs
-	nuc_marker_types = ["ssu_rRNA_tax", "lsu_rRNA_tax"]
-	sm_lca_bh_pattern = re.compile("sm_best hit=[a-z; ]{0,7}\'([^\(\);\']+)\'\(([^;,\(\)]+),([^;,\(\)]+);\s*acc=\'([^;,\(\)]+)\'")
-	sm_lca_bc_pattern = re.compile("sm_best contradiction=[a-z; ]{0,7}\'([^\(\);\']+)\'\(([^;,\(\)]+),([^;,\(\)]+);\s*acc=\'([^;,\(\)]+)\'")
-	blacklist = None
-	blacklist_additions = set()
-	added2blacklistcount = 0
-	# \1 = taxid, \2 = domain; \3= phylum, \4= accession, 
-	# virus_indicator_pattern = re.compile("=\'eukcat__viral'") #in case it is needed to differentiate viral besthits/contradictions from those of other sources that also happen to yield "domain = None" (I don't think there are any such cases...)
-
-	def __init__(self, amb_evidence,markerlevel, db, configs, blacklist = None, outfileprefix = ""):
-		self.db = db
-		self.markerlevel = markerlevel
-		self.amb_evidence = amb_evidence
-		self.best_hit, self.best_contradiction = self.parse_evidence(configs)
-		if type(self).blacklist == None:
-			if blacklist == None:
-				type(self).blacklist = set()
-			else:
-				type(self).blacklist = blacklist
-		for i in self.best_hit, self.best_contradiction: #todo. do this in calling function. if diamond blastx is planned, collect instances and blast together
-			if i.seqid in type(self).blacklist:
-				print("  {} is already in blacklist --> skipping!")
-				continue
-			return_category = i.blast_contigs(threads = configs["threads"], blacklist=blacklist, outfileprefix = outfileprefix)
-			if return_category == "contamination":
-				type(self).blacklist.add(i.seqid)
-				type(self).blacklist_additions.add(i.seqid)
-				type(self).added2blacklistcount += 1
-		
-	def parse_evidence(self, configs): #todo: this should move to a compare_group_object
-		return_list = []
-		# ~ print(self.amb_evidence)
-		for p in [self.sm_lca_bh_pattern, self.sm_lca_bc_pattern]:
-			# ~ print(p)
-			patternhit = re.search(p, self.amb_evidence)
-			# ~ print(patternhit)
-			seqid = patternhit.group(4)
-			domain = patternhit.group(2)
-			phylum = patternhit.group(3)
-			taxid = patternhit.group(1)
-			comp = None
-			if domain in self.prot_domain_types and self.markerlevel not in self.nuc_marker_types:
-				comp = comp_refseqprot(taxid = taxid, seqid=seqid, domain=domain, phylum=phylum, db=self.db, markerlevel=self.markerlevel, configs=configs)
-			elif self.markerlevel == "ssu_rRNA_tax":
-				comp = comp_ssurrna(taxid = taxid,seqid=seqid, domain=domain, phylum=phylum, db=self.db, markerlevel=self.markerlevel, configs=configs)
-			elif self.markerlevel == "lsu_rRNA_tax":
-				comp = comp_lsurrna(taxid = taxid,seqid=seqid, domain=domain, phylum=phylum, db=self.db, markerlevel=self.markerlevel, configs=configs)
-			else:
-				comp = comp_prokprotcontig(taxid = taxid,seqid=seqid, domain=domain, phylum=phylum, db=self.db, markerlevel=self.markerlevel, configs=configs)
-			return_list.append(comp)
-		if "prot" in [ x.seqtype for x in return_list]:
-			for x in range(len(return_list)):
-				if not isinstance(return_list[x], comp_refseqprot): #TODO: NOTE: extraction protein sequences from diamond DBs is rather inefficient. so this will be skipped for now, only noted here in case it should be implemented in a later version (if it turns out to be needed, which is unlikely considering only get the accession of one protein per referencecontig this way)
-					return_list[x].changeblastmethod("diamond blastx") #TODO: collect blastx-jobs and run all together, instead of running one after another (is faster)
-		# ~ import pdb; pdb.set_trace()
-		assert len(return_list) == 2, "\nERROR: something went wrong when parsing amb_evidence: \n'{}'\n\n".format(self.amb_evidence)
-		return return_list[0], return_list[1]
-		
-
-
-def delmeprint(inlist, db):
-	wantedkeys = ["query", "subject", "ident", "alignlen", "qstart", "qend", "sstart", "send", "score", "qlen", "slen"]
-	for line in inlist:
-		outline="\t".join(str(line[x]) for x in wantedkeys)
-		outline+="\t{:.3f}".format(line["alignlen"]/min(line["qlen"],line["slen"])*100)
-		dp_tuple = db.get_domain_phylum(line["taxid"])
-		outline+="\t{}\n".format(dp_tuple)
-		print(outline)
-		print("---")
-
 
 def read_ambiguity_report(ambiguity_report, configs, outbasename):
 	import os
@@ -470,69 +344,8 @@ def read_ambiguity_report(ambiguity_report, configs, outbasename):
 				continue
 			amb_evidence = tokens[8]
 			suspects.parse_evidence(amb_evidence, markerlevel)
-			sys.stder.write("\r\tprocessed line {}".format.counter)
-	sys.stder.write("\r\tprocessed line {} --> FINISHED!\n".format.counter)	
-	# ~ import pdb; pdb.set_trace()
-	print("collective diamondblast")
+			sys.stderr.write("\r\tprocessed line {}".format(counter))
+	sys.stderr.write("\r\tprocessed line {} --> FINISHED!\n".format(counter))
+	sys.stderr.write("\nnow running remaining diamond blasts collectively")
 	suspects.collective_diamondblast()
 	return suspects.blacklist_additions #todo: write blacklist_additions to outfile progressively. also optionally write all other evaluations to logfile
-							
-
-def read_ambiguity_report_old(ambiguity_report, configs, blacklist = None):# todo: blacklist should now already be part of configs
-	import getdb
-	'''
-		todo: ambiguity/contradiction at phylum level (--> e.g.: both hits are bacteria, but different phyla) are easy. But what about contradicitons at domain level? How do i doublecheck if eukaryotic, when all I have is PROTEINS for eukaryotes?)  
-		todo: ANSWER: use complete amgiguity info as input:
-			if sm-LCA level: check if best hit and besz contradiction come from bacteria and/or archaea --> extract contigs and blastn nucleotide level
-			if however one of them come from eukaryotes and/or viruses --> just extract prokaryotic contigs and blastx against refprots (check if eukaryotes yield more/better hits than prokaryotes of same domain/phylum).
-				in BOTH cases: the domain/phylum that yields the more than twice as many hits (or twice as high summed score?) within a specified identity cutoff (use total_prots species cutoff = 85%? ) than the other "wins"
-				todo: in future the db should keep track which genomes are fom isolates, and wich are from MAGs/SAGs. Isolates should count double. Ideally, fully close genome should count triple
-			IGNORE weighted -LCA instances for now. create specific chimera check for those later!
-	'''
-	import re
-	sm_contam_pattern = re.compile("potential refDB-contamination \[\w+ indication sm-LCA level\]")
-
-	print("\nREADING: {}\n\n".format(ambiguity_report))
-	db = getdb.taxdb(configs)
-	# ~ collect_diamond_querys = {}	
-	with openfile(ambiguity_report) as infile:
-		counter = 0
-		for line in infile:
-			counter += 1
-			tokens = line.strip().split("\t")
-			if line.startswith("magsag\t") or len(tokens) == 0:
-				continue
-			magsag = tokens[0]
-			contig = tokens[1]
-			markerlevel = tokens[2]			
-			ambtype = tokens[6]
-			if re.search(sm_contam_pattern, ambtype) == None: #ignore everything other than potential contaminations detected on singlemarker level for now (those exclusively found on weighted LCA level are more indicative for chimeras than refDB contaminations...)
-				continue
-			print("processing line {}".format(counter))
-			print("+"*100)
-			amb_evidence = tokens[8]
-			cp = comparison_pair(amb_evidence, markerlevel, db, configs=configs)
-			if cp.best_hit == cp.best_contradiction == None:
-				continue
-		print("\nadded {} new entries to blacklist!\n".format(cp.added2blacklistcount))
-		print("current blacklist : \n\t{}".format("\n\t".join([x for x in cp.blacklist])))
-	return cp.blacklist_additions
-			#TODO: NOTE: extraction protein sequences from diamond DBs is rather inefficient. so this will be skipped for now (mayble iplemented in a later version if it turns out it is needed). Will only analyse proteins for now
-			#todo: blast comparison seqs against appropriate blastdb (e.g. blastx vs combined_refprots if one is eukaryotic, otherwise concat_refgenomes (with appropriate program))
-			#todo: choose contig that yields higher summed-hitscores to domain/phylum other than annotated as contamination. YIeld warnfing if BOTH show such an result
-			# ~ blastdatalist = blast_refdb_contigs(comparison_seqdicts, dbobject=db, outfile_basename = "refdb_ambig_{}".format(str(counter).zfill(5)), blacklist=blacklist)
-			#todo: 1.) parse & filter blast results, 2.) assign taxa per blastline, 3.) count domains and phyla
-			# ~ print("blastfiles:\n\t{}\n\t".format("\n\t".join(blastfiles))
-			# ~ blastdata = blasthandler.blastdata(blastfiles, max_evalue = 1e-5, min_ident = 90, score_cutoff_fraction = 0, keep_max_hit_fraction = 1, keep_min_hit_count = 2, continue_from_json = False, auxilliary = False, seqtype=None, ignorelistfile=None) #todo: ignlorelistfile should be changed to ignore list. Can be a list of a filepath. If filepath, read that file as list. if list, use that
-			# ~ import pdb; pdb.set_trace()
-
-# ~ def reevaluate_ambigeous_contigs():
-	# ~ '''
-	# ~ todo: this should be a function of bindata-objects
-		# ~ todo: ANSWER: use complete amgiguity info as input:
-			# ~ if sm-LCA level: check if best hit and besz contradiction come from bacteria and/or archaea --> extract contigs and blastn nucleotide level
-			# ~ if however one of them come from eukaryotes and/or viruses --> just extract prokaryotic contigs and blastx against refprots (check if eukaryotes yield more/better hits than prokaryotes of same domain/phylum).
-				# ~ in BOTH cases: the domain/phylum that yields the more than twice as many hits (or twice as high summed score?) within a specified identity cutoff (use total_prots species cutoff = 85%? ) than the other "wins"
-				# ~ todo: in future the db should keep track which genomes are fom isolates, and wich are from MAGs/SAGs. Isolates should count double. Ideally, fully close genome should count triple
-			# ~ IGNORE weighted -LCA instances for now. create specific chimera check for those later!	'''
-	# ~ pass

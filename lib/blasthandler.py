@@ -352,9 +352,6 @@ class blastdata_baseobject(object): #todo: define differently for protein or nuc
 			if bindata_obj != None:
 				bl["contig"] = bindata.marker2contig(bl["query"])
 				bl["stype"] = bindata.markerdict[bl["query"]]["stype"]
-			# ~ print("*"*20)
-			# ~ print(bl)
-			# ~ print("*"*20)
 			self.blastlinelist.append(bl)
 
 	def get_blastlines_for_query(self, queryname):
