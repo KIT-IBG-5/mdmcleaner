@@ -33,10 +33,17 @@ def read_configs(configfilelist, args): #todo: switch to config object instead o
 	Setting values are always read as lists
 	Unknown setting names will just be ignored. However, comments should optimally be marked with "#"
 	"""
+	import os
 	settings, settings_source = {}, {}
 	settings["blacklistfile"] = []
-	settings_source["blacklistfile"] = None
-	for config in configfilelist:
+	if "ignore_default_blacklist" in vars(args) and args.ignore_default_blacklist == True:
+		settings_source["blacklistfile"] = None
+	else:
+		mdmcleaner_lib_path = os.path.dirname(os.path.realpath(__file__))
+		default_blacklist = os.path.join(mdmcleaner_lib_path, "blacklist.list")
+		settings["blacklistfile"].append(default_blacklist)
+		settings_source["blacklistfile"] = "default"
+	for config in configfilelist: #todo: maybe instead of replacing blacklist with that in config-file, just append it to the list of blacklists?
 		sys.stderr.write("\nreading settings from configfile: \"{}\"\n".format(config))
 		with openfile(config) as configfile:
 			for line in configfile:
@@ -81,6 +88,8 @@ def main():
 	cleansagmag_args.add_argument("--overview_files_basename", action = "store", dest = "overview_basename", default = "overview", help = "basename for overviewfiles (default=\"overview\"")
 	cleansagmag_args.add_argument("-b", "--blacklistfile", action = "store", dest = "blacklistfile", default = None, help = "File listing reference-DB sequence-names that should be ignored during blast-analyses (e.g. known refDB-contaminations...")
 	cleansagmag_args.add_argument("--no_filterfasta", action = "store_true", dest = "no_filterfasta", default = False, help = "Do not write filtered contigs to final output fastas (Default = False)")
+	cleansagmag_args.add_argument("--ignore_default_blacklist", action = "store_true", dest = "ignore_default_blacklist", default = False, help = "Ignore the default blacklist (Default = False)")
+
 
 	makedb_args = subparsers.add_parser("makedb", help = "Download and create MDMcleaner database")
 	makedb_args.add_argument("-o", "--outdir", action = "store", dest = "outdir", default = None, help = "target base directory for reference-data. may not be the current working directory. Needs >100GB space! Default = './db/gtdb'")
