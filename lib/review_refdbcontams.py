@@ -78,7 +78,7 @@ class comparison_hit(object):
 				self.blastdata.filter_blasthits_by_cov_and_ident(mincov=90, filterbylen=subject)
 			else:
 				self.blastdata.filter_blasthits_by_cov_and_ident() #todo: stricter identity cutoffs for ssu-rRNA	
-			self.blastdata.add_info_to_blastlines(taxdb_obj=self.db)	
+			self.blastdata.add_info_to_blastlines(taxdb_obj=self.db, verbose=False)	
 			# ~ print("afterfilter:")
 			# ~ delmeprint(self.blastdata.blastlinelist, self.db)
 			# ~ print("="*50)
@@ -314,7 +314,7 @@ class suspicious_entries(object):
 				if len(self.blastxjobs[x].seqrecord[0]) < 100000:
 					print("apparently smaller than 100000??")
 					self.blastxjobs[x].blastdata = blasthandler.blastdata_subset(collective_blastdata, query_id = x)
-					self.blastxjobs[x].blastdata.add_info_to_blastlines(taxdb_obj=self.blastxjobs[x].db)
+					self.blastxjobs[x].blastdata.add_info_to_blastlines(taxdb_obj=self.blastxjobs[x].db, verbose=False)
 					# ~ try:
 					print(self.blastxjobs[x].blastdata.blastlinelist)
 					
@@ -459,8 +459,6 @@ def read_ambiguity_report(ambiguity_report, configs, outbasename):
 		counter = 0
 		for line in infile:
 			counter += 1
-			if counter % 100 == 0:
-				print("processing line {}".format(counter))
 			tokens = line.strip().split("\t")
 			if line.startswith("magsag\t") or len(tokens) == 0:
 				continue
@@ -472,6 +470,8 @@ def read_ambiguity_report(ambiguity_report, configs, outbasename):
 				continue
 			amb_evidence = tokens[8]
 			suspects.parse_evidence(amb_evidence, markerlevel)
+			sys.stder.write("\r\tprocessed line {}".format.counter)
+	sys.stder.write("\r\tprocessed line {} --> FINISHED!\n".format.counter)	
 	# ~ import pdb; pdb.set_trace()
 	print("collective diamondblast")
 	suspects.collective_diamondblast()

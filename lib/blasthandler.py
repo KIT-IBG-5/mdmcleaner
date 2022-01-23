@@ -228,9 +228,10 @@ class blastdata_baseobject(object): #todo: define differently for protein or nuc
 		self.blastlinelist = filteredlist
 		# ~ import pdb; pdb.set_trace()
 	
-	def add_info_to_blastlines(self, bindata_obj = None, taxdb_obj = None): #todo: add verbose and/or quiet argument
+	def add_info_to_blastlines(self, bindata_obj = None, taxdb_obj = None, verbose=True): #todo: add verbose and/or quiet argument
 		# ~ import time #todo: remove this later
-		sys.stderr.write("\tadding info to blastlines (old version)\n")
+		if verbose:
+			sys.stderr.write("\tadding info to blastlines (old version)\n")
 		# ~ starttime = time.time()
 		for i in range(len(self.blastlinelist)):
 			if bindata_obj != None:
@@ -839,7 +840,7 @@ def _run_any_blast(query, db, path_appl, outfmt = "6",outname = None ,threads = 
 	appl = os.path.basename(path_appl)
 	appl_onlypath = os.path.dirname(path_appl)
 	#print("\nblasting --> {}".format(outname))
-	assert outname, "\n\tERROR: must upply an outfilename!\n" 
+	assert outname, "\n\tERROR: must supply an outfilename!\n" 
 	assert outfmt in supported_outfmts, "\n\tError: outfmt '{}' not supported! can only be one of : {}".format(outfmt, ", ".join(supported_outfmts))
 	if os.path.isfile(outname) and force == False:
 		sys.stderr.write("\n\tWARNING: blast result file '{}' already exists and 'force' not set to True --> skipping this blast\n".format(outname))
