@@ -14,13 +14,11 @@ It is based on the GTDB taxonomic system and uses GTDB representative genomes, a
 - aragorn v 1.2.38+ (detecting tRNA genes)
 
 ## Installation:
-Apart from downloading and running the soruce code from this repository directly, MDMcleaner can also be installed via **pip**:
+Just download this repository directly then either just add the path to ```mdmcleaner.py``` to each call, or add this repository folder to your PATH variable (e.g. add ```export PATH="$PATH:/path/to/mdmcleaner_repository"``` to your ```.bash_rc``` file).
 
-```pip install mdmcleaner```
+All dependencies must be installed seperately. If the respective binary-locations are present in PATH, they will be recongized automatically. Otherwise the locations to each dependency must be specified in a ```mdmcleaner.config``` file (see below).
 
-in both cases, when downloading this repository directly or when using pip, all dependencies must be installed seperately. If the respective binary-locations are present in PATH, they will be recongized automatically. Otherwise the locations to each dependency must be specified in a ```mdmcleaner.config``´ file (see below).
-
-**Bioconda** recipe will follow shortly!
+Availability via **Pip** and **Bioconda** recipe will follow shortly!
 
 ## Configuration
 Several options can be passed directly as commandline arguments (see usage below), but basic settings, such as database location, should be provided in the form of ```mdmcleaner.config``` config files. The pipeline distinguishes between global (system/environment-wide settings) and local (individual) config files.
@@ -36,7 +34,7 @@ the settings that can be specified/adjusted in the config files are:
 - location of barrnap binaries (default is simply "barrnap", which assumes it is present in PATH)
 - location of aragorn binaries (default is simply "blastp", which assumes it is present in PATH)
 
-To create a local config file in the current working directory, simply use ```mdmcleaner -s local [SETTING_ARGUMENTS]```
+To create a local config file in the current working directory, simply use ```mdmcleaner set_configs -s local [SETTING_ARGUMENTS]```
 This file can be moved and copied and will be automatically recognized if present in the current working directory when running MDMcleaner. Alternative the path to a local config file can be passed to mdmcleaner via the "-c" argument of the "clean" and "makedb" workflows.
 
 ## overview of MDMcleaner commands
@@ -118,7 +116,7 @@ optional arguments:
   -f, --force           Force reclassification of pre-existing blast-results
   --overview_files_basename OVERVIEW_BASENAME
                         basename for overviewfiles (default="overview"
-  -I IGNORELISTFILE, --ignorelistfile IGNORELISTFILE
+  -b BLACKLISTFILE, --blacklistfile BLACKLISTFILE
                         File listing reference-DB sequence-names that should be ignored during blast-analyses (e.g. known refDB-contaminations...
   --no_filterfasta      Do not write filtered contigs to final output fastas (Default = False)
 ```
@@ -130,7 +128,7 @@ Running the ```clean``` option of MDMcleaner.py will create a mdmcleaner_results
 - \<genome-name\>_rRNA_lsu_rRNA.fasta --> 23s rRNA genes
 - \<genome-name\>_rRNA_ssu_rRNA.fasta --> 16s rRNA genes
 - \<genome-name\>_rRNA_tsu_rRNA.fasta --> 5s rRNA genes
-- \<genome-name\>_rRNA_tRNAs.fasta.gz --> tRNA genes
+- \<genome-name\>_tRNAs.fasta.gz --> tRNA genes
 - \<genome-name\>_totalprots.faa --> total protein sequences
 - \<genome-name\>_keep.fasta --> trusted contigs that are safe to submit
 - \<genome-name\>_evaluate_low.fasta --> contigs that yielded some kind of refDB ambiguity and __may__ profit from some individual re-evaluation (cross-blast against RefSeq etc)
@@ -141,8 +139,8 @@ Running the ```clean``` option of MDMcleaner.py will create a mdmcleaner_results
 Additionally, general overview files are written to the current working directory: "overview_allbeforecleanup.tsv", "overview_refdb_ambiguities.tsv" and "overview_errorlist.txt"
 #### general overview files
 - overview_allbeforecleanup.tsv --> tab seperated table listing majority classification and general metrics per analyzed bin
-- overview_allbeforecleanup.tsv --> tab seperated table listing detected refDB ambiguities together with evidence information and preliminary MDMcleaner assessments
-- overview_errorlist.txt --> list of genomes that yielded errors during MDMcleaner assessments
+- overview_refdb_ambiguities.tsv --> tab seperated table listing detected refDB ambiguities together with evidence information and preliminary MDMcleaner assessments
+- overview_errorlist.txt --> list of genomes that yielded errors during MDMcleaner assessments and may need to be rerun
 
 ## How to cite:
 look out for our publication which has been submitted to Nucleic acids research and will hopefully be available soon.
