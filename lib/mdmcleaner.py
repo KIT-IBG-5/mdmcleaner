@@ -59,7 +59,7 @@ def read_configs(configfilelist, args): #todo: switch to config object instead o
 		settings["threads"] = args.threads
 	else:
 		settings["threads"] = int(settings["threads"][0])
-	if "blacklistfile" in vars(args):
+	if "blacklistfile" in vars(args) and args.blacklistfile != None:
 		settings["blacklistfile"].append(args.blacklistfile)
 	return settings, settings_source
 
