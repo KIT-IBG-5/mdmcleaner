@@ -57,7 +57,7 @@ refseq_dbsource_dict["crc"] = { "url": "{}/release-catalog/".format(ftp_adress_r
 gtdb_server = "https://data.ace.uq.edu.au/public/gtdb/data/releases/latest"
 gtdb_source_dict = { "gtdb_taxfiles" : { "url": "{}/".format(gtdb_server), "pattern" : "*_taxonomy.tsv,MD5SUM" }, \
 					 "gtdb_fastas" : { "url": "{}/genomic_files_reps".format(gtdb_server), "pattern" : "gtdb_genomes_reps.tar.gz,gtdb_proteins_aa_reps.tar.gz" }, \
-					 "gtdb_vs_ncbi_lookup" : { "url" : "{}/auxillary_files".format(gtdb_server), "pattern" : "*_vs_*.xlsx" } }
+					 "gtdb_vs_ncbi_lookup" : { "url" : "{}/auxillary_files".format(gtdb_server), "pattern" : "*_vs_*.xlsx" } } #todo: remove gtdb_vs_ncbi_lookuptables
 
 silva_server = "https://www.arb-silva.de/fileadmin/silva_databases/current"
 silva_source_dict = { "silva_version" : { "url" : "{}/".format(silva_server), "wishlist" : [ "VERSION.txt" ]}, \
@@ -164,12 +164,13 @@ def get_cksum(infile): #for gods sake, contrary to the docs on the ftp server, t
 	return outline.split()[0]
 
 	
-def download_refseq_eukaryote_prots(sourcedict=refseq_dbsource_dict, targetfolder=None, verbose=False):
+def download_refseq_eukaryote_prots(sourcedict=refseq_dbsource_dict, targetfolder=None, verbose=False, maxtries = 3):
 	"""
 	downloads all protein-fastas from the refseq release subfolders specified in source_dict.
 	sourcedict should have categories as keys and a dictionary of corresponding remote folder urls and searchpatterns as values
 	sourcedict must also have an entry "crc" pointing to the "release-catalog" folder of the refseq-release (which, unfortunately contains CRC-checksums instead of MD5)
 	returns a list of the names of all files downloaded if successful, None if not.
+	if crc-checksums do not match it will reattempt downloads as often as speciefied by 'maxtries' (default = 3 times)
 	"""
 	#TODO: consider the following: Refseq only provides downloads for about one representative per species. probably that is a good thing, because it prevents overinterpreting results from overrepresented species. but possibly I should also consider downloading the sequence data for the other examples too?
 	# start ot nested subfunctions
@@ -205,8 +206,9 @@ def download_refseq_eukaryote_prots(sourcedict=refseq_dbsource_dict, targetfolde
 					ok_filelist.append(expectedfile)
 		infile.close()
 		assert len(ok_filelist) != 0, "\nERROR: None of the expected files appear to have been downloaded. Do you have read/write permissions for the targetfolder?\n"
-		assert allisfine, "\nERROR: something went wrong during download: {} expected files are missing, and {} files have mismatching MD5checksums!\n  --> Missing files: {}\n  --> Corrupted files: {}\nPlease try again WITHOUT deleting anything in the target folder (only mismatching files will be redownloaded and run will continue from there)".format(len(missing_filelist), len(bad_filelist), ",".join(missing_filelist), ",".join(bad_filelist))
-		return ok_filelist
+		if not allisfine:
+			sys.stderr.write("\nERROR: something went wrong during download: {} expected files are missing, and {} files have mismatching MD5checksums!\n  --> Missing files: {}\n  --> Corrupted files: {}\nPlease try again WITHOUT deleting anything in the target folder (only mismatching files will be redownloaded and run will continue from there)".format(len(missing_filelist), len(bad_filelist), ",".join(missing_filelist), ",".join(bad_filelist)))
+		return ok_filelist, allisfine
 		# end of nested subfunctions
 		
 	#TODO: check if a flag file exists, that indicates that this already ran successfully
@@ -228,20 +230,29 @@ def download_refseq_eukaryote_prots(sourcedict=refseq_dbsource_dict, targetfolde
 	crcfile = downloaded_crc[0]
 	refseq_release_number = re.search("(release\d+)\.files\.installed", crcfile).group(1)
 	#### Now that We have the crc file, download the rest:
-	for vireukcat in [ vec for vec in sourcedict if vec != "crc" ]:
-		sys.stderr.write("\n\tNow downloading refseq release category \"{}\"...\n".format(vireukcat))
-		returncode = _download_unixwget(sourcedict[vireukcat]["url"], sourcedict[vireukcat]["pattern"], targetdir=targetfolder)
-		if returncode != 0:
-			sys.stderr.write("\nWARNING: wget returned non-zero returncode '{}' after downloading {} \n".format(returncode, vireukcat))
-	download_list = check_crcfile(crcfile, targetfolder, ",".join(["{}*.protein.faa.gz".format(x) for x in sourcedict if x != "crc"]))
+	trycounter = 0
+	download_list = None
+	allisfine = False
+	while not allisfine and trycounter < maxtries:
+		if trycounter > 0:
+			sys.stderr.write("\t-->Reattempting download\n")
+		for vireukcat in [ vec for vec in sourcedict if vec != "crc" ]:
+			sys.stderr.write("\n\tNow downloading refseq release category \"{}\" (attempt {})...\n".format(vireukcat, trycounter + 1))
+			returncode = _download_unixwget(sourcedict[vireukcat]["url"], sourcedict[vireukcat]["pattern"], targetdir=targetfolder)
+			if returncode != 0:
+				sys.stderr.write("\nWARNING: wget returned non-zero returncode '{}' after downloading {} \n".format(returncode, vireukcat))
+		download_list, allisfine = check_crcfile(crcfile, targetfolder, ",".join(["{}*.protein.faa.gz".format(x) for x in sourcedict if x != "crc"]))
+		trycounter += 1
 	#TODO: create a flag file to indicate that this has already run
+	assert allisfine, "\nERROR: Still incomplete download or mismatching MD5sums after {} download-attempts. Please check connection and try again later...\n".format(trycounter+1)
 	return download_list, refseq_release_number
 
-def download_gtdb_stuff(sourcedict = gtdb_source_dict, targetfolder=None, verbose=False):
+def download_gtdb_stuff(sourcedict = gtdb_source_dict, targetfolder=None, verbose=False, maxtries=3):
 	"""
 	downloads all protein-fastas from the refseq release subfolders specified in source_dict.
 	sourcedict should have categories as keys and a dictionary of corresponding remote folder urls and searchpatterns as values
 	returns a dictionary listing the names of all files downloaded for each category/subfolder if successful, None if not.
+	if md5sums do not match it will reattempt downloads as often as speciefied by 'maxtries' (default = 3 times)
 	"""
 	#TODO: check for a flag file, indicating that this already ran successfully
 	# start of nested subfunctions
@@ -279,8 +290,9 @@ def download_gtdb_stuff(sourcedict = gtdb_source_dict, targetfolder=None, verbos
 		infile.close()
 		ok_filelist.sort() #ensure alphabetial ordering of files, even if order is different in MD5-file
 		assert len(ok_filelist) != 0, "\nERROR: None of the expected files appear to have been downloaded. Do you have read/write permissions for the targetfolder?\n"
-		assert allisfine, "\nERROR: something went wrong during download: {} expected files are missing, and {} files have mismatching CRCchecksums!\n  --> Missing files: {}\n  --> Corrupted files: {}\n".format(len(missing_filelist), len(bad_filelist), ",".join(missing_filelist), ",".join(bad_filelist)) 
-		return ok_filelist
+		if not allisfine:
+			sys.stderr.write("\nWARNING: something went wrong during download: {} expected files are missing, and {} files have mismatching MD5-checksums!\n  --> Missing files: {}\n  --> Corrupted files: {}\n".format(len(missing_filelist), len(bad_filelist), ",".join(missing_filelist), ",".join(bad_filelist)))
+		return ok_filelist, allisfine
 
 	def get_gtdbversion_from_MD5SUM(md5sumfile):
 		import re
@@ -296,17 +308,32 @@ def download_gtdb_stuff(sourcedict = gtdb_source_dict, targetfolder=None, verbos
 				return version
 	# end of nested subfunctions
 	
-		
-	for gtdbcat in sourcedict:
-		sys.stderr.write("\n\tNow downloading from gtdb: \"{}\"...\n".format(gtdbcat))
-		returncode = _download_unixwget(sourcedict[gtdbcat]["url"], sourcedict[gtdbcat]["pattern"], targetdir=targetfolder, verbose=verbose)
-		if returncode != 0:
-			sys.stderr.write("\nWARNING: wget returned non-zero returncode '{}' after downloading {} \n".format(returncode, gtdbcat))
-	download_dict = { x : check_gtdbmd5file(os.path.join(targetfolder, "MD5SUM"), targetfolder, sourcedict[x]["pattern"]) for x in sourcedict }
+	def get_download_dict(sourcedict, targetfolder):
+		download_dict = {}
+		for x in sourcedict:
+			okdownloadfilelist, allisfine = check_gtdbmd5file(os.path.join(targetfolder, "MD5SUM"), targetfolder, sourcedict[x]["pattern"])
+			if not allisfine:
+				return
+			download_dict[x] = okdownloadfilelist
+		return download_dict
+			
+	download_dict = None
+	trycounter = 0
+	while download_dict == None and trycounter < maxtries:
+		if trycounter > 0:
+			sys.stderr.write("\t-->Reattempting download\n")
+		for gtdbcat in sourcedict:
+			sys.stderr.write("\n\tNow downloading from gtdb: \"{}\" (attempt {})...\n".format(gtdbcat, trycounter+1))
+			returncode = _download_unixwget(sourcedict[gtdbcat]["url"], sourcedict[gtdbcat]["pattern"], targetdir=targetfolder, verbose=verbose)
+			if returncode != 0:
+				sys.stderr.write("\nWARNING: wget returned non-zero returncode '{}' after downloading {} \n".format(returncode, gtdbcat))
+		download_dict = get_download_dict(sourcedict, targetfolder)
+		trycounter += 1
+	assert download_dict, "\nERROR: Still incomplete download or mismatching MD5sums after {} download-attempts. Please check connection and try again later...\n".format(trycounter +1)
 	version = get_gtdbversion_from_MD5SUM(os.path.join(targetfolder, "MD5SUM"))
 	return download_dict, version
 
-def download_silva_stuff(sourcedict = silva_source_dict, targetfolder=None, verbose=False):
+def download_silva_stuff(sourcedict = silva_source_dict, targetfolder=None, verbose=False, maxtries = 3):
 	# start of nested subfunctions
 	def check_silvamd5file(filelist, wishlist):
 		allisfine = True
@@ -331,7 +358,7 @@ def download_silva_stuff(sourcedict = silva_source_dict, targetfolder=None, verb
 				sys.stderr.write("\nExpcted downloaded file '{}', but could not find it ...\n".format(f))
 				allisfine = False
 		assert allisfine, "\nError: Download of silva data failed!\nPlease check connection and retry again later\n"
-		return successlist
+		return successlist, allisfine
 	
 	def getsilvaversion(urldict, targetfolder): #yes I know. This could go easier with urllib2 yadayadayada. But for the other stuff wget is better, so sticking with that for now!
 		sys.stderr.write("\n\tNow trying to get current silva release version...\n")
@@ -347,17 +374,33 @@ def download_silva_stuff(sourcedict = silva_source_dict, targetfolder=None, verb
 		return version
 	# end of nested subfunctions
 	
+	def get_download_dict(prelim_downloadlist, wishdict):
+		download_dict = {}
+		for x in wishdict:
+			okdownloadlist, allisfine = check_silvamd5file([df for df in prelim_downloadlist if not df.endswith(".md5")], wishdict[x])
+			if not allisfine:
+				return
+			download_dict[x] = okdownloadlist
+		return download_dict
+	
 	version = getsilvaversion(sourcedict["silva_version"], targetfolder)
 	prelim_downloadlist = [os.path.join(targetfolder, sourcedict["silva_version"]["wishlist"][0])]
 	wishdict = {silvacat : [ w.format(version) for w in sourcedict[silvacat]["wishlist"] ] for silvacat in sourcedict }
-	for silvacat in ["silva_taxfiles", "silva_fastas"]:
-		for wish in wishdict[silvacat]:
-			sys.stderr.write("\n\tNow downloading from silva: \"{}\"...\n".format(wish))
-			returncode = _download_unixwget(sourcedict[silvacat]["url"] + wish, pattern = None, targetdir=targetfolder, verbose=verbose)
-			if returncode != 0:
-				sys.stderr.write("\nWARNING: wget returned non-zero returncode '{}' after downloading {} \n".format(returncode, wish))
-			prelim_downloadlist.append(os.path.join(targetfolder, wish))
-	download_dict = { x : check_silvamd5file([df for df in prelim_downloadlist if not df.endswith(".md5")], wishdict[x]) for x in wishdict} # listing all the files that are not md5 files #TODO: something wrong here. lists all the files again in every key
+	download_dict = None
+	trycounter = 0
+	while download_dict == None and trycounter < maxtries:
+		if trycounter > 0:
+			sys.stderr.write("\t-->Reattempting download\n")
+		for silvacat in ["silva_taxfiles", "silva_fastas"]:
+			for wish in wishdict[silvacat]:
+				sys.stderr.write("\n\tNow downloading from silva: \"{}\" (attempt {})...\n".format(wish, trycounter +1))
+				returncode = _download_unixwget(sourcedict[silvacat]["url"] + wish, pattern = None, targetdir=targetfolder, verbose=verbose)
+				if returncode != 0:
+					sys.stderr.write("\nWARNING: wget returned non-zero returncode '{}' after downloading {} \n".format(returncode, wish))
+				prelim_downloadlist.append(os.path.join(targetfolder, wish))
+		download_dict = get_download_dict(prelim_downloadlist, wishdict)
+		trycounter += 1
+	assert download_dict, "\nERROR: Still incomplete download or mismatching MD5sums after {} download-attempts. Please check connection and try again later...\n".format(trycounter +1)
 	#TODO: create a flag file, indicating that this already ran successfully
 	return download_dict, version
 		
@@ -663,6 +706,7 @@ creates files for storing taxdict, LCA_walktree and acc2taxid files and returns 
 	returns gtdb_download_dict, refseq_files, silva_download_dict (in that order)
 	"""
 	sys.stderr.write("\nWARNING! This download may take a LONG time! However, you may be able to resume if it is aborted prematurely...\n")
+	sys.stderr.flush()
 	assert os.path.abspath(targetdir) != os.getcwd(), "\nERROR: targetdir may not be the current working directory\n"
 	assert progressdump["step"] in _progress_steps["download"], "\nError: loaded progress step '{}' is not involved in Download steps {}!\n".format(progressdump["step"], str(_progress_steps["download"]))
 	steporder = _progress_steps["download"]
@@ -988,6 +1032,7 @@ def getNprepare_dbdata_nonncbi(targetdir, verbose=False):
 	progressdump = _check_progressmarker(targetdir)
 	#steps1-3 (downloading):
 	sys.stderr.write("highest pre-existing progressmarker found: '{}'\n".format(progressdump["step"]))
+	sys.stderr.flush()
 	if progressdump["step"] in _progress_steps["download"][:-1]:
 		sys.stderr.write("beginning/continuing at download stage\n")
 		progressdump = _download_dbdata_nonncbi(targetdir, progressdump, verbose=verbose)
