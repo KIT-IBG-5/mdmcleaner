@@ -1,10 +1,14 @@
 #!/usr/bin/env python
 import sys
+if sys.version_info[0] < 3:
+	sys.exit("\nERROR: python 3 or higher required!\n")
+import check_dependencies
 import os
 import argparse
 import misc
 from misc import openfile
 import pprint
+
 
 setting_keys = ["blacklistfile","blastp", "blastn", "blastdbcmd", "diamond", "barrnap", "rnammer", "hmmsearch", "aragorn", "db_basedir","db_type", "blastdb_diamond", "blastdb_blastp", "blastdb_blastn", "threads"] # todo: complete this list 
 from _version import __version__
@@ -132,6 +136,9 @@ def main():
 	show_configs_args = subparsers.add_parser("show_configs", help = "check settings in config files (with highest ranking source for each setting)")
 	show_configs_args.add_argument("-c", "--config", action = "store", dest = "configfile", default = find_local_configfile(), help = "local config file (default: search for config file in current working directory, use None if not present)")
 
+	check_dependencies_args = subparsers.add_parser("check_dependencies", help = "checks if all dependencies for MDMcleaner are being met")
+	check_dependencies_args.add_argument("-c", "--config", action = "store", dest = "configfile", default = find_local_configfile(), help = "provide a local config file with basic settings (such as the location of database-files). default: looks for config files named 'mdmcleaner.config' in current working directory. settings in the local config file will override settings in the global config file '{}'".format(os.path.join(os.path.dirname(os.path.abspath(__file__)), "mdmcleaner.config")))
+
 	version_args = subparsers.add_parser("version", help = "show version info and exit")
 	if len(sys.argv)==1:
 		myparser.print_help(sys.stderr)
@@ -141,7 +148,7 @@ def main():
 	if args.command == "version":
 		sys.stderr.write("MDMcleaner v{}\n".format(__version__))
 
-	if args.command in ["clean", "makedb", "show_configs", "get_markers", "acc2taxpath", "refdb_contams"]:
+	if args.command in ["clean", "makedb", "show_configs", "get_markers", "acc2taxpath", "refdb_contams", "check_dependencies"]:
 		configfile_hierarchy = [ cf for cf in [find_global_configfile(), args.configfile] if cf != None ]
 		configs, settings_source = read_configs(configfile_hierarchy, args)
 		sys.stderr.write("\n\nSETTINGS:\n" + pprint.pformat(configs)+ "\n\n")
@@ -151,6 +158,7 @@ def main():
 	# ~ import pdb; pdb.set_trace()
 	if args.command == "clean":
 		import clean
+		check_dependencies.check_dependencies(configs=configs)
 		clean.main(args, configs)
 	
 	if args.command == "makedb":
@@ -160,6 +168,7 @@ def main():
 			args.outdir = os.path.join(configs["db_basedir"][0], configs["db_type"][0])
 		else:
 			args.outdir = os.path.join(args.outdir, configs["db_type"][0])
+		check_dependencies.check_dependencies("makeblastdb", "diamond", "wget", configs=configs)
 		read_gtdb_taxonomy.main(args, configs)
 		
 	# ~ if args.command == "get_rrnas":
@@ -228,9 +237,14 @@ def main():
 				taxpath = db.taxid2pathstring(taxid)
 				sys.stderr.write("{}\t{}".format(taxid, taxpath))
 		sys.stderr.write("\n")
-	
+
+	if args.command == "check_dependencies":
+		check_dependencies.check_dependencies("blastp", "blastn", "diamond", "wget", configs=configs)
+		sys.stderr.write("\nSUCCESS: all dependencies are being met\n")
+
 	if args.command == "refdb_contams":
 		import review_refdbcontams
+		check_dependencies.check_dependencies("blastp", "blastn", "diamond", "wget", configs=configs)
 		blacklist_additions = review_refdbcontams.read_ambiguity_report(args.ambiguity_report, configs, args.tempbasename)
 		print("\n------> writing {} blacklist additions to {}".format(len(blacklist_additions), args.outblacklist))
 		write_blacklist(blacklist_additions, args.outblacklist)
