@@ -73,7 +73,7 @@ _progress_steps = {"download": [None, "01a", "02a", "03a"], \
 				  "prepare": ["04a", "04b", "04c", "05a", "06a", "06b", "06c", "07a"], \
 				  "finished": ["08a"]} #todo: add more steps for individual dbs (instead of concatenating all to one db
 
-
+default_settings = { x:x for x in ["makeblastdb", "diamond"]}
 
 import os
 import sys
@@ -82,6 +82,8 @@ import time
 import misc
 from misc import openfile
 import getdb #TODO: obsolete when i integrate this all into getdb.py
+
+
 
 def _download_unixwget(sourceurl, pattern=None, targetdir=None, verbose=False): #adds wget >1.19 to dependencies, is probably not the best way to do this, but easier and more stable that ftp/urrlib2, automaticcaly resumes failed downloads etc ... working-solution for now, BUT CONSIDER SWITCHING!
 	"""
@@ -791,10 +793,14 @@ def _check_progressmarker(targetdir):
 	
 	
 	
-def _prepare_dbdata_nonncbi(targetdir, progressdump, verbose=False): #Todo:add continueflag argument #todo: make sure verbosity is implemented
+def _prepare_dbdata_nonncbi(targetdir, progressdump, verbose=False, settings=None): #Todo:add continueflag argument #todo: make sure verbosity is implemented
 	import blasthandler
 	import getdb #todo: for using dict2jsonthis will be obsolete, when this is moved there #edit: no it won't. keeping download for gttdb and ncbi data seperate. common stuff goes to misc or getdb
 	import time #todo probably not needed anymore
+
+	if settings == None:
+		settings = default_settings #by default assume all tools in pATH
+
 	def step4a():
 		progressdump["acc2taxidfilelist"] = []
 		progressdump["taxdict"], progressdump["lca_walktree"] = None, None
@@ -960,7 +966,7 @@ def _prepare_dbdata_nonncbi(targetdir, progressdump, verbose=False): #Todo:add c
 	if progressdump["step"] == laststep:
 		progressdump["step"] = step
 		progressdump["outprotdbname"] = os.path.join(targetdir, "gtdbplus_protdb")
-		blasthandler.make_diamond_db(progressdump["concatprotfasta"], progressdump["outprotdbname"])  ##step6b: create protein diamond-db
+		blasthandler.make_diamond_db(progressdump["concatprotfasta"], progressdump["outprotdbname"], diamond = settings["diamond"])  ##step6b: create protein diamond-db
 		getdb.dict2jsonfile(progressdump, os.path.join(targetdir, currentprogressmarker))	
 		os.remove(os.path.join(targetdir, lastprogressmarker))
 	else:
@@ -985,7 +991,7 @@ def _prepare_dbdata_nonncbi(targetdir, progressdump, verbose=False): #Todo:add c
 			for suff in [".gz", ".fasta", ".fa", ".faa", ".fna"]:
 				if outnucldbname.endswith(suff):
 					outnucldbname = outnucldbname[:-len(suff)]
-			progressdump["outnucldblist"].append(blasthandler.make_blast_db_from_gz(dbfasta, outnucldbname, db_type = "nucl")) ##step6d: create nucleotide diamond or blastdb (test which one is faster, blast may be faster here, because there are not so many queries as in the protein-blasts)
+			progressdump["outnucldblist"].append(blasthandler.make_blast_db_from_gz(dbfasta, outnucldbname, db_type = "nucl",makeblastdb = settings["makeblastdb"])) ##step6d: create nucleotide diamond or blastdb (test which one is faster, blast may be faster here, because there are not so many queries as in the protein-blasts)
 		getdb.dict2jsonfile(progressdump, os.path.join(targetdir, currentprogressmarker))
 		os.remove(os.path.join(targetdir, lastprogressmarker)) 
 		#TODO: make sure tehre are actually 3 databases created here! one for 16S , one for 23S and one for gtdbgenomes!
@@ -1023,7 +1029,9 @@ def test_or_create_targetdir(targetdir):
 		# ~ sys.stderr.write("\nERROR: insufficient write permissions for '{}'! Please choose a different target directory and try again\n".format(targetdir))
 		raise PermissionError("\n\nERROR: insufficient write permissions for '{}'! Please choose a different target directory and try again\n".format(targetdir))
 
-def getNprepare_dbdata_nonncbi(targetdir, verbose=False):
+def getNprepare_dbdata_nonncbi(targetdir, verbose=False, settings=None):
+	if settings == None:
+		settings = default_settings #by default assume all tools in pATH
 	#TODO: pack all data into pgrogessdump
 	#  Todo: pass only progressdump to subsequent functions
 	#  Todo: have a dictionary of progresssteps and their respecitve functions.	
@@ -1039,7 +1047,7 @@ def getNprepare_dbdata_nonncbi(targetdir, verbose=False):
 	#steps 4-6 (processing)
 	if progressdump["step"] in [_progress_steps["download"][-1]] + _progress_steps["prepare"][:-1]:
 		sys.stderr.write("beginning/continuing at processing stage\n")
-		progressdump = _prepare_dbdata_nonncbi(targetdir, progressdump, verbose=verbose)
+		progressdump = _prepare_dbdata_nonncbi(targetdir, progressdump, verbose=verbose, settings = settings)
 	if progressdump["step"] == _progress_steps["prepare"][-1]:
 		#cleanup
 		cleanupwhenfinished(progressdump, targetdir, verbose)
@@ -1111,7 +1119,7 @@ def cleanupwhenfinished(progressdump, targetdir, verbose=False):
 #todo: DROP download of ncbi2gtdb and vice versa mapping files will not use them anyway!
 
 def main(args, configs): #todo: make option to read targetdir from configfile or to WRITE targetdir to configfile when finished
-	getNprepare_dbdata_nonncbi(args.outdir, verbose=args.verbose)
+	getNprepare_dbdata_nonncbi(args.outdir, verbose=args.verbose, settings=configs.settings)
 
 # ~ if __name__ == '__main__':
 	# ~ import argparse

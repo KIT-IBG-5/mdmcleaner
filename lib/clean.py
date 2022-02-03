@@ -48,11 +48,11 @@ def main(args, configs):
 	# ~ print(configfile_hierarchy)
 	# ~ configs = read_configs(configfile_hierarchy, args) #todo finish this
 	#initialize blastdbs
-	assert "db_basedir" in configs and "db_type" in configs, "\n\nERROR: 'db_basedir' and 'db_type' need to be specified in the configs file!\n" 
-	ssu_nucblastdblist = [os.path.join(configs["db_basedir"][0], configs["db_type"][0], nbdb) for nbdb in getdb.dbfiles[configs["db_type"][0]]["ssu_nucblastdbs"]]
-	lsu_nucblastdblist = [os.path.join(configs["db_basedir"][0], configs["db_type"][0], nbdb) for nbdb in getdb.dbfiles[configs["db_type"][0]]["lsu_nucblastdbs"]] #used for lsu and "tsu" rRNAs
-	# ~ trna_nucblastdblist = [os.path.join(configs["db_basedir"][0], configs["db_type"][0], nbdb) for nbdb in getdb.dbfiles[configs["db_type"][0]]["genome_nucblastdbs"]]		#todo: implement tRNA_blasts		
-	protblastdblist = [os.path.join(configs["db_basedir"][0], configs["db_type"][0], pbdb) for pbdb in getdb.dbfiles[configs["db_type"][0]]["protblastdbs"]]
+	assert "db_basedir" in configs.settings and "db_type" in configs.settings, "\n\nERROR: 'db_basedir' and 'db_type' need to be specified in the configs file!\n" 
+	ssu_nucblastdblist = [os.path.join(configs.settings["db_basedir"][0], configs.settings["db_type"][0], nbdb) for nbdb in getdb.dbfiles[configs.settings["db_type"][0]]["ssu_nucblastdbs"]]
+	lsu_nucblastdblist = [os.path.join(configs.settings["db_basedir"][0], configs.settings["db_type"][0], nbdb) for nbdb in getdb.dbfiles[configs.settings["db_type"][0]]["lsu_nucblastdbs"]] #used for lsu and "tsu" rRNAs
+	# ~ trna_nucblastdblist = [os.path.join(configs.settings["db_basedir"][0], configs.settings["db_type"][0], nbdb) for nbdb in getdb.dbfiles[configs.settings["db_type"][0]]["genome_nucblastdbs"]]		#todo: implement tRNA_blasts		
+	protblastdblist = [os.path.join(configs.settings["db_basedir"][0], configs.settings["db_type"][0], pbdb) for pbdb in getdb.dbfiles[configs.settings["db_type"][0]]["protblastdbs"]]
 	
 	
 	progressdump = check_progressdump(args.output_folder, args.input_fastas) #todo: this is meant to implement a "major-progressdump", consisting of multiple "mini-progressdumps" (one for each input-fasta). for each input-fasta, it should list the current progress-state [None = not started yet, stepxx = currently unfinished, "Finished" = finished]
@@ -67,7 +67,7 @@ def main(args, configs):
 		try:
 			
 			############### getting markers
-			bindata = getmarkers.bindata(contigfile=infasta, threads=configs["threads"])
+			bindata = getmarkers.bindata(contigfile=infasta, threads=configs.settings["threads"], settings = configs.settings)
 			nucblastjsonfilename = os.path.join(bindata.bin_resultfolder, "nucblasts.json.gz")
 			protblastjsonfilename = os.path.join(bindata.bin_resultfolder, "protblasts.json") #todo: why is this not compressed? Fix!
 
@@ -78,7 +78,7 @@ def main(args, configs):
 			sys.stderr.flush()	
 			if os.path.isfile(protblastjsonfilename) and args.force != True: #for debugging. allows picking up AFTER blastlines were already classified when re-running
 				sys.stderr.write("\n-->using preexisting protein blast results in resultfolder!\n")
-				protblasts = blasthandler.blastdata(protblastjsonfilename, score_cutoff_fraction = 0.75, continue_from_json = True, seqtype = "prot", blacklist = configs["blacklist"])
+				protblasts = blasthandler.blastdata(protblastjsonfilename, score_cutoff_fraction = 0.75, continue_from_json = True, seqtype = "prot", blacklist = configs.blacklist)
 			else:
 				sys.stderr.write("\n-->blasting protein data\n")
 				protblastfiles = []
@@ -87,11 +87,11 @@ def main(args, configs):
 					sys.stdout.flush()
 					sys.stderr.flush()	
 					# ~ starttime = time.time()
-					protblastfiles.append(blasthandler._run_any_blast(bindata.totalprotsfile, blastdb, "diamond", outname=os.path.join(bindata.bin_resultfolder, "{}_totalprots_vs_{}.blast.tsv".format(bindata.bin_tempname, pbdb)), threads=configs["threads"]))  #todo make choce of blast tool flexible. perhaps dependent on db (add tool/db tuple pairs to configs-dict)
+					protblastfiles.append(blasthandler._run_any_blast(bindata.totalprotsfile, blastdb, configs.settings["diamond"], outname=os.path.join(bindata.bin_resultfolder, "{}_totalprots_vs_{}.blast.tsv".format(bindata.bin_tempname, pbdb)), threads=configs.settings["threads"]))  #todo make choce of blast tool flexible. perhaps dependent on db (add tool/db tuple pairs to configs-dict)
 					# ~ endtime = time.time()
 					# ~ print("\nthis blast took {} seconds\n".format(endtime - starttime))
 				sys.stderr.write("\treading in protblast files...\n")
-				protblasts = blasthandler.blastdata(*protblastfiles, score_cutoff_fraction = 0.75, seqtype = "prot", blacklist = configs["blacklist"])
+				protblasts = blasthandler.blastdata(*protblastfiles, score_cutoff_fraction = 0.75, seqtype = "prot", blacklist = configs.blacklist)
 				sys.stderr.write("\tlooking up taxids of protein blast hits...\n")
 				protblasts.add_info_to_blastlines(bindata, db)
 				sys.stderr.write("\tsaving protblasts for reuse\n") #todo: make this optional. is only for debugging now!
@@ -99,28 +99,28 @@ def main(args, configs):
 			##### then rnablasts
 			if os.path.isfile(nucblastjsonfilename) and args.force != True: #for debugging. allows picking up AFTER blastlines were already classified when re-running
 				sys.stderr.write("\n-->using preexisting ribosomal rRNA blast results in resultfolder!\n")
-				nucblasts = blasthandler.blastdata(nucblastjsonfilename, score_cutoff_fraction = 0.8, continue_from_json = True, seqtype = "nuc", blacklist = configs["blacklist"])
+				nucblasts = blasthandler.blastdata(nucblastjsonfilename, score_cutoff_fraction = 0.8, continue_from_json = True, seqtype = "nuc", blacklist = configs.blacklist)
 			else:
 				rnablastfiles = []
 				# ~ starttime = time.time()
 				#todo: not all rRNAs should be blasted against all databases.  so creating different blast_combiantions for lsu & ssu (and tsu and trna?) here. create a get_blast_combinations function for this in blasthander!
-				# ~ nucblastdblist = [os.path.join(configs["db_basedir"][0], configs["db_type"][0], nbdb) for nbdb in getdb.dbfiles[configs["db_type"][0]]["nucblastdbs"]] #todo: set nucblastdblist during initialization!
+				# ~ nucblastdblist = [os.path.join(configs.settings["db_basedir"][0], configs.settings["db_type"][0], nbdb) for nbdb in getdb.dbfiles[configs.settings["db_type"][0]]["nucblastdbs"]] #todo: set nucblastdblist during initialization!
 
-				# ~ trna_nucblastdblist = [os.path.join(configs["db_basedir"][0], configs["db_type"][0], nbdb) for nbdb in getdb.dbfiles[configs["db_type"][0]]["trna_nucblastdbs"]]		#todo: implement tRNA_blasts		
+				# ~ trna_nucblastdblist = [os.path.join(configs.settings["db_basedir"][0], configs.settings["db_type"][0], nbdb) for nbdb in getdb.dbfiles[configs.settings["db_type"][0]]["trna_nucblastdbs"]]		#todo: implement tRNA_blasts		
 				lsublastquerylist = [bindata.rRNA_fasta_dict["lsu_rRNA"]] #,  bindata.rRNA_fasta_dict["tsu_rRNA"]] was thinking about running the 5S blasts now, but actually they should only be run if needed at the end!
 				ssublastquerylist = [bindata.rRNA_fasta_dict["ssu_rRNA"]]
 				# ~ trnablastquerylist = [bindata.trnafile]
 	
 				sys.stderr.write("\n-->blasting rRNA data\n") 
 				#todo: the following blasts all against all (including 16S vs 23S database). But blasting 16S only makes sense against a 16S dabatase... --> ensure blasts are only against appropriate dbs![
-				lsu_blast_combinations = blasthandler.get_blast_combinations(lsu_nucblastdblist, lsublastquerylist, blast = "blastn")
-				ssu_blast_combinations = blasthandler.get_blast_combinations(ssu_nucblastdblist, ssublastquerylist, blast = "blastn")
+				lsu_blast_combinations = blasthandler.get_blast_combinations(lsu_nucblastdblist, lsublastquerylist, blast = configs.settings["blastn"])
+				ssu_blast_combinations = blasthandler.get_blast_combinations(ssu_nucblastdblist, ssublastquerylist, blast = configs.settings["blastn"])
 			# ~ trna_blast_combinations = blasthandler.get_blast_combinations(trna_nucblastdblist, trnablastquerylist, blast = "blastn")
 				all_blast_combinations = lsu_blast_combinations + ssu_blast_combinations
-				rnablastfiles = blasthandler.run_multiple_blasts_parallel(all_blast_combinations, outbasename=os.path.join(bindata.bin_resultfolder, "blastn"), total_threads=configs["threads"])
+				rnablastfiles = blasthandler.run_multiple_blasts_parallel(all_blast_combinations, outbasename=os.path.join(bindata.bin_resultfolder, "blastn"), total_threads=configs.settings["threads"])
 				# ~ endtime = time.time()
 				# ~ print("\nthis blast took {} seconds\n".format(endtime - starttime))
-				nucblasts = blasthandler.blastdata(*rnablastfiles, score_cutoff_fraction = 0.8, seqtype = "nuc", blacklist = configs["blacklist"]) #stricter cutoff for nucleotide blasts
+				nucblasts = blasthandler.blastdata(*rnablastfiles, score_cutoff_fraction = 0.8, seqtype = "nuc", blacklist = configs.blacklist) #stricter cutoff for nucleotide blasts
 				sys.stderr.write("\tlooking up taxids of nucleotide blast hits...\n")
 				nucblasts.add_info_to_blastlines(bindata, db)
 				sys.stderr.write("\tsaving nuclasts for reuse\n") #todo: make this optional. is only for debugging now!
@@ -178,7 +178,7 @@ def main(args, configs):
 			#unclass_auxrna_genes = bindata.get_auxrna_from_unclass_contigs()
 			# --> blast against lsu_blastdbs
 			#auxrna_blast_combinations = blasthandler.get_blast_combinations(lsu_nucblastdblist, [unclass_auxrna_contigs], blast = "blastn")
-			#auxrnablastfiles = blasthandler.run_multiple_blasts_parallel(auxrna_blast_combinations, os.path.join(bindata.bin_resultfolder, "blastn"), configs["threads"])
+			#auxrnablastfiles = blasthandler.run_multiple_blasts_parallel(auxrna_blast_combinations, os.path.join(bindata.bin_resultfolder, "blastn"), configs.settings["threads"])
 			#auxblasts = blasthandler.blastdata(*auxrnablastfiles, score_cutoff_fraction = 0.8)
 			# use that info to get additional classifications
 			#auxblasts.add_info_to_blastlines(bindata, db)

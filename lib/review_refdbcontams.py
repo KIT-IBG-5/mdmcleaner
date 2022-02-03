@@ -11,7 +11,11 @@ much of this will move to the other modules when finished
 '''
 
 class comparison_hit(object):
-	def __init__(self,*, taxid, seqid, domain, phylum, db, markerlevel):
+	def __init__(self,*, taxid, seqid, domain, phylum, db, markerlevel, settings=None):
+		if settings == None:
+			self.settings = {x:x for x in ["blastn", "blastp", "diamond"]}
+		else:
+			self.settings = settings
 		self.seqid = seqid
 		self.domain = domain
 		self.phylum = phylum
@@ -66,7 +70,7 @@ class comparison_hit(object):
 			# ~ print("\nthis blast took {:.4f} seconds\n\n".format(end-start))
 			# ~ print(resultfiles)
 			self.blastdata = blasthandler.blastdata(*resultfiles, max_evalue = 1e-5, min_ident = 90, score_cutoff_fraction = 0, keep_max_hit_fraction = 1, keep_min_hit_count = 2, continue_from_json = False, auxilliary = False, seqtype=None, blacklist=blacklist) #todo: ignlorelistfile should be changed to ignore list. Can be a list of a filepath. If filepath, read that file as list. if list, use that
-			if self.blast == "blastx":
+			if self.blast.endswith("blastx"):
 				self.blastdata.filter_blasthits_by_cov_and_ident(mincov=90, filterbylen=subject)
 			else:
 				self.blastdata.filter_blasthits_by_cov_and_ident() #todo: stricter identity cutoffs for ssu-rRNA	
@@ -187,7 +191,7 @@ class comp_prokprotcontig(comparison_hit):
 		super().__init__(taxid=taxid,seqid=seqid, domain=domain, phylum=phylum, db=db, markerlevel=markerlevel)
 		self.set_extractdb()
 		self.seqtype = "nucl" 
-		self.blast = "blastn" #except, if the best contradiction is a "refseqprot" = eukaryotic or viral seqeunce --> then change to "diamond blastx"
+		self.blast = self.settings["blastn"] #except, if the best contradiction is a "refseqprot" = eukaryotic or viral seqeunce --> then change to "diamond blastx"
 		self.blastdbs = db.nucdbs_genome
 		self.get_seqrecord()
 		# ~ self.blast_contigs(threads = configs["threads"], blacklist=None, outfileprefix = "")
@@ -195,11 +199,11 @@ class comp_prokprotcontig(comparison_hit):
 	def changeblastmethod(self, blasttype):
 		assert blasttype in ["blastn", "blastx", "diamond blastx"], "\nERROR: blasttype={}\n".format(blasttype)
 		if blasttype in ["blastx", "diamond blastx"]:
-			self.blast = "diamond blastx"
+			self.blast = self.settings["diamond"] + " blastx"
 			self.blastdbs = self.db.protdbs_all
 		elif blasttype in ["blastn"]:
-			self.blast = "blastn"
-			self.blastdbs = dself.b.nucdbs_genome
+			self.blast = self.settings["blastn"]
+			self.blastdbs = db.nucdbs_genome
 				
 class comp_ssurrna(comparison_hit):
 	def __init__(self,*, taxid, seqid, domain, phylum, db, markerlevel, configs):
@@ -208,7 +212,7 @@ class comp_ssurrna(comparison_hit):
 		# ~ self.extractdb = db.nucdbs_ssu_rRNA[-1] #todo: may need to terate through genomic db also in some cases?
 		self.blastdbs = db.nucdbs_ssu_rRNA
 		self.seqtype = "nucl"
-		self.blast = "blastn"
+		self.blast = self.settings["blastn"]
 		self.get_seqrecord()
 		# ~ self.blast_contigs(threads = configs["threads"], blacklist=None, outfileprefix = "")
 	
@@ -219,7 +223,7 @@ class comp_lsurrna(comparison_hit):
 		# ~ self.extractdb = db.nucdbs_lsu_rRNA[-1] #todo: may need to terate through genomic db also in some cases?
 		self.blastdbs = db.nucdbs_lsu_rRNA
 		self.seqtype = "nucl"
-		self.blast = "blastn"
+		self.blast = self.settings["blastn"]
 		self.get_seqrecord()
 		# ~ self.blast_contigs(threads = configs["threads"], blacklist=None, outfileprefix = "")
 
@@ -235,9 +239,9 @@ class suspicious_entries(object):
 	
 	def __init__(self, db, configs, outbasename = "./"):
 		self.db = db
-		self.threads = configs["threads"]
-		self.configs = configs
-		self.blacklist = configs["blacklist"] #todo: double check that the default value for "blacklist" in configs in set() and NOT None!
+		self.threads = configs.settings["threads"]
+		self.configs = configs.settings
+		self.blacklist = configs.blacklist #todo: double check that the default value for "blacklist" in configs in set() and NOT None!
 		self.blacklist_additions = set()
 		self.added2blacklistcount = 0
 		self.blastxjobs = {}

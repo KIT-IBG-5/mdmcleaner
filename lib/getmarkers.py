@@ -156,7 +156,7 @@ def get_trnas(*subfastas, outdirectory = ".", aragorn = "aragorn", threads = 1):
 			misc.unixzcat(subfastas[i], outfilename=tempfilename)
 			subfastas[i] = tempfilename
 			tempfilelist.append(tempfilename)
-	commandlist = [("getmarkers", "_get_trnas_single", {"infasta" : subfasta}) for subfasta in subfastas]
+	commandlist = [("getmarkers", "_get_trnas_single", {"infasta" : subfasta, "aragorn" : aragorn}) for subfasta in subfastas]
 	outstringlistlist =misc.run_multiple_functions_parallel(commandlist, threads)
 	sys.stdout.flush()
 	sys.stderr.flush()
@@ -598,7 +598,11 @@ def add_rrnamarker_to_contigdict_and_markerdict(rrnamarkerdict, contigdict, mark
 	return contigdict, markerdict
 #######################
 class gdata(object): #meant for gathering all contig/protein/marker info
-	def __init__(self, contigfile, threads = 1, outbasedir = "mdmcleaner_results", mincontiglength = 0, outprefix="MDM_"): #todo: enable init with additional precalculated infos
+	def __init__(self, contigfile, threads = 1, outbasedir = "mdmcleaner_results", mincontiglength = 0, outprefix="MDM_", settings = None): #todo: enable init with additional precalculated infos
+		if settings == None:
+			self.settings = {x:x for x in ["blastn", "blastp", "makeblastdb", "blastdbcmd","diamond","barrnap","hmmsearch","aragorn"]} #default: assume all tools in PATH
+		else:
+			self.settings = settings
 		import re
 		self.threads = threads
 		self.barrnap_pattern = re.compile("^\d{1,2}S_rRNA::(.+):\d+-\d+\([+-]\)")
@@ -683,7 +687,7 @@ class gdata(object): #meant for gathering all contig/protein/marker info
 	
 	def _prep_contigsANDtotalprots(self, mincontiglength, threads):
 		subfastas, self.contigdict = split_fasta_for_parallelruns(self.binfastafile, minlength = mincontiglength, number_of_fractions = threads)
-		commandlist = [("getmarkers", "runprodigal", {"infasta" : subfastas[i], "outfilename" : os.path.join(self.bin_resultfolder, "tempfile_{}_prodigal_{}.faa".format(self.bin_tempname, i)) }) for i in range(len(subfastas))]
+		commandlist = [("getmarkers", "runprodigal", {"infasta" : subfastas[i], "prodigal" : self.settings["prodigal"], "outfilename" : os.path.join(self.bin_resultfolder, "tempfile_{}_prodigal_{}.faa".format(self.bin_tempname, i)) }) for i in range(len(subfastas))]
 		tempprotfiles = misc.run_multiple_functions_parallel(commandlist, threads)
 		# ~ tempdict = get_trnas(subfastas, threads=threads) #todo: aragorn does not accept input from stdin. find a solution for mutiprocessing later!
 		# ~ self.trnadict = { trna[0]: contig for trna in tempdict[contig] for contig in tempdict} 
@@ -692,12 +696,12 @@ class gdata(object): #meant for gathering all contig/protein/marker info
 		self.totalprotsfile, self.markerdict = combine_multiple_fastas(tempprotfiles, outfilename = self.totalprotsfile, delete_original = True, contigdict = self.contigdict,return_markerdict = True)
 	
 	def _prep_protmarker(self):
-		self.protmarkerdictlist = get_markerprotnames(self.totalprotfile, hmmsearch = "hmmsearch", outdir = self.bin_resultfolder, cmode = "moderate", level = "all", threads = "4") #todo: delete hmm_intermediate_results
+		self.protmarkerdictlist = get_markerprotnames(self.totalprotfile, hmmsearch = self.settings["hmmsearch"], outdir = self.bin_resultfolder, cmode = "moderate", level = "all", threads = "4") #todo: delete hmm_intermediate_results
 		for pml in range(len(self.protmarkerdictlist)):
 			self.contigdict = parse_protmarkerdict(self.protmarkerdictlist[pml], self.contigdict, pml)	
 
 	def _prep_rRNAmarker(self):
-		self.rRNA_fasta_dict, self.rrnamarkerdict = runbarrnap_all(infasta=self.binfastafile, outfilebasename=os.path.join(self.bin_resultfolder, self.bin_tempname + "_rRNA"), barrnap="barrnap", output_directory = self.bin_resultfolder, threads=self.threads) #todo add option for rnammer (using the subdivided fastafiles)? #todo: parse resultfolder from basename. or rather basename from resultfolder!
+		self.rRNA_fasta_dict, self.rrnamarkerdict = runbarrnap_all(infasta=self.binfastafile, outfilebasename=os.path.join(self.bin_resultfolder, self.bin_tempname + "_rRNA"), barrnap=self.settings["barrnap"], output_directory = self.bin_resultfolder, threads=self.threads) #todo add option for rnammer (using the subdivided fastafiles)? #todo: parse resultfolder from basename. or rather basename from resultfolder!
 		self.contigdict, self.markerdict = add_rrnamarker_to_contigdict_and_markerdict(self.rrnamarkerdict, self.contigdict, self.markerdict)
 				
 	def _prep_onlycontigs(self, mincontiglength, threads):
@@ -716,14 +720,14 @@ class gdata(object): #meant for gathering all contig/protein/marker info
 			_, self.markerdict = combine_multiple_fastas([self.totalprotsfile], outfilename = None, delete_original = False, contigdict = self.contigdict, return_markerdict = True)
 		else:
 			self._prep_contigsANDtotalprots(mincontiglength, threads)
-		protmarkerfiles, self.protmarkerdictlist = get_markerprots(self.totalprotsfile, hmmsearch = "hmmsearch", outfile_basename = os.path.join(self.bin_resultfolder, self.bin_tempname + "_markerprots"), cmode = "moderate", level = "all", threads = threads) #todo: delete hmm_intermediate_results
+		protmarkerfiles, self.protmarkerdictlist = get_markerprots(self.totalprotsfile, hmmsearch = self.settings["hmmsearch"], outfile_basename = os.path.join(self.bin_resultfolder, self.bin_tempname + "_markerprots"), cmode = "moderate", level = "all", threads = threads) #todo: delete hmm_intermediate_results
 		
 		#todo: protmarkerdictlists probably not needed in that form. just save a general markerdict and a contigdict
 
 		for pml in range(len(self.protmarkerdictlist)): #todo: contigdict is maybe not needed in this form. choose simpler dicts ?
 			self.contigdict = parse_protmarkerdict(self.protmarkerdictlist[pml], self.contigdict, pml, self.markerdict)
 		self._prep_rRNAmarker()
-		trna_list = get_trnas(self.binfastafile) #todo: aragorn does not accept input from stdin (WHY!?) --> makes multithreading a bit more complicated. find a solution for mutiprocessing later, that does not break current workflow! --> probably switch to trnascanSE after all? (EDIT: trnascanSE ALSO does not accept input from stdin (WHY?!)
+		trna_list = get_trnas(self.binfastafile, aragorn=self.settings["aragorn"]) #todo: aragorn does not accept input from stdin (WHY!?) --> makes multithreading a bit more complicated. find a solution for mutiprocessing later, that does not break current workflow! --> probably switch to trnascanSE after all? (EDIT: trnascanSE ALSO does not accept input from stdin (WHY?!)
 		trna_records = self.get_trna_sequences_from_contigs(trna_list)
 		SeqIO.write(trna_records, openfile(self.trnafastafile, "wt"), "fasta")
 
@@ -769,8 +773,8 @@ class gdata(object): #meant for gathering all contig/protein/marker info
 
 ########################
 class bindata(gdata): #meant for gathering all contig/protein/marker info
-	def __init__(self, contigfile, threads = 1, outbasedir = "mdmcleaner_results", mincontiglength = 0, cutofftable = cutofftablefile): #todo: enable init with additional precalculated infos. #todo: cutofftablefile is actually decapricated (cutoffs are stated in the hmm-files themselves). kept here only to keep the option open to maybe use individual hmms instead...
-		gdata.__init__(self,contigfile, threads = 1, outbasedir = "mdmcleaner_results", mincontiglength = 0, outprefix="")
+	def __init__(self, contigfile, threads = 1, outbasedir = "mdmcleaner_results", mincontiglength = 0, cutofftable = cutofftablefile, settings = None): #todo: enable init with additional precalculated infos. #todo: cutofftablefile is actually decapricated (cutoffs are stated in the hmm-files themselves). kept here only to keep the option open to maybe use individual hmms instead...
+		super().__init__(contigfile, threads = threads, outbasedir = outbasedir, mincontiglength = mincontiglength, outprefix="", settings=settings)
 		self.pickle_progressfile = os.path.join(self.bin_resultfolder, "bindata_progress.pickle") #todo: change to better system
 		self.trna_jsonfile = os.path.join(self.bin_resultfolder, "bindata_trna_progress.json.gz") #todo: REALLY start implementing a better system!
 		self.filteroutputfiles = { 	"keep" : os.path.join(self.bin_resultfolder, self.bin_tempname + "_filtered_kept_contigs.fasta.gz"),\
@@ -800,7 +804,7 @@ class bindata(gdata): #meant for gathering all contig/protein/marker info
 			_, self.markerdict = combine_multiple_fastas([self.totalprotsfile], outfilename = None, delete_original = False, contigdict = self.contigdict, return_markerdict = True)
 		else:
 			self._prep_contigsANDtotalprots(mincontiglength, threads)
-		self.protmarkerdictlist = get_markerprotnames(self.totalprotsfile, cutofftable, hmmsearch = "hmmsearch", outdir = self.bin_resultfolder, cmode = "moderate", level = "all", threads = threads) #todo: delete hmm_intermediate_results
+		self.protmarkerdictlist = get_markerprotnames(self.totalprotsfile, cutofftable, hmmsearch = self.settings["hmmsearch"], outdir = self.bin_resultfolder, cmode = "moderate", level = "all", threads = threads) #todo: delete hmm_intermediate_results
 		#todo: protmarkerdictlists probably not needed in that form. just save a general markerdict and a contigdict
 
 		for pml in range(len(self.protmarkerdictlist)): #todo: contigdict is maybe not needed in this form. choose simpler dicts ?
@@ -817,7 +821,7 @@ class bindata(gdata): #meant for gathering all contig/protein/marker info
 		if from_json and os.path.exists(self.trna_jsonfile):
 			trna_list = misc.from_json(self.trna_jsonfile)
 		else:
-			trna_list = get_trnas(self.binfastafile) #todo: aragorn does not accept input from stdin (WHY!?) --> makes multithreading a bit more complicated. find a solution for mutiprocessing later, that does not break current workflow! --> probably switch to trnascanSE after all? (EDIT: trnascanSE ALSO does not accept input from stdin (WHY?!)
+			trna_list = get_trnas(self.binfastafile, aragorn=self.settings["aragorn"]) #todo: aragorn does not accept input from stdin (WHY!?) --> makes multithreading a bit more complicated. find a solution for mutiprocessing later, that does not break current workflow! --> probably switch to trnascanSE after all? (EDIT: trnascanSE ALSO does not accept input from stdin (WHY?!)
 			trna_records = self.get_trna_sequences_from_contigs(trna_list)
 			SeqIO.write(trna_records, openfile(self.trnafastafile, "wt"), "fasta")
 			misc.to_json(trna_list, self.trna_jsonfile)
@@ -829,7 +833,7 @@ class bindata(gdata): #meant for gathering all contig/protein/marker info
 			self.contigdict[contig]["tRNAs"].append(trna) 
 			
 		#todo: create progressdict like in db-setup (pickling won't work with this kid of object)
-#ASPA01000002.1
+
 	def _save_current_status(self): #todo: for debugging. find better solution later. had to use pickle rather than json, because json does not recognize named_tuples
 		markerprogress_dict = {"rRNA_fasta_dict": self.rRNA_fasta_dict, "rrnamarkerdict": self.rrnamarkerdict, "contigdict": self.contigdict, "markerdict": self. markerdict}
 		misc.to_pickle(markerprogress_dict, self.pickle_progressfile)
@@ -1297,13 +1301,13 @@ class bindata(gdata): #meant for gathering all contig/protein/marker info
 
 def get_only_marker_seqs(args, configs):
 	for infasta in args.input_fastas:
-		genomedata = gdata(infasta, args.threads, outbasedir = args.outdir, outprefix="args.outprefix")
+		genomedata = gdata(infasta, args.threads, outbasedir = args.outdir, outprefix="args.outprefix", settings=configs.settings)
 		if args.markertype in ["rrna", "trna"]:
 			genomedata._prep_onlycontigs(args.mincontiglength, args.threads)
 			if args.markertype == "rrna":
 				genomedata._prep_rRNAmarker()
 			elif args.markertype == "trna":
-				trna_list = get_trnas(genomedata.binfastafile) #todo: aragorn does not accept input from stdin (WHY!?) --> makes multithreading a bit more complicated. find a solution for mutiprocessing later, that does not break current workflow! --> probably switch to trnascanSE after all? (EDIT: trnascanSE ALSO does not accept input from stdin (WHY?!)
+				trna_list = get_trnas(genomedata.binfastafile, aragorn = configs.settings["aragorn"]) #todo: aragorn does not accept input from stdin (WHY!?) --> makes multithreading a bit more complicated. find a solution for mutiprocessing later, that does not break current workflow! --> probably switch to trnascanSE after all? (EDIT: trnascanSE ALSO does not accept input from stdin (WHY?!)
 				trna_records = genomedata.get_trna_sequences_from_contigs(trna_list)
 				SeqIO.write(trna_records, openfile(genomedata.trnafastafile, "wt"), "fasta")
 		elif args.markertype in ["totalprots", "markerprots", "all"]:
@@ -1311,37 +1315,37 @@ def get_only_marker_seqs(args, configs):
 			if args.markertype == "all":
 				genomedata._get_all_markers(threads = args.threads, mincontiglength = args.mincontiglength)
 			elif args.markertype == "markerprots":
-				markerprotfiles, genomedata.protmarkerdictlist = get_markerprots(genomedata.totalprotsfile, hmmsearch = configs["hmmsearch"][0], outfile_basename = os.path.join(genomedata.bin_resultfolder, genomedata.bin_tempname + "_markerprots"), cmode = "moderate", level = "all", threads = args.threads) #todo: delete hmm_intermediate_results
+				markerprotfiles, genomedata.protmarkerdictlist = get_markerprots(genomedata.totalprotsfile, hmmsearch = configs.settings["hmmsearch"], outfile_basename = os.path.join(genomedata.bin_resultfolder, genomedata.bin_tempname + "_markerprots"), cmode = "moderate", level = "all", threads = args.threads) #todo: delete hmm_intermediate_results
 		else:
 			raise Exception("\nERROR: markertype '{}' not implemented yet!\n".format(mtype))
 		
 ######################################################
 
 
-def main():
-	import argparse
-	myparser = argparse.ArgumentParser(prog=os.path.basename(sys.argv[0]), description= "extracts markers from input-fastas")
-	subparsers = myparser.add_subparsers(dest = "command")
-	get_trna_args = subparsers.add_parser("get_trnas", help = "extracts trna sequences using Aragorn")
-	get_trna_args.add_argument("infastas", nargs = "+", help = "input fasta(s). May be gzip-compressed")
-	get_trna_args.add_argument("--outdir", dest = "outdir", default = ".", help = "Output directory for temporary files, etc. Default = '.'")
-	get_trna_args.add_argument("-b", "--binary", default = "binary", help = "aragorn executable (with path if not in PATH). Default= assume aragorn is in PATH")
-	get_trna_args.add_argument("-t", "--threads", default = 1, type = int, help = "number of parallel threads. Is only used when multiple input files are passed")
-	get_rrnas_args = subparsers.add_parser("get_rrnas", help = "extract_rRNA sequences using barrnap")
-	get_rrnas_args.add_argument("infasta", help = "input fasta. May be gzip-compressed")
-	get_rrnas_args.add_argument("-o", "--outbasename", action="store", dest="outfilebasename", default = "rRNA_barrnap", help = "basename of output files (default = 'rRNA_barrnap')")
-	get_rrnas_args.add_argument("-t", "--threads", action="store", dest="threads", type = int, default = 1, help = "number of threads to use (default = 1)")
-	get_rrnas_args.add_argument("-b", "--binary", action="store", dest="barrnap", default = "barrnap", help = "path to barrnap binaries (if not in PATH)")
-	get_rrnas_args.add_argument("--outdir", dest = "outdir", default = ".", help = "Output directory for temporary files, etc. Default = '.'")
-	args = myparser.parse_args()
+# ~ def main():
+	# ~ import argparse
+	# ~ myparser = argparse.ArgumentParser(prog=os.path.basename(sys.argv[0]), description= "extracts markers from input-fastas")
+	# ~ subparsers = myparser.add_subparsers(dest = "command")
+	# ~ get_trna_args = subparsers.add_parser("get_trnas", help = "extracts trna sequences using Aragorn")
+	# ~ get_trna_args.add_argument("infastas", nargs = "+", help = "input fasta(s). May be gzip-compressed")
+	# ~ get_trna_args.add_argument("--outdir", dest = "outdir", default = ".", help = "Output directory for temporary files, etc. Default = '.'")
+	# ~ get_trna_args.add_argument("-b", "--binary", default = "binary", help = "aragorn executable (with path if not in PATH). Default= assume aragorn is in PATH")
+	# ~ get_trna_args.add_argument("-t", "--threads", default = 1, type = int, help = "number of parallel threads. Is only used when multiple input files are passed")
+	# ~ get_rrnas_args = subparsers.add_parser("get_rrnas", help = "extract_rRNA sequences using barrnap")
+	# ~ get_rrnas_args.add_argument("infasta", help = "input fasta. May be gzip-compressed")
+	# ~ get_rrnas_args.add_argument("-o", "--outbasename", action="store", dest="outfilebasename", default = "rRNA_barrnap", help = "basename of output files (default = 'rRNA_barrnap')")
+	# ~ get_rrnas_args.add_argument("-t", "--threads", action="store", dest="threads", type = int, default = 1, help = "number of threads to use (default = 1)")
+	# ~ get_rrnas_args.add_argument("-b", "--binary", action="store", dest="barrnap", default = "barrnap", help = "path to barrnap binaries (if not in PATH)")
+	# ~ get_rrnas_args.add_argument("--outdir", dest = "outdir", default = ".", help = "Output directory for temporary files, etc. Default = '.'")
+	# ~ args = myparser.parse_args()
 	
-	if args.command == "get_trnas":
-		sys.stderr.write("extracting tRNAs:\n")
-		print(get_trnas(*args.infastas, outdirectory = args.outdir, aragorn = args.binary, threads = args.threads)) # todo: make a dedicated standalone funtion with a mini_bindata-object (inherited from bindata)
-	elif args.command == "get_rrnas":
-		sys.stderr.write("extracting rRNA genes:\n")
-		rRNA_fasta_dict, rrnamarkerdict = runbarrnap_all(infasta=args.infasta, outfilebasename=args.outfilebasename, barrnap=args.barrnap, output_directory = args.outdir, threads=args.threads)	
-		sys.stderr.write("created the following output-files:\n{}\n\n".format(",\n".join(list(rRNA_fasta_dict.values()))))
+	# ~ if args.command == "get_trnas":
+		# ~ sys.stderr.write("extracting tRNAs:\n")
+		# ~ print(get_trnas(*args.infastas, outdirectory = args.outdir, aragorn = args.binary, threads = args.threads)) # todo: make a dedicated standalone funtion with a mini_bindata-object (inherited from bindata)
+	# ~ elif args.command == "get_rrnas":
+		# ~ sys.stderr.write("extracting rRNA genes:\n")
+		# ~ rRNA_fasta_dict, rrnamarkerdict = runbarrnap_all(infasta=args.infasta, outfilebasename=args.outfilebasename, barrnap=args.barrnap, output_directory = args.outdir, threads=args.threads)	
+		# ~ sys.stderr.write("created the following output-files:\n{}\n\n".format(",\n".join(list(rRNA_fasta_dict.values()))))
 
-if __name__ == '__main__':
-	main()
+# ~ if __name__ == '__main__':
+	# ~ main()

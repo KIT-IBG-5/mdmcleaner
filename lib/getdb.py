@@ -159,19 +159,19 @@ def _create_sorted_acc2taxid_lookup(acc2taxidfilelist, acc2taxid_outfilename):
 class taxdb(object):
 	def __init__(self, configs): # acc2taxid_lookupfile, taxdbfile = None, lca_pathsfile = None): #todo: create and read a "config file" to get file-locations from
 		#self.taxdict = self.read_taxddbfile(taxdbfile) #todo: write tis!
-		self.dbpath = os.path.join(configs["db_basedir"][0], configs["db_type"][0])
+		self.dbpath = os.path.join(configs.settings["db_basedir"][0], configs.settings["db_type"][0])
 
 		 
-		self.acc2taxid_lookupfile = os.path.join(self.dbpath, dbfiles[configs["db_type"][0]]["mdmdbs"][0])
-		self.taxdbfile = os.path.join(self.dbpath, dbfiles[configs["db_type"][0]]["mdmdbs"][1])
-		self.lca_pathsfile = os.path.join(self.dbpath, dbfiles[configs["db_type"][0]]["mdmdbs"][2])
+		self.acc2taxid_lookupfile = os.path.join(self.dbpath, dbfiles[configs.settings["db_type"][0]]["mdmdbs"][0])
+		self.taxdbfile = os.path.join(self.dbpath, dbfiles[configs.settings["db_type"][0]]["mdmdbs"][1])
+		self.lca_pathsfile = os.path.join(self.dbpath, dbfiles[configs.settings["db_type"][0]]["mdmdbs"][2])
 		
-		self.nucdbs_ssu_rRNA = [os.path.join(self.dbpath, x) for x in dbfiles[configs["db_type"][0]]["ssu_nucblastdbs"]]
-		self.nucdbs_lsu_rRNA = [os.path.join(self.dbpath, x) for x in dbfiles[configs["db_type"][0]]["lsu_nucblastdbs"]]
-		self.nucdbs_genome = [os.path.join(self.dbpath, x) for x in dbfiles[configs["db_type"][0]]["genome_nucblastdbs"]]
-		self.nucdbs_all = [os.path.join(self.dbpath, x) for x in dbfiles[configs["db_type"][0]]["nucblastdbs"]]
+		self.nucdbs_ssu_rRNA = [os.path.join(self.dbpath, x) for x in dbfiles[configs.settings["db_type"][0]]["ssu_nucblastdbs"]]
+		self.nucdbs_lsu_rRNA = [os.path.join(self.dbpath, x) for x in dbfiles[configs.settings["db_type"][0]]["lsu_nucblastdbs"]]
+		self.nucdbs_genome = [os.path.join(self.dbpath, x) for x in dbfiles[configs.settings["db_type"][0]]["genome_nucblastdbs"]]
+		self.nucdbs_all = [os.path.join(self.dbpath, x) for x in dbfiles[configs.settings["db_type"][0]]["nucblastdbs"]]
 		
-		self.protdbs_all = [os.path.join(self.dbpath, x) for x in dbfiles[configs["db_type"][0]]["protblastdbs"]]
+		self.protdbs_all = [os.path.join(self.dbpath, x) for x in dbfiles[configs.settings["db_type"][0]]["protblastdbs"]]
 		
 		
 		self.versionfile = os.path.join(self.dbpath, "DB_versions.txt")

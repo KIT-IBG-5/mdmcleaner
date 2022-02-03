@@ -10,7 +10,7 @@ from misc import openfile
 import pprint
 
 
-setting_keys = ["blacklistfile","blastp", "blastn", "blastdbcmd", "diamond", "barrnap", "rnammer", "hmmsearch", "aragorn", "db_basedir","db_type", "blastdb_diamond", "blastdb_blastp", "blastdb_blastn", "threads"] # todo: complete this list 
+setting_keys = ["blacklistfile","blastp", "blastn", "blastdbcmd", "diamond", "barrnap", "rnammer", "hmmsearch", "aragorn", "prodigal", "db_basedir","db_type", "blastdb_diamond", "blastdb_blastp", "blastdb_blastn", "threads"] # todo: complete this list 
 from _version import __version__
 
 def write_blacklist(blacklist, outfilename):
@@ -19,63 +19,127 @@ def write_blacklist(blacklist, outfilename):
 			outfile.write("{}\n".format(b))
 
 def find_global_configfile():
-	moduledir = os.path.dirname(os.path.abspath(__file__))
+	moduledir = os.path.dirname(os.path.realpath(__file__))
 	if os.path.exists(os.path.join(moduledir, "mdmcleaner.config")) and os.path.isfile(os.path.join(moduledir, "mdmcleaner.config")):
 		return os.path.join(moduledir, "mdmcleaner.config")
-	raise Exception("\nError: a \"mdmcleaner.config\" file should exist under {}, but doesnt!\n".format(moduledir))
+	sys.exit("\nError: a \"mdmcleaner.config\" file should exist under {}, but doesnt!\n".format(moduledir))
 
 def find_local_configfile():
 	cwd = os.getcwd()
-	moduledir = os.path.dirname(os.path.abspath(__file__))
 	if os.path.exists(os.path.join(cwd, "mdmcleaner.config")) and os.path.isfile(os.path.join(cwd, "mdmcleaner.config")):
-		return os.path.join(cwd, "mdmcleaner.config")	
+		return os.path.join(cwd, "mdmcleaner.config")
 
-def read_configs(configfilelist, args): #todo: switch to config object instead of dictionary
-	"""
-	Reads the config files in hierarchical order (first global, then local), with the later configs always overriding the previous in case of conflicts
-	Config files must be tab-seperated text files (may be compressed though), with setting names in the first column, and the corresponding setting value(s) in subsequent columns.
-	Setting values are always read as lists
-	Unknown setting names will just be ignored. However, comments should optimally be marked with "#"
-	"""
-	import os
-	settings, settings_source = {}, {}
-	settings["blacklistfile"] = []
-	if "ignore_default_blacklist" in vars(args) and args.ignore_default_blacklist == True:
-		settings_source["blacklistfile"] = None
-	else:
-		mdmcleaner_lib_path = os.path.dirname(os.path.realpath(__file__))
-		default_blacklist = os.path.join(mdmcleaner_lib_path, "blacklist.list")
-		settings["blacklistfile"].append(default_blacklist)
-		settings_source["blacklistfile"] = "default"
-	for config in configfilelist: #todo: maybe instead of replacing blacklist with that in config-file, just append it to the list of blacklists?
-		sys.stderr.write("\nreading settings from configfile: \"{}\"\n".format(config))
-		with openfile(config) as configfile:
-			for line in configfile:
-				tokens = line.strip().split("#",1)[0].strip().split()
-				if len(tokens) <= 1:
-					continue
-				if tokens[0] in setting_keys:
-					settings[tokens[0]] = tokens[1:]
-					settings_source[tokens[0]] = config
+# ~ def read_configs(configfilelist, args): #todo: switch to config object instead of dictionary
+	# ~ """
+	# ~ Reads the config files in hierarchical order (first global, then local), with the later configs always overriding the previous in case of conflicts
+	# ~ Config files must be tab-seperated text files (may be compressed though), with setting names in the first column, and the corresponding setting value(s) in subsequent columns.
+	# ~ Setting values are always read as lists
+	# ~ Unknown setting names will just be ignored. However, comments should optimally be marked with "#"
+	# ~ """
+	# ~ import os
+	# ~ settings, settings_source = {}, {}
+	# ~ settings["blacklistfile"] = []
+	# ~ if "ignore_default_blacklist" in vars(args) and args.ignore_default_blacklist == True:
+		# ~ settings_source["blacklistfile"] = None
+	# ~ else:
+		# ~ mdmcleaner_lib_path = os.path.dirname(os.path.realpath(__file__))
+		# ~ default_blacklist = os.path.join(mdmcleaner_lib_path, "blacklist.list")
+		# ~ settings["blacklistfile"].append(default_blacklist)
+		# ~ settings_source["blacklistfile"] = "default"
+	# ~ for config in configfilelist: #todo: maybe instead of replacing blacklist with that in config-file, just append it to the list of blacklists?
+		# ~ sys.stderr.write("\nreading settings from configfile: \"{}\"\n".format(config))
+		# ~ with openfile(config) as configfile:
+			# ~ for line in configfile:
+				# ~ tokens = line.strip().split("#",1)[0].strip().split()
+				# ~ if len(tokens) <= 1:
+					# ~ continue
+				# ~ if tokens[0] in setting_keys:
+					# ~ settings[tokens[0]] = tokens[1:]
+					# ~ settings_source[tokens[0]] = config
+				# ~ else:
+					# ~ sys.stderr.write("\nWARNING: unknown setting key \"{}\" --> ignoring it!\n")
+	# ~ if "threads" in vars(args):
+		# ~ settings["threads"] = args.threads
+	# ~ else:
+		# ~ settings["threads"] = int(settings["threads"][0])
+	# ~ if "blacklistfile" in vars(args) and args.blacklistfile != None:
+		# ~ settings["blacklistfile"].append(args.blacklistfile)
+	# ~ return settings, settings_source
+
+class config_object(object):
+	execs = {	"blastpath" : ["blastn", "blastp", "makeblastdb", "blastdbcmd"],\
+				"diamondpath" : ["diamond"],\
+				"barrnappath" : ["barrnap"],\
+				"hmmerpath" : ["hmmsearch"],\
+				"aragornpath" : ["aragorn"],\
+				"prodigalpath" : ["prodigal"] } #lists which excecutables should be found in which path. todo: intgrate this with check_dependencies...
+	config_file_exepathkeys = list(execs.keys())
+	config_file_misckeys = ["threads"]
+	config_file_dbkeys = ["db_basedir", "db_type", "blacklistfile"]
+	config_file_setting_keys = config_file_exepathkeys + config_file_misckeys + config_file_dbkeys
+					
+	def __init__(self, args, read_blacklist = True):
+		self.configfile_hierarchy = [ cf for cf in [find_global_configfile(), args.configfile] if cf != None ]
+		self.settings = {key : [] for key in self.config_file_setting_keys}
+		self.settings_source = {key : "default" for key in self.config_file_setting_keys}
+		self.blacklist = set()
+		self.read_configs(args)
+		for execpath in self.execs:
+			for e in self.execs[execpath]:
+				if len(self.settings[execpath]) == 0:
+					self.settings[e] = e
 				else:
-					sys.stderr.write("\nWARNING: unknown setting key \"{}\" --> ignoring it!\n")
-	if "threads" in vars(args):
-		settings["threads"] = args.threads
-	else:
-		settings["threads"] = int(settings["threads"][0])
-	if "blacklistfile" in vars(args) and args.blacklistfile != None:
-		settings["blacklistfile"].append(args.blacklistfile)
-	return settings, settings_source
+					self.settings[e] = os.path.join(self.settings[execpath][0], e)
+		if read_blacklist:
+			self.blacklist = self.read_blacklistfiles()	
+	
+	def print_settings(self):
+		pprint.pprint(self.settings)
+	
+	def read_configs(self, args): #todo: switch to config object instead of dictionary
+		"""
+		Reads the config files in hierarchical order (first global, then local), with the later configs always overriding the previous in case of conflicts
+		Config files must be tab-seperated text files (may be compressed though), with setting names in the first column, and the corresponding setting value(s) in subsequent columns.
+		Setting values are always read as lists (except "threads" which is read as integer)
+		Unknown setting names will just be ignored. However, comments should optimally be marked with "#"
+		"""
+		import os
+		self.settings["blacklistfile"] = []
+		if "ignore_default_blacklist" in vars(args) and args.ignore_default_blacklist == True:
+			self.settings_source["blacklistfile"] = None
+		else:
+			self.mdmcleaner_lib_path = os.path.dirname(os.path.realpath(__file__))
+			default_blacklist = os.path.join(self.mdmcleaner_lib_path, "blacklist.list")
+			self.settings["blacklistfile"].append(default_blacklist)
+			self.settings_source["blacklistfile"] = "default"
+		for config in self.configfile_hierarchy: #todo: maybe instead of replacing blacklist with that in config-file, just append it to the list of blacklists?
+			sys.stderr.write("\nreading settings from configfile: \"{}\"\n".format(config))
+			with openfile(config) as configfile:
+				for line in configfile:
+					tokens = line.strip().split("#",1)[0].strip().split()
+					if len(tokens) <= 1:
+						continue
+					if tokens[0] in self.config_file_setting_keys:
+						self.settings[tokens[0]] = tokens[1:]
+						self.settings_source[tokens[0]] = config
+					else:
+						sys.stderr.write("\nWARNING: unknown setting key \"{}\" --> ignoring it!\n".format(tokens[0]))
+		if "threads" in vars(args):
+			self.settings["threads"] = args.threads
+		else:
+			self.settings["threads"] = int(self.settings["threads"][0])
+		if "blacklistfile" in vars(args) and args.blacklistfile != None:
+			self.settings["blacklistfile"].append(args.blacklistfile)	
 
-def _read_blacklistfiles(blacklistfilelist):
-	blacklist = []
-	for blacklistfile in blacklistfilelist:
-		with openfile(blacklistfile) as blf:
-			for line in blf:
-				tokens = line.strip().split("#")
-				if len(tokens) >0 and tokens[0] != "":
-					blacklist.append(tokens[0])
-	return set(blacklist)
+	def read_blacklistfiles(self):
+		blacklist = []
+		for blacklistfile in self.settings["blacklistfile"]:
+			with openfile(blacklistfile) as blf:
+				for line in blf:
+					tokens = line.strip().split("#")
+					if len(tokens) >0 and tokens[0] != "":
+						blacklist.append(tokens[0])
+		return set(blacklist)
 
 def main():
 	myparser = argparse.ArgumentParser(prog=os.path.basename(sys.argv[0]), description= "MDMcleaner pipeline v{} for decontaminating and classifying microbial dark matter MAGs and SAGs".format(__version__))
@@ -148,13 +212,21 @@ def main():
 	if args.command == "version":
 		sys.stderr.write("MDMcleaner v{}\n".format(__version__))
 
+	# ~ if args.command in ["clean", "makedb", "show_configs", "get_markers", "acc2taxpath", "refdb_contams", "check_dependencies"]:
+		# ~ configfile_hierarchy = [ cf for cf in [find_global_configfile(), args.configfile] if cf != None ]
+		# ~ configs, settings_source = read_configs(configfile_hierarchy, args)
+		# ~ sys.stderr.write("\n\nSETTINGS:\n" + pprint.pformat(configs)+ "\n\n")
+		# ~ if args.command in ["clean", "get_markers", "refdb_contams"]:
+			# ~ configs["blacklist"] =  _read_blacklistfiles(configs["blacklistfile"])
+
 	if args.command in ["clean", "makedb", "show_configs", "get_markers", "acc2taxpath", "refdb_contams", "check_dependencies"]:
-		configfile_hierarchy = [ cf for cf in [find_global_configfile(), args.configfile] if cf != None ]
-		configs, settings_source = read_configs(configfile_hierarchy, args)
-		sys.stderr.write("\n\nSETTINGS:\n" + pprint.pformat(configs)+ "\n\n")
 		if args.command in ["clean", "get_markers", "refdb_contams"]:
-			configs["blacklist"] =  _read_blacklistfiles(configs["blacklistfile"])
-	
+			configs = config_object(args, read_blacklist = True)
+		else:
+			configs = config_object(args)
+		configs.print_settings
+
+
 	# ~ import pdb; pdb.set_trace()
 	if args.command == "clean":
 		import clean
@@ -167,16 +239,9 @@ def main():
 			assert "db_basedir" in configs, ("\n\nERROR: either 'outdir' must be specified as argument or 'db_basedir' needs to be specified in config file!\n\n")
 			args.outdir = os.path.join(configs["db_basedir"][0], configs["db_type"][0])
 		else:
-			args.outdir = os.path.join(args.outdir, configs["db_type"][0])
+			args.outdir = os.path.join(args.outdir, configs.settings["db_type"][0])
 		check_dependencies.check_dependencies("makeblastdb", "diamond", "wget", configs=configs)
 		read_gtdb_taxonomy.main(args, configs)
-		
-	# ~ if args.command == "get_rrnas":
-		# ~ import getmarkers
-		# ~ getmarkers.get_rrnas_only(args)
-		
-	# ~ if args.command == "get_rrnas":
-		# ~ pass
 		
 	if args.command == "get_markers":
 		import getmarkers
@@ -195,10 +260,10 @@ def main():
 		arg_settings = vars(args)
 		for a in arg_settings:
 			if a != "scope" and arg_settings[a] != None:
-				configs[a] = [arg_settings[a]]
-		for c in configs:
-			if c in setting_keys and configs[c]:
-				outfile.write("{}\t{}\n".format(c, configs[c][0]))
+				configs.settings[a] = [arg_settings[a]]
+		for c in configs.settings:
+			if c in configs.config_file_setting_keys and configs.settings[c]:
+				outfile.write("{}\t{}\n".format(c, configs.settings[c][0]))
 		outfile.close()
 		sys.stderr.write("wrote settings to 'mdmcleaner.config'\n")
 	
@@ -207,8 +272,8 @@ def main():
 		# ~ print(configs)
 		# ~ print("*"*100)
 		# ~ print(settings_source)
-		for c in configs:
-			sys.stderr.write("{}\t{}\t{}\n".format(c,configs[c],settings_source[c]))
+		for c in configs.config_file_setting_keys:
+			sys.stderr.write("{}\t{}\t{}\n".format(c,configs.settings[c],configs.settings_source[c]))
 
 	if args.command == "acc2taxpath":
 		import getdb
@@ -239,7 +304,7 @@ def main():
 		sys.stderr.write("\n")
 
 	if args.command == "check_dependencies":
-		check_dependencies.check_dependencies("blastp", "blastn", "diamond", "wget", configs=configs)
+		check_dependencies.check_dependencies(configs=configs)
 		sys.stderr.write("\nSUCCESS: all dependencies are being met\n")
 
 	if args.command == "refdb_contams":

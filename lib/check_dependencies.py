@@ -8,15 +8,18 @@ external_dependency_version_dict = {	"wget" : { "vpattern" : "Wget (\d+(\.\d+)+)
 										"blastn": { "vpattern" : ": (\d+(\.\d+)+).*", "executable" : ["blastn"], "version_option" : ["-version"], "required_version" : "2.10"},\
 										"blastp": { "vpattern" : ": (\d+(\.\d+)+).*", "executable" : ["blastp"], "version_option" : ["-version"], "required_version" : "2.10"},\
 										"makeblastdb": { "vpattern" : ": (\d+(\.\d+)+).*", "executable" : ["makeblastdb"], "version_option" : ["-version"], "required_version" : "2.10"},\
+										"blastdbcmd": { "vpattern" : ": (\d+(\.\d+)+).*", "executable" : ["blastdbcmd"], "version_option" : ["-version"], "required_version" : "2.10"},\
 										"diamond": { "vpattern" : "diamond version (\d+(\.\d+)+).*", "executable" : ["diamond"], "version_option" : ["version"], "required_version" : "2.0.6"},\
 										"hmmsearch": { "vpattern" : "# HMMER (\d+(\.\d+)+).*", "executable" : ["hmmsearch"], "version_option" : ["-h"], "required_version" : "3.3.1"},\
 										"barrnap": { "vpattern" : "barrnap (\d+(\.\d+)+).*", "executable" : ["barrnap"], "version_option" : ["--version"], "required_version" : "0.9"},\
-										"aragorn": { "vpattern" : "ARAGORN v(\d+(\.\d+)+).*", "executable" : ["aragorn"], "version_option" : ["-h"], "required_version" : "1.2.38"}	}
+										"aragorn": { "vpattern" : "ARAGORN v(\d+(\.\d+)+).*", "executable" : ["aragorn"], "version_option" : ["-h"], "required_version" : "1.2.38"},\
+										"prodigal": { "vpattern" : "Prodigal V(\d+(\.\d+)+).*", "executable" : ["prodigal"], "version_option" : ["-v"], "required_version" : "2.6.3"}	}
 										#todo: paths to excecutables need to be parsed from configs! Here only defaults, assuming executables are in PATH
 
 class version_object(object):
 	def __init__(self, version_string):
 		templist = [0]*3 #Only comparing major, minor and patch versions. Not accomodating any potential strange special cases here (dependency list is rather small anyway)
+		self.version_string = "None"
 		if version_string != None:
 			if isinstance(version_string, str):
 				self.version_string = re.search("\d+(\.\d+)+",version_string).group(0) #this will get rid of prefixes such as "v" but also of non-numeric pre-release designations
@@ -39,8 +42,6 @@ class version_object(object):
 		elif isinstance(other, tuple):
 			return self.version_tuple < other
 		else:
-			print(type(other))
-			print(other)
 			raise Exception("\nError: version_objects can only be compared against other version_objects or tuples!\n")
 	
 	def __le__(self, other):
@@ -80,17 +81,18 @@ def get_external_dependency_version_string(toolname):
 	versionpattern = external_dependency_version_dict[toolname]["vpattern"]
 	try:
 		proc = subprocess.Popen(cmd, stdout = subprocess.PIPE, stderr = subprocess.STDOUT, text = True, universal_newlines=True)
-
-		while True:
+		loopcounter = 0
+		while loopcounter < 10: #expecting version to be mentioned within the first 10 lines...		
 			output = proc.stdout.readline().strip()
 			versionhit = re.search(versionpattern,output)
 			if versionhit:
 				return versionhit.group(1)
+			loopcounter += 1
 	except FileNotFoundError:
-		sys.stderr.write("\nERROR: Could not find '{}'\n".format(toolname))
+		sys.stderr.write("\n\tCould not find '{}'!\n".format(toolname))
 		return None
 	except OSError:
-		sys.stderr.write("\nERROR: Could not execute '{}' for dependency: '{}'\n".format(cmd[0], toolname))
+		sys.stderr.write("\n\tCould not execute '{}' for dependency: '{}'!\n".format(cmd[0], toolname))
 		return None	
 
 def get_python_module_version(modulename):
@@ -116,20 +118,24 @@ def check_external_dependency(*toolnames, configs):
 	sys.stderr.write("\n\tchecking dependencies...\n")
 	global external_dependency_version_dict
 	for tool in external_dependency_version_dict:
-		if tool in configs:
-			external_dependency_version_dict[tool]["executable"] = configs[tool]
+		if tool in configs.settings:
+			external_dependency_version_dict[tool]["executable"] = [configs.settings[tool]]
 	if len(toolnames) == 0: #by default, check ALL dependencies
 		toolnames = [tool for tool in external_dependency_version_dict]
 	allisfine = True
 	for tool in toolnames:
+		sys.stderr.write("\t{}...".format(tool))
 		isttool = version_object(get_external_dependency_version_string(tool))
+		sys.stderr.write(isttool.version_string)
 		solltool = version_object(external_dependency_version_dict[tool]["required_version"])
 		if isttool < solltool:
 			allisfine = False
-			sys.stderr.write("\t-->WARNING: Incorrect version or excecutable not detected: {}\n".format(tool))
+			sys.stderr.write(" -->WARNING: Incorrect version or excecutable not detected: {}\n".format(tool))
+		else:
+			sys.stderr.write(" --> OK!\n")
 	if not allisfine:
 		sys.exit("\nERROR: Not all required dependencies for running MDMcleaner are met\n")
-	sys.stderr.write("\t-->OK!\n")
+	sys.stderr.write("\t-->OK! All dependencies are being met!\n")
 
 # ~ for tool in external_dependency_version_dict:
 	# ~ print("{} : {}".format(tool, get_external_dependency_version_string(tool)))
