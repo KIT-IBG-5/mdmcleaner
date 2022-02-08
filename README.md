@@ -12,6 +12,7 @@ It is based on the GTDB taxonomic system and uses GTDB representative genomes, a
 - hmmer v.3.3.1+ (detecting conserved marker genes)
 - barrnap v.0.9+ (detecting ribosomal RNA genes)
 - aragorn v 1.2.38+ (detecting tRNA genes)
+- prodigal v 2.6.3 (ORF/CDS-prediction)
 
 ## Installation:
 Just download this repository directly then either just add the path to ```mdmcleaner.py``` to each call, or add this repository folder to your PATH variable (e.g. add ```export PATH="$PATH:/path/to/mdmcleaner_repository"``` to your ```.bash_rc``` file).
@@ -46,6 +47,7 @@ A list of mdmcleaner commands is returned when invoking the help function of MCM
  - **get_markers** an accessory command for extracting marker gene sequences from input genomes
  - **refdb_contams** EXPERIMENTAL: evaluates refDBambiguity overviewfiles and adds obvious refDB contaminations to the blacklist
  - **acc2taxpath** Get full taxonomic path associated with a specific input accession. Currently only works for MDMcleaner/GTDB accessions, but support for NCBI accession-numbers will follow soon
+ - **check_dependencies** Just check if all dependencies are being met
  - **version** show version info and quit 
 
 #### usage of ```mdmcleaner set_configs```:

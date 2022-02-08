@@ -156,9 +156,9 @@ def calculate_crc32hash(infile): # TODO: probably move to "misc.py"?
 			crcvalue = zlib.crc32(data, crcvalue) & 0xffffffff
 	return crcvalue
 
-def get_cksum(infile): #for gods sake, contrary to the docs on the ftp server, the refseq-checksums are equivalent to cksum results rather than md5-checksums (or even crc32)! Cannot recreate, and not a single predefined module for calculating these in python! giving up and calling cksum for this!
+def get_cksum(infile): #Contrary to the docs on the ftp server, the refseq-checksums are equivalent to cksum results rather than md5-checksums (or even crc32)! Need to call cksum for this!
 	"""
-	AAAAARGH!GODAMIT!ARGH!WHY?!
+	calculate cksum-hash of a binary file
 	"""
 	import subprocess
 	wget_proc = subprocess.run(["cksum", infile], stdout = subprocess.PIPE, stderr = subprocess.PIPE, text = True, universal_newlines=True)
