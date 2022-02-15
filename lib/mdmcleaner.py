@@ -185,7 +185,7 @@ def main():
 	evaluate_refdbcontam_args.add_argument("-c", "--config", action = "store", dest = "configfile", default = find_local_configfile(), help = "provide a local config file with the target location to store database-files. default: looks for config files named 'mdmcleaner.config' in current working directory. settings in the local config file will override settings in the global config file '{}'".format(os.path.join(os.path.dirname(os.path.abspath(__file__)), "mdmcleaner.config")))
 	evaluate_refdbcontam_args.add_argument("-t", "--threads", action="store", dest="threads", type = int, default = 1, help = "number of threads to use (default = 1)")
 	evaluate_refdbcontam_args.add_argument("-o", "--outblacklist", action="store", dest="outblacklist", default = "new_blacklist_additions.tsv", help = "Outputfile for new blacklist additions. If a preexisting file is selected, additions will be appended to end of that file")
-	evaluate_refdbcontam_args.add_argument("--tempbasename", action="store", dest="tempbasename", default = "mdmtempfile", help = "basename for temporary files (default = 'mdmtempfile'")
+	# ~ evaluate_refdbcontam_args.add_argument("--tempbasename", action="store", dest="tempbasename", default = "mdmtempfile", help = "basename for temporary files (default = 'mdmtempfile'")
 	
 	
 	set_configs_args = subparsers.add_parser("set_configs", help = "setting or changing settings in config files")
@@ -313,7 +313,7 @@ def main():
 	if args.command == "refdb_contams":
 		import review_refdbcontams
 		check_dependencies.check_dependencies("blastp", "blastn", "diamond", "wget", configs=configs)
-		blacklist_additions = review_refdbcontams.read_ambiguity_report(args.ambiguity_report, configs, args.tempbasename)
+		blacklist_additions = review_refdbcontams.read_ambiguity_report(args.ambiguity_report, configs)
 		print("\n------> writing {} blacklist additions to {}".format(len(blacklist_additions), args.outblacklist))
 		write_blacklist(blacklist_additions, args.outblacklist)
 main()

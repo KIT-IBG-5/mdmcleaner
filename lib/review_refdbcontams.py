@@ -6,6 +6,7 @@ import sys
 import os
 import blasthandler
 import re
+import tempfile
 '''
 much of this will move to the other modules when finished
 '''
@@ -248,6 +249,7 @@ class suspicious_entries(object):
 		self.blastxdbs = None
 		self.seqid2evaluation = {} # key = seqid, value = dictionary --> { "evaluation": a, "markerlevel_checked": [b], "note" : c}
 		self.outbasename = outbasename
+		self.tempdir = tempfile.mkdtemp(prefix="tempdir_", suffix="_mdmcleaner_refdbcontam", dir=".")
 		self.delete_filelist= []
 		
 	def evaluateornot(self, comp, blastxdone=False): #todo: improve this! This just a convoluted solution to make sure multiple mentions of contigs are only re-evaluated if they affect more/different target databases (e.g. "ssu_rRNA" is blasted against genomes AND SSU-databases, but not against LSU databases. So no need to redo genomeblasts on markerlevel "total_prots" or "marker_prots", but may ned to reblast "lsu_rRNA"
@@ -256,7 +258,7 @@ class suspicious_entries(object):
 		blastfilenames=[]
 		if comp.seqid not in self.seqid2evaluation or (blastxdone and self.seqid2evaluation[comp.seqid] != "contamination"): # todo: convoluted --> simplify. if rRNA dbs searched, no need for additional search of genome-DBs (were already included). but if protein-blast --> search against eukaryotes not in nucleotide-genome-DB --> do again
 			if not blastxdone:
-				evaluation, blastfilenames = comp.blast_contigs(self.threads, blacklist=self.blacklist, outfileprefix = "")
+				evaluation, blastfilenames = comp.blast_contigs(self.threads, blacklist=self.blacklist, outfileprefix = os.path.join(self.tempdir, ""))
 			else:
 				return_category, return_note = comp.count_contradictions() #todo: redundant. streamline blastcontigs() and countcontradictions() more
 				evaluation = {"evaluation": return_category, "markerlevel_checked": [comp.markerlevel], "note": return_note} 
@@ -266,7 +268,7 @@ class suspicious_entries(object):
 				self.blacklist_additions.add(comp.seqid)			
 		else:
 			if "rRNA" in comp.markerlevel and comp.markerlevel not in self.seqid2evaluation[comp.seqid]["markerlevel_checked"]:
-				evaluation, blastfilenames = comp.blast_contigs(self.threads, blacklist=self.blacklist, outfileprefix = "")
+				evaluation, blastfilenames = comp.blast_contigs(self.threads, blacklist=self.blacklist, outfileprefix = os.path.join(self.tempdir, ""))
 				self.seqid2evaluation[comp.seqid]["markerlevel_checked"].append(comp.markerlevel)
 				self.seqid2evaluation[comp.seqid]["note"] += "; {}".format(evaluation["note"])
 		self.delete_filelist += blastfilenames
@@ -282,7 +284,7 @@ class suspicious_entries(object):
 			# ~ import pdb; pdb.set_trace()
 			import time
 			start = time.time()
-			resultfiles = blasthandler.run_multiple_blasts_parallel(basic_blastarglist, outfmt= "6 std qlen slen", outbasename=self.outbasename, total_threads=self.threads)
+			resultfiles = blasthandler.run_multiple_blasts_parallel(basic_blastarglist, outfmt= "6 std qlen slen", outbasename= os.path.join(self.tempdir, ""), total_threads=self.threads)
 			self.delete_filelist += resultfiles
 			end = time.time()
 			# ~ print ("THIS BLAST TOOK {:.3f} seconds".format(end-start))
@@ -326,17 +328,17 @@ class suspicious_entries(object):
 			for c in return_list:
 				self.evaluateornot(c)
 
-def read_ambiguity_report(ambiguity_report, configs, outbasename):
+def read_ambiguity_report(ambiguity_report, configs):
 	import os
 	import getdb
 	import re
 	
-	outdir, outfileprefix = os.path.split(outbasename)
-	if outdir != "" and not os.path.exists(outdir):
-		os.mkdir(outdir)
+	# ~ outdir, outfileprefix = os.path.split(outbasename)
+	# ~ if outdir != "" and not os.path.exists(outdir):
+		# ~ os.mkdir(outdir)
 	sm_contam_pattern = re.compile("potential refDB-contamination \[\w+ indication sm-LCA level\]")		
 	db = getdb.taxdb(configs)
-	suspects = suspicious_entries(db, configs, outbasename)
+	suspects = suspicious_entries(db, configs)
 	with openfile(ambiguity_report) as infile:
 		counter = 0
 		for line in infile:
@@ -351,8 +353,8 @@ def read_ambiguity_report(ambiguity_report, configs, outbasename):
 			if re.search(sm_contam_pattern, ambtype) == None: #ignore everything other than potential contaminations detected on singlemarker level for now (those exclusively found on weighted LCA level are more indicative for chimeras than refDB contaminations...)
 				continue
 			amb_evidence = tokens[8]
+			sys.stderr.write("\r\tprocessing line {}".format(counter))
 			suspects.parse_evidence(amb_evidence, markerlevel)
-			sys.stderr.write("\r\tprocessed line {}".format(counter))
 	sys.stderr.write("\r\tprocessed line {} --> FINISHED!\n".format(counter))
 	sys.stderr.write("\nnow running remaining diamond blasts collectively")
 	suspects.collective_diamondblast()
