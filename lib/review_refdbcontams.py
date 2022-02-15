@@ -76,7 +76,7 @@ class comparison_hit(object):
 				self.blastdata.filter_blasthits_by_cov_and_ident() #todo: stricter identity cutoffs for ssu-rRNA	
 			self.blastdata.add_info_to_blastlines(taxdb_obj=self.db, verbose=False)			
 			return_category, return_note = self.count_contradictions()
-			return {"evaluation": return_category, "markerlevel_checked": [self.markerlevel], "note": return_note} 
+			return {"evaluation": return_category, "markerlevel_checked": [self.markerlevel], "note": return_note}, resultfiles
 
 
 	def count_contradictions(self): # argument "ch" should be a "comparison_hit"-object
@@ -248,13 +248,15 @@ class suspicious_entries(object):
 		self.blastxdbs = None
 		self.seqid2evaluation = {} # key = seqid, value = dictionary --> { "evaluation": a, "markerlevel_checked": [b], "note" : c}
 		self.outbasename = outbasename
+		self.delete_filelist= []
 		
 	def evaluateornot(self, comp, blastxdone=False): #todo: improve this! This just a convoluted solution to make sure multiple mentions of contigs are only re-evaluated if they affect more/different target databases (e.g. "ssu_rRNA" is blasted against genomes AND SSU-databases, but not against LSU databases. So no need to redo genomeblasts on markerlevel "total_prots" or "marker_prots", but may ned to reblast "lsu_rRNA"
 		# ~ if comp.seqid in self.blacklist: #unnecessary, because this is already checked in the calling function
 			# ~ return #if it was already previously detected as contamination on any level, no need to do more blasts
+		blastfilenames=[]
 		if comp.seqid not in self.seqid2evaluation or (blastxdone and self.seqid2evaluation[comp.seqid] != "contamination"): # todo: convoluted --> simplify. if rRNA dbs searched, no need for additional search of genome-DBs (were already included). but if protein-blast --> search against eukaryotes not in nucleotide-genome-DB --> do again
 			if not blastxdone:
-				evaluation = comp.blast_contigs(self.threads, blacklist=self.blacklist, outfileprefix = "")
+				evaluation, blastfilenames = comp.blast_contigs(self.threads, blacklist=self.blacklist, outfileprefix = "")
 			else:
 				return_category, return_note = comp.count_contradictions() #todo: redundant. streamline blastcontigs() and countcontradictions() more
 				evaluation = {"evaluation": return_category, "markerlevel_checked": [comp.markerlevel], "note": return_note} 
@@ -264,9 +266,10 @@ class suspicious_entries(object):
 				self.blacklist_additions.add(comp.seqid)			
 		else:
 			if "rRNA" in comp.markerlevel and comp.markerlevel not in self.seqid2evaluation[comp.seqid]["markerlevel_checked"]:
-				evaluation = comp.blast_contigs(self.threads, blacklist=self.blacklist, outfileprefix = "")
+				evaluation, blastfilenames = comp.blast_contigs(self.threads, blacklist=self.blacklist, outfileprefix = "")
 				self.seqid2evaluation[comp.seqid]["markerlevel_checked"].append(comp.markerlevel)
 				self.seqid2evaluation[comp.seqid]["note"] += "; {}".format(evaluation["note"])
+		self.delete_filelist += blastfilenames
 	
 	def collective_diamondblast(self):
 		print("{} potential diamond blasts".format(len(self.blastxjobs)))
@@ -280,6 +283,7 @@ class suspicious_entries(object):
 			import time
 			start = time.time()
 			resultfiles = blasthandler.run_multiple_blasts_parallel(basic_blastarglist, outfmt= "6 std qlen slen", outbasename=self.outbasename, total_threads=self.threads)
+			self.delete_filelist += resultfiles
 			end = time.time()
 			# ~ print ("THIS BLAST TOOK {:.3f} seconds".format(end-start))
 			collective_blastdata = blasthandler.blastdata(*resultfiles, max_evalue = 1e-5, min_ident = 90, score_cutoff_fraction = 0, keep_max_hit_fraction = 1, keep_min_hit_count = 2, continue_from_json = False, auxilliary = False, seqtype=None, blacklist=self.blacklist)
@@ -352,4 +356,6 @@ def read_ambiguity_report(ambiguity_report, configs, outbasename):
 	sys.stderr.write("\r\tprocessed line {} --> FINISHED!\n".format(counter))
 	sys.stderr.write("\nnow running remaining diamond blasts collectively")
 	suspects.collective_diamondblast()
+	for df in suspects.delete_filelist:
+		os.remove(df)
 	return suspects.blacklist_additions #todo: write blacklist_additions to outfile progressively. also optionally write all other evaluations to logfile

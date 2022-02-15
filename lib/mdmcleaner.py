@@ -72,7 +72,7 @@ class config_object(object):
 				"barrnappath" : ["barrnap"],\
 				"hmmerpath" : ["hmmsearch"],\
 				"aragornpath" : ["aragorn"],\
-				"prodigalpath" : ["prodigal"] } #lists which excecutables should be found in which path. todo: intgrate this with check_dependencies...
+				"prodigalpath" : ["prodigal"] } #lists which excecutables should be found in which path. todo: integrate this with check_dependencies...
 	config_file_exepathkeys = list(execs.keys())
 	config_file_misckeys = ["threads"]
 	config_file_dbkeys = ["db_basedir", "db_type", "blacklistfile"]
@@ -134,6 +134,9 @@ class config_object(object):
 	def read_blacklistfiles(self):
 		blacklist = []
 		for blacklistfile in self.settings["blacklistfile"]:
+			if not (os.path.exists(blacklistfile) and os.path.isfile(blacklistfile)):
+				sys.stderr.write("\nWARNING: could not file blacklistfile : \"{}\"! --> skipping it!\n".format(blacklistfile))
+				continue
 			with openfile(blacklistfile) as blf:
 				for line in blf:
 					tokens = line.strip().split("#")
