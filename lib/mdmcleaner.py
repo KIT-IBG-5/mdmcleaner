@@ -251,22 +251,20 @@ def main():
 		getmarkers.get_only_marker_seqs(args, configs)
 
 	if args.command == "set_configs":
+		args.configfile = None
+		conf = config_object(args)
 		# ~ import pdb; pdb.set_trace()
 		if args.scope == "global":
-			configfile_hierarchy = [find_global_configfile()]
-			outfile = misc.openfile(configfile_hierarchy[0], "wt")
-		else:
-			configfile_hierarchy = [ cf for cf in [find_global_configfile(), find_local_configfile()] if cf != None ]
-		configs, settings_source = read_configs(configfile_hierarchy, args)
-		if args.scope == "local":
+			outfile = misc.openfile(conf.configfile_hierarchy[0], "wt")
+		elif args.scope == "local":
 			outfile = misc.openfile("mdmcleaner.config", "wt")
 		arg_settings = vars(args)
 		for a in arg_settings:
 			if a != "scope" and arg_settings[a] != None:
-				configs.settings[a] = [arg_settings[a]]
-		for c in configs.settings:
-			if c in configs.config_file_setting_keys and configs.settings[c]:
-				outfile.write("{}\t{}\n".format(c, configs.settings[c][0]))
+				conf.settings[a] = [arg_settings[a]]
+		for c in conf.settings:
+			if c in conf.config_file_setting_keys and conf.settings[c]:
+				outfile.write("{}\t{}\n".format(c, conf.settings[c][0]))
 		outfile.close()
 		sys.stderr.write("wrote settings to 'mdmcleaner.config'\n")
 	
