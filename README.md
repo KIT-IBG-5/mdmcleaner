@@ -17,6 +17,8 @@ It is based on the GTDB taxonomic system and uses GTDB representative genomes, a
 ## Installation:
 Just download this repository directly then either just add the path to ```mdmcleaner.py``` to each call, or add this repository folder to your PATH variable (e.g. add ```export PATH="$PATH:/path/to/mdmcleaner_repository"``` to your ```.bash_rc``` file).
 
+This repository is hosted at [github]( https://github.com/KIT-IBG-5/mdmcleaner) and mirrored at [gitlab](https://git.scc.kit.edu/ww5070/mdmcleaner).
+
 All dependencies must be installed seperately. If the respective binary-locations are present in PATH, they will be recongized automatically. Otherwise the locations to each dependency must be specified in a ```mdmcleaner.config``` file (see below).
 
 Availability via **Pip** and **Bioconda** recipe will follow shortly!
