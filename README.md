@@ -152,4 +152,4 @@ look out for our publication which has been submitted to Nucleic acids research 
 Vollmers et al. ***How clear is our current view on microbial dark-matter? (Re-)assessing public MAG & SAG-datasets with “MDMcleaner”*** (submitted)
 
 ## For help or feedback:
-please write an issue on the [github repository]( https://github.com/KIT-IBG-5/mdmcleaner) or send us an [email](mailto:ibg5-support@lists.kit.edu?subject=[MDMcleaner%20support])
+please write an issue on the [github repository](https://github.com/KIT-IBG-5/mdmcleaner/issues) or send us an [email](mailto:ibg5-support@lists.kit.edu?subject=[MDMcleaner%20support])
