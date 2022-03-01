@@ -11,6 +11,8 @@ import tempfile
 much of this will move to the other modules when finished
 '''
 
+sm_contam_pattern = re.compile("potential refDB-contamination \[\w+ indication sm-LCA level\]")
+
 class comparison_hit(object):
 	def __init__(self,*, taxid, seqid, domain, phylum, db, markerlevel, settings=None):
 		if settings == None:
@@ -250,12 +252,30 @@ class suspicious_entries(object):
 		self.seqid2evaluation = {} # key = seqid, value = dictionary --> { "evaluation": a, "markerlevel_checked": [b], "note" : c}
 		self.outbasename = outbasename
 		self.tempdir = tempfile.mkdtemp(prefix="tempdir_", suffix="_mdmcleaner_refdbcontam", dir=".")
-		self.delete_filelist= []
+		self.delete_filelist = []
+		self.last_checked = []
+	
+	def last_checked_evaluations(self):
+		'''
+		returns the most severe evaluation result of the last checked reference-seqids
+		'''
+		last_evaluations =  [ self.seqid2evaluation[seqid]["evaluation"] for seqid in self.last_checked if seqid in self.seqid2evaluation ]
+		# ~ print(last_evaluations)
+		if "contamination" in last_evaluations:
+			return "contamination"
+		elif "ambiguity" in last_evaluations:
+			return "ambiguity"
+		elif "wtf" in last_evaluations:
+			return "wtf"
+		for le in last_evaluations:
+			assert le == "OK", "\nERROR: evaluation result not accounted for: '{}'\n".format(le)
+		return "OK"
 		
 	def evaluateornot(self, comp, blastxdone=False): #todo: improve this! This just a convoluted solution to make sure multiple mentions of contigs are only re-evaluated if they affect more/different target databases (e.g. "ssu_rRNA" is blasted against genomes AND SSU-databases, but not against LSU databases. So no need to redo genomeblasts on markerlevel "total_prots" or "marker_prots", but may ned to reblast "lsu_rRNA"
 		# ~ if comp.seqid in self.blacklist: #unnecessary, because this is already checked in the calling function
 			# ~ return #if it was already previously detected as contamination on any level, no need to do more blasts
 		blastfilenames=[]
+		evaluation = {"evaluation": None, "markerlevel_checked": [None], "note": None} 
 		if comp.seqid not in self.seqid2evaluation or (blastxdone and self.seqid2evaluation[comp.seqid] != "contamination"): # todo: convoluted --> simplify. if rRNA dbs searched, no need for additional search of genome-DBs (were already included). but if protein-blast --> search against eukaryotes not in nucleotide-genome-DB --> do again
 			if not blastxdone:
 				evaluation, blastfilenames = comp.blast_contigs(self.threads, blacklist=self.blacklist, outfileprefix = os.path.join(self.tempdir, ""))
@@ -265,19 +285,22 @@ class suspicious_entries(object):
 			self.seqid2evaluation[comp.seqid] = evaluation
 			if evaluation["evaluation"] == "contamination":
 				self.blacklist.add(comp.seqid)	
-				self.blacklist_additions.add(comp.seqid)			
+				self.blacklist_additions.add(comp.seqid)
 		else:
 			if "rRNA" in comp.markerlevel and comp.markerlevel not in self.seqid2evaluation[comp.seqid]["markerlevel_checked"]:
 				evaluation, blastfilenames = comp.blast_contigs(self.threads, blacklist=self.blacklist, outfileprefix = os.path.join(self.tempdir, ""))
 				self.seqid2evaluation[comp.seqid]["markerlevel_checked"].append(comp.markerlevel)
 				self.seqid2evaluation[comp.seqid]["note"] += "; {}".format(evaluation["note"])
 		self.delete_filelist += blastfilenames
+		return evaluation["evaluation"]
 	
 	def collective_diamondblast(self):
-		print("{} potential diamond blasts".format(len(self.blastxjobs)))
+		# ~ print("{} potential diamond blasts".format(len(self.blastxjobs)))
+		eval_list = []
 		if len(self.blastxjobs) > 0:
+			# ~ print([self.blastxjobs[x].seqid for x in self.blastxjobs])
 			blastrecords = [self.blastxjobs[x].seqrecord[0] for x in self.blastxjobs if len(self.blastxjobs[x].seqrecord[0]) < 100000] #for now skipping reference contigs larger than 100 kb (takes too long to blastx). TODO: in such cases, search for ribosomal & other markergenes to verify classification!
-			sys.stderr.write("\nblasting {} entires with blastx against reference proteins (another {} entries were too long to blastx efficiently\n".format(len(blastrecords), len(self.blastxjobs) - len(blastrecords)))
+			sys.stderr.write("\nblasting {} entries with blastx against reference proteins (another {} entries were too long to blastx efficiently\n".format(len(blastrecords), len(self.blastxjobs) - len(blastrecords)))
 			if len(blastrecords) == 0:
 				return
 			basic_blastarglist = [ (blastrecords, blastdb, "diamond blastx") for blastdb in self.blastxdbs ]
@@ -293,10 +316,12 @@ class suspicious_entries(object):
 				if len(self.blastxjobs[x].seqrecord[0]) < 100000:
 					self.blastxjobs[x].blastdata = blasthandler.blastdata_subset(collective_blastdata, query_id = x)
 					self.blastxjobs[x].blastdata.add_info_to_blastlines(taxdb_obj=self.blastxjobs[x].db, verbose=False)
-					self.evaluateornot(self.blastxjobs[x], blastxdone = True)
+					eval_list.append(self.evaluateornot(self.blastxjobs[x], blastxdone = True))
+		return eval_list
 				
 	def parse_evidence(self, amb_evidence, markerlevel): #todo: this should move to a compare_group_object
 		return_list = []
+		self.last_checked = []
 		for p in [self.sm_lca_bh_pattern, self.sm_lca_bc_pattern]:
 			patternhit = re.search(p, amb_evidence)
 			seqid = patternhit.group(4)
@@ -317,16 +342,17 @@ class suspicious_entries(object):
 			else:
 				comp = comp_prokprotcontig(taxid = taxid,seqid=seqid, domain=domain, phylum=phylum, db=self.db, markerlevel=markerlevel, configs=self.configs)
 			return_list.append(comp)
-		if "prot" in [ x.seqtype for x in return_list]:
+		if "prot" in [ x.seqtype for x in return_list ]:
 			for x in range(len(return_list)):
 				if not isinstance(return_list[x], comp_refseqprot): #TODO: NOTE: extraction protein sequences from diamond DBs is rather inefficient. so this will be skipped for now, only noted here in case it should be implemented in a later version (if it turns out to be needed, which is unlikely considering only get the accession of one protein per referencecontig this way)
 					return_list[x].changeblastmethod("diamond blastx")
 					self.blastxjobs[return_list[x].seqid] = return_list[x]
 					self.blastxdbs = return_list[x].blastdbs #todo: this works as long as there is only one protein-db or if ALWAYS ALL available protein dbs are used (--> for any protein balst, ALWAYS the same set of DBs is used as currently the case). If that changes, make sure this here still works! 
-
+					self.last_checked.append(return_list[x].seqid)
 		else:
 			for c in return_list:
 				self.evaluateornot(c)
+				self.last_checked.append(c.seqid)
 
 def read_ambiguity_report(ambiguity_report, configs):
 	import os
@@ -336,7 +362,7 @@ def read_ambiguity_report(ambiguity_report, configs):
 	# ~ outdir, outfileprefix = os.path.split(outbasename)
 	# ~ if outdir != "" and not os.path.exists(outdir):
 		# ~ os.mkdir(outdir)
-	sm_contam_pattern = re.compile("potential refDB-contamination \[\w+ indication sm-LCA level\]")		
+	# ~ sm_contam_pattern = re.compile("potential refDB-contamination \[\w+ indication sm-LCA level\]")		
 	db = getdb.taxdb(configs)
 	suspects = suspicious_entries(db, configs)
 	with openfile(ambiguity_report) as infile:
@@ -361,3 +387,4 @@ def read_ambiguity_report(ambiguity_report, configs):
 	for df in suspects.delete_filelist:
 		os.remove(df)
 	return suspects.blacklist_additions #todo: write blacklist_additions to outfile progressively. also optionally write all other evaluations to logfile
+

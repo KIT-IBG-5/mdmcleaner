@@ -8,22 +8,22 @@ taxlevels = ["root", "domain", "phylum", "class", "order", "family", "genus", "s
 taxasstuple = namedtuple("taxasstuple", "seqid taxid identity score") #use exact same syntax as for input, to enable lca of lca annotations
 species_identity_cutoffs = {	"ssu_rRNA_tax" : 98, \
 												"lsu_rRNA_tax" : 96, \
-												"total_prots_tax" : 85, \
+												"totalprots_tax" : 85, \
 												"prok_marker_tax" : 90 } #based on AAI distribution observed in "Rodriguez-R, L. M., & Konstantinidis, K. T. (2014). Bypassing cultivation to identify bacterial species. Microbe, 9(3), 111-118." and "https://doi.org/10.1093/nar/gku169"
 
 genus_identity_cutoffs = {	"ssu_rRNA_tax" : 92, \
 												"lsu_rRNA_tax" : 85, \
-												"total_prots_tax" : 55, \
+												"totalprots_tax" : 55, \
 												 "prok_marker_tax" : 60 } #based on AAI distribution observed in "Rodriguez-R, L. M., & Konstantinidis, K. T. (2014). Bypassing cultivation to identify bacterial species. Microbe, 9(3), 111-118." and "https://doi.org/10.1093/nar/gku169"
 
 order_identity_cutoffs = {	"ssu_rRNA_tax" : 87, \
 												"lsu_rRNA_tax" : 83, \
-												"total_prots_tax" : 47, \
+												"totalprots_tax" : 47, \
 												 "prok_marker_tax" : 55 } #based on AAI distribution observed in "Rodriguez-R, L. M., & Konstantinidis, K. T. (2014). Bypassing cultivation to identify bacterial species. Microbe, 9(3), 111-118." and "https://doi.org/10.1093/nar/gku169"
 
 phylum_identity_cutoffs = {	"ssu_rRNA_tax" : 77, \
 												"lsu_rRNA_tax" : 73, \
-												"total_prots_tax" : 40, \
+												"totalprots_tax" : 40, \
 												 "prok_marker_tax" : 45 } #based on AAI distribution observed in "Rodriguez-R, L. M., & Konstantinidis, K. T. (2014). Bypassing cultivation to identify bacterial species. Microbe, 9(3), 111-118." and "https://doi.org/10.1093/nar/gku169"
 
 #todo: apply also orderlevel cutoffs (and domain level cutoffs
@@ -104,7 +104,7 @@ def strict_lca(taxdb, seqid = None, blasthitlist=None, threads=1):
 	return taxasstuple(seqid = seqid, taxid = interim_taxid, identity = interim_id, score = interim_score) 
 	# ~ return "fuck"
 	
-def weighted_lca(taxdb, seqid = None, blasthitlist=None, fractioncutoff = 0.95, taxlevel="total_prots_tax", threads=1, return_contradicting_top2 = False):
+def weighted_lca(taxdb, seqid = None, blasthitlist=None, fractioncutoff = 0.95, taxlevel="totalprots_tax", threads=1, return_contradicting_top2 = False):
 	#todo: maybe allow option to use identity as criterium, instead of score?
 	"""
 	Returns weighted lca of a list of blasthits or pre-lca-annotations.

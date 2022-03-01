@@ -151,6 +151,7 @@ def main():
 	cleansagmag_args = subparsers.add_parser("clean", help = "classify and filter contigs from microbial dark matter MAGs and SAGs")
 	cleansagmag_args.add_argument("-i", "--input_fastas", action = "store", dest = "input_fastas", nargs = "+", required = True, help = "input fastas of genomes and/or bins")  #todo: also allow genbanks
 	cleansagmag_args.add_argument("-o", "--output_folder", action = "store", dest = "output_folder", default = "mdmcleaner_output", help = "output-folder for MDMcleaner results. Default = 'mdmcleaner_output'")
+	cleansagmag_args.add_argument("--outblacklist", action="store", dest="outblacklist", default = "new_blacklist_additions.tsv", help = "Outputfile for new blacklist additions. If a preexisting file is selected, additions will be appended to end of that file")
 	cleansagmag_args.add_argument("-v", "--version", action = "version", version='%(prog)s {version}'.format(version=__version__))
 	cleansagmag_args.add_argument("-c", "--config", action = "store", dest = "configfile", default = find_local_configfile(), help = "provide a local config file with basic settings (such as the location of database-files). default: looks for config files named 'mdmcleaner.config' in current working directory. settings in the local config file will override settings in the global config file '{}'".format(os.path.join(os.path.dirname(os.path.abspath(__file__)), "mdmcleaner.config")))
 	cleansagmag_args.add_argument("-t", "--threads", action = "store", dest = "threads", type = int, default = None, help = "Number of threads to use. Can also be set in the  mdmcleaner.config file")
@@ -160,6 +161,7 @@ def main():
 	cleansagmag_args.add_argument("-b", "--blacklistfile", action = "store", dest = "blacklistfile", default = None, help = "File listing reference-DB sequence-names that should be ignored during blast-analyses (e.g. known refDB-contaminations...")
 	cleansagmag_args.add_argument("--no_filterfasta", action = "store_true", dest = "no_filterfasta", default = False, help = "Do not write filtered contigs to final output fastas (Default = False)")
 	cleansagmag_args.add_argument("--ignore_default_blacklist", action = "store_true", dest = "ignore_default_blacklist", default = False, help = "Ignore the default blacklist (Default = False)")
+	cleansagmag_args.add_argument("--fast_run", action = "store_true", dest = "fast_run", default = False, help = "skip detailed analyses of potential reference ambiguities (runs may be faster but also classification may be less exact, and potential reference database contaminations will not be verified)")
 
 
 	makedb_args = subparsers.add_parser("makedb", help = "Download and create MDMcleaner database")
@@ -234,7 +236,10 @@ def main():
 	if args.command == "clean":
 		import clean
 		check_dependencies.check_dependencies(configs=configs)
-		clean.main(args, configs)
+		blacklist_additions = clean.main(args, configs)
+		if not args.fast_run and blacklist_additions != None:
+			print("\n------> writing {} blacklist additions to {}".format(len(blacklist_additions), args.outblacklist))
+			write_blacklist(blacklist_additions, args.outblacklist)
 	
 	if args.command == "makedb":
 		import read_gtdb_taxonomy

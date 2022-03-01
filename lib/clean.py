@@ -63,11 +63,12 @@ def main(args, configs):
 	overview_before = args.overview_basename + "_all_before_cleanup.tsv"
 	overview_after = args.overview_basename + "_all_after_cleanup.tsv"
 	refdb_ambiguity_report = args.overview_basename + "_refdb_ambiguities.tsv"
+	db_suspects = None
 	for infasta in args.input_fastas:
 		try:
 			
 			############### getting markers
-			bindata = getmarkers.bindata(contigfile=infasta, threads=configs.settings["threads"], settings = configs.settings)
+			bindata = getmarkers.bindata(contigfile=infasta, configs = configs)
 			nucblastjsonfilename = os.path.join(bindata.bin_resultfolder, "nucblasts.json.gz")
 			protblastjsonfilename = os.path.join(bindata.bin_resultfolder, "protblasts.json") #todo: why is this not compressed? Fix!
 
@@ -145,12 +146,12 @@ def main(args, configs):
 			testlca_dict_23s = {}
 			testlca_dict_16s = {}
 
-			################## compiling infos
+			################## compiling infos #todo: condense this!
 			for contig in bindata.contigdict: #todo: create an own class in lca.py for this. that class should have options to filter, evaluate etc...
 				ctotalprottax = [bindata.markerdict[x]["tax"] for x in bindata.contigdict[contig]["totalprots"] if bindata.markerdict[x]["tax"] != None]
-				testlca_dict_total[contig] = lca.weighted_lca(db, contig, ctotalprottax, taxlevel="total_prots_tax")
+				testlca_dict_total[contig] = lca.weighted_lca(db, contig, ctotalprottax, taxlevel="totalprots_tax")
 				if len(testlca_dict_total[contig]) != 0:
-					bindata.contigdict[contig]["total_prots_tax"] = testlca_dict_total[contig]
+					bindata.contigdict[contig]["totalprots_tax"] = testlca_dict_total[contig]
 
 				cprokprottax = [bindata.markerdict[x]["tax"] for x in bindata.contigdict[contig]["prok_marker"] + bindata.contigdict[contig]["bac_marker"] + bindata.contigdict[contig]["arc_marker"] if bindata.markerdict[x]["tax"] != None]
 				testlca_dict_prok[contig] = lca.weighted_lca(db, contig, cprokprottax, taxlevel = "prok_marker_tax")
@@ -185,9 +186,9 @@ def main(args, configs):
 			
 			#    					, those that still have no hit or have no RNAs --> blastx against protein-db
 			#						, those that are still not assignable (on domain-level): mark as potential Eukaryote contamination (based on relatively high coding density of prokaryotic genomes) 
-
-			bindata.evaluate_and_flag_all_contigs(db=db, protblasts=protblasts, nucblasts=nucblasts)
-			
+			# ~ print("db_suspects = {}".format(db_suspects))
+			db_suspects = bindata.evaluate_and_flag_all_contigs(db=db, protblasts=protblasts, nucblasts=nucblasts, db_suspects=db_suspects, fast_run=args.fast_run)
+			# ~ print("db_suspects_tempdir = {}".format(db_suspects.tempdir))
 			sys.stderr.write("\n--> writing to output files\n")
 			
 			refdb_ambiguity_report = reporting.write_refdb_ambiguity_report(bindata.bin_tempname, bindata.ref_db_ambiguity_overview, refdb_ambiguity_report)
@@ -200,23 +201,37 @@ def main(args, configs):
 			if not args.no_filterfasta:
 				bindata.sort_and_write_contigs()
 			bindata.write_krona_inputtable(db)
-
+			
 			# ~ bindata.clean_yourself() #todo: mdmcleaner runs into error if all contigs are removed fix this
 			# ~ test_1(bindata, os.path.join(bindata.bin_resultfolder, "testcontigmarkersnew_aftercleanup.tsv"))
 			# ~ misc.write_fasta(bindata.get_contig_records(), os.path.join(bindata.bin_resultfolder, bindata.bin_tempname + "after_cleanup.fasta.gz"))
 			# ~ overview_after = gather_extended_bin_metrics(bindata, outfile=overview_after, cutoff=5)
-
+			if not args.fast_run:
+				sys.stderr.write("reference-database contaminations detected during this run: {}".format(len(db_suspects.blacklist_additions)))
 			
 		except Exception as e:
 			sys.stderr.write("\nTHERE WAS A EXCEPTION WHILE HANDLING {}\n".format(infasta))
 			sys.stderr.write("\n{}\n".format(e))
 			traceback.print_exc()
 			errorlistfile.write(infasta + "\n")
+
+	if not args.fast_run:
+		if "contamination" in db_suspects.collective_diamondblast():
+			sys.stderr.write("\nWARNING: potential eukaryotic contaminants were determined in reference genomes. some classifications may need to be ajdjusted.\nIt is recommended to run the pipeline again (as is), with the updated blacklist to correct that (most intermediate results can be reused, so this will be faster than the original run)\n\n")
+		if len(db_suspects.blacklist_additions) > 0:
+			sys.stderr.write("\nA total of {} reference-database entries were newly detected as contaminants! Please note the updated blacklist!\n".format(len(db_suspects.blacklist_additions)))
+		
 	import io
 	for f in [overview_before, overview_after, refdb_ambiguity_report]:
 		if isinstance(f, io.IOBase):
 			f.close() #make sure whole buffer is written to files before script terminates!
 	sys.stderr.write("\n{line}finished{line}\n".format(line="-"*30))
+
+	if db_suspects != None: #removing tempfiles from refdb-ambiguity assessments
+		for f in db_suspects.delete_filelist:
+			os.remove(f)
+		os.rmdir(db_suspects.tempdir)
+		return db_suspects.blacklist_additions
 
 if __name__ == '__main__':
 	main()		

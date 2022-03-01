@@ -270,20 +270,36 @@ class blastdata_baseobject(object): #todo: define differently for protein or nuc
 		# ~ endtime = time.time()
 		# ~ print("\nthis took {} seconds\n".format(endtime - starttime))
 	
-	def sort_blastlines_by_gene(self):
+	def sort_blastlines_by_gene(self, contig=None):
+		'''
+		returns a list of blastlines, sorted first increasingly by contig-id and query-id, and then decreasingly by score.
+		if contig is != None: only blastlines corresponding to the specified contig are processed. Otherwise all blastlines are processed.
+		'''
+		if contig != None:
+			return sorted(self.get_blastlines_for_contig(contig), key = lambda x: (x["contig"], x["query"], -x["score"]))
 		return sorted(self.blastlinelist, key = lambda x: (x["contig"], x["query"], -x["score"])) #sorts hits first increasingly by contig and query-name (not the same in case of rRNA genes), then decreasingly by score	
 
 	def sort_blastlines_by_contig(self):
-		return sorted(self.blastlinelist, key = lambda x: (x["contig"], -x["score"])) #sorts hits first increasingly by contig and query-name (not the same in case of rRNA genes), then decreasingly by score	
+		'''
+		returns a list of blastlines, sorted first increasingly by contig-id, and then decreasingly by score.
+		'''
+		
+		return sorted(self.blastlinelist, key = lambda x: (x["contig"], -x["score"])) #sorts hits first increasingly by contig-name, then decreasingly by score	
 			
-	def get_best_hits_per_gene(self, keep_max_best_hit_fraction = 1.0, keep_min_hit_count = 2): #max_best_hitfraction and keep_min_hit_count are not supposed to be actually used. should already be taken care of by "filter_hits_by_gene". Just keeping option open to filter again using different cutoffs	#todo: combine with below function. add keyword to return contig or gene
+	def get_best_hits_per_gene(self, keep_max_best_hit_fraction = 1.0, keep_min_hit_count = 2, contig=None): #max_best_hitfraction and keep_min_hit_count are not supposed to be actually used. should already be taken care of by "filter_hits_by_gene". Just keeping option open to filter again using different cutoffs	#todo: combine with below function. add keyword to return contig or gene
+		'''
+		A generator function that returns gene-identifiers and corresponding blast-hit-tuples for applying strict lca-classification
+		"keep_max_best_hit_fraction" and "keep_min_it_count" do not usially need to be set during standard mdmcleaner runs, as these filtering steps should have been applied during earlier analysis steps
+		if set, keep-max-hit-fraction should be a floating-pint value between 0-1. 
+		optionally a contig name can be specified. only gene-identifiers and corresponding hit-tuples for that specific contig will be returned
+		contig is set to 'None' (default setting), then all contigs are processed.
+		'''
 		#print("OI!")
 		assert 0< keep_max_best_hit_fraction <= 1, "score_cutoff_fraction must be larger than 0.0, and lower or equal to 1.0!"
 		previous_query = None
 		#blindex = 0
-		query_templist = []
-		filtered_blastlinelist = []
-		for currline in self.sort_blastlines_by_gene():
+		query_templist = []		
+		for currline in self.sort_blastlines_by_gene(contig):
 			if currline["query"] == previous_query:
 				query_templist.append(currline)
 			else:
@@ -354,12 +370,22 @@ class blastdata_baseobject(object): #todo: define differently for protein or nuc
 			if min_ident and bl["ident"] < min_ident: #bl.ident < min_ident:
 				continue
 			if bl["subject"] in self.blacklist:
-				print("' {}' is on blacklist --> ignoring!".format(bl["subject"]))
+				# ~ print("' {}' is on blacklist --> ignoring!".format(bl["subject"]))
 				continue
 			if bindata_obj != None:
 				bl["contig"] = bindata_obj.marker2contig(bl["query"])
 				bl["stype"] = bindata_obj.markerdict[bl["query"]]["stype"]
 			self.blastlinelist.append(bl)
+
+	def filter_blacklist(self, blacklist):
+		# ~ sys.stderr.write("\n\t (Re-)filtering blasthits for new blacklist entries\n")
+		i=0
+		while i < len(self.blastlinelist):
+			if self.blastlinelist[i]["subject"] in blacklist:
+				self.blastlinelist.pop(i)
+				continue
+			i += 1
+		
 
 	def get_blastlines_for_query(self, queryname):
 		'''

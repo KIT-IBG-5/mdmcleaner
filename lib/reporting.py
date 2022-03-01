@@ -66,6 +66,7 @@ def gather_extended_bin_metrics(bindata, outfile, cutoff=5): #todo: make a simpl
 	totalbincontigs = len(bindata.contigdict)
 	if totalbincontigs > 0:
 		totalbinbp = bindata.get_total_size()
+		trna_completeness = bindata.completeness
 		majortaxpath = bindata.get_consensus_taxstringlist()
 		
 		fraction_trustedbp = sum([ bindata.contigdict[contig]["contiglen"] for contig in bindata.get_trusted_contignames() ])/totalbinbp
@@ -172,6 +173,7 @@ def gather_extended_bin_metrics(bindata, outfile, cutoff=5): #todo: make a simpl
 		total_proteins = 0
 
 	print_dict = {  "binname" : binname, \
+							"completeness" : trna_completeness,\
 							"totalbincontigs" : totalbincontigs,\
 							"totalbinbp" : totalbinbp,\
 							"majortaxpath" : majortaxpath,\

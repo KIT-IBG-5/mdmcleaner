@@ -48,11 +48,15 @@ _barrnappattern = re.compile("^[\d_]{1,3}S_rRNA::(.+):\d+-\d+\([+-]\)(\s.*)*$") 
 _prodigalpattern = re.compile("^(.+)_\d+(\s.*)*")
 _trnapattern = re.compile('^trna_([\w\|\.-]+)__aragorn_([\w-]+)__(c?\[\d+,\d+\])')
 
-full_tRNA_species=[	"tRNA-Ala", "tRNA-Arg", "tRNA-Asn", "tRNA-Asp", "tRNA-Cys", "tRNA-Gln", "tRNA-Glu", "tRNA-Gly", "tRNA-His", "tRNA-Ile", \
-							"tRNA-Leu", "tRNA-Lys", "tRNA-Met", "tRNA-Phe", "tRNA-Pro", "tRNA-Ser", "tRNA-Thr", "tRNA-Trp", "tRNA-Tyr", "tRNA-Val", "tRNA-SeC"] #expected "full" set of tRNA species expeced for prototoph bacteria. For estimating completeness
+universal_tRNA_species = [	"tRNA-Ala", "tRNA-Arg", "tRNA-Asn", "tRNA-Asp", "tRNA-Cys", "tRNA-Gln", "tRNA-Glu", "tRNA-Gly", "tRNA-His", "tRNA-Ile", \
+							"tRNA-Leu", "tRNA-Lys", "tRNA-Met", "tRNA-Phe", "tRNA-Pro", "tRNA-Ser", "tRNA-Thr", "tRNA-Trp", "tRNA-Tyr", "tRNA-Val" ]
+
+full_tRNA_species = universal_tRNA_species + ["tRNA-SeC"]
+
+
 
 def _get_new_contigdict_entry(record): #todo change contiglen and totalprotcount to ints rather than lists!
-	return {"contiglen": len(record), "totalprotcount" : 0, "ssu_rRNA" : [], "ssu_rRNA_tax" : None, "lsu_rRNA" : [], "lsu_rRNA_tax":None, "tsu_rRNA" : [], "tRNAs": [],"prok_marker" : [], "prok_marker_tax" :None,  "bac_marker" : [], "arc_marker" : [], "totalprots" : [], "total_prots_tax": None, "toplevel_marker" : None, "toplevel_tax" : None, "toplevel_taxlevel" : None, "toplevel_ident": None, "ambigeous" : False, "consensus_level_diff": 0, "contradict_consensus": None, "contradict_consensus_evidence": 0, "contradictions_interlevel": [], "viral" : None, "refdb_ambig" : False, "refdb_ambig_infotext": "", "refdb_ambig_evidence": "", "tax_score" : None, "trust_index" : None,"tax_note" : "", "non-coding" : False, "info_flag" : None, "filterflag" : None}
+	return {"contiglen": len(record), "totalprotcount" : 0, "ssu_rRNA" : [], "ssu_rRNA_tax" : None, "lsu_rRNA" : [], "lsu_rRNA_tax":None, "tsu_rRNA" : [], "tRNAs": [],"prok_marker" : [], "prok_marker_tax" :None,  "bac_marker" : [], "arc_marker" : [], "totalprots" : [], "totalprots_tax": None, "toplevel_marker" : None, "toplevel_tax" : None, "toplevel_taxlevel" : None, "toplevel_ident": None, "ambigeous" : False, "consensus_level_diff": 0, "contradict_consensus": None, "contradict_consensus_evidence": 0, "contradictions_interlevel": [], "viral" : None, "refdb_ambig" : False, "refdb_ambig_infotext": "", "refdb_ambig_evidence": "", "tax_score" : None, "trust_index" : None,"tax_note" : "", "non-coding" : False, "info_flag" : None, "filterflag" : None}
 
 def split_fasta_for_parallelruns(infasta, minlength = 0, number_of_fractions = 2, outfilebasename = None):
 	"""
@@ -171,7 +175,7 @@ def _parse_aragorn_output(outstringlist, verbose=False): #todo:implement verbosi
 	import re
 	sys.stdout.flush()
 	sys.stderr.flush()
-	trnapattern = " (tRNA-\w+)\s+(c?\[\d+,\d+\])"
+	trnapattern = " (tRNA-\w+)\s+(c?\[\d+,\d+\])" 
 	# ~ locationpattern = "c?\[(\d+),(\d+)\]"
 	outlist = []
 	trnalist = []
@@ -191,11 +195,21 @@ def _parse_aragorn_output(outstringlist, verbose=False): #todo:implement verbosi
 				sys.stderr.flush()
 			outlist.append(genename)
 			trnaset.add(trna)
-	sys.stderr.write("\tfound {} of {} tRNAs --> estimated completeness = {:.2f}% (when assuming prototrophy. Actual completeness is probably higher!)\n".format(len(trnaset), len(full_tRNA_species), len(trnaset)/len(full_tRNA_species)*100)) #todo: change to an actual completeness function that takes into consideration that only about 22% or sequenced bacteria encode SeC-tRNAs
+	sys.stderr.write("\tfound {} of {} types of tRNAs --> estimated completeness = {:.2f}% (rough estimate based on 20 universally required types of tRNA)\n".format(len(trnaset), len(full_tRNA_species), trna_completeness(outlist)))
 	if verbose:
 		sys.stderr.write("{}\n".format("\t-".join(outlist)))
 	return outlist
-	
+
+def trna_completeness(trna_seqid_list):
+	trnaset = set()
+	for trna_seqid in trna_seqid_list:
+		trna_type_match = re.match(_trnapattern, trna_seqid)
+		assert trna_type_match != None, "\nError: not a recognized tRNA seqid: '{}'.format(trna_seqid)"
+		trna_type = trna_type_match.group(2)
+		if trna_type in universal_tRNA_species:
+			trnaset.add(trna_type)
+	completeness = len(trnaset)/len(universal_tRNA_species)*100
+	return completeness	
 		
 def runbarrnap_single(infasta, barrnap="barrnap", kingdom = "bac", output_directory = ".", threads=1): 
 	#todo: the following hack is to circumvent the problem of barrnap not handling compressed files. A better way to do this would to just assume files are sent via pipe?
@@ -598,13 +612,16 @@ def add_rrnamarker_to_contigdict_and_markerdict(rrnamarkerdict, contigdict, mark
 	return contigdict, markerdict
 #######################
 class gdata(object): #meant for gathering all contig/protein/marker info
-	def __init__(self, contigfile, threads = 1, outbasedir = "mdmcleaner_results", mincontiglength = 0, outprefix="MDM_", settings = None): #todo: enable init with additional precalculated infos
-		if settings == None:
+	def __init__(self, contigfile, threads = 1, outbasedir = "mdmcleaner_results", mincontiglength = 0, outprefix="MDM_", configs = None): #todo: enable init with additional precalculated infos
+		if configs == None:
 			self.settings = {x:x for x in ["blastn", "blastp", "makeblastdb", "blastdbcmd","diamond","barrnap","hmmsearch","aragorn"]} #default: assume all tools in PATH
+			self.threads = threads # todo: just switch to having all basic settings in configs...
 		else:
-			self.settings = settings
+			self.configs = configs
+			self.settings = self.configs.settings
+			self.threads = self.configs.settings["threads"]
 		import re
-		self.threads = threads
+		# ~ self.threads = threads
 		self.barrnap_pattern = re.compile("^\d{1,2}S_rRNA::(.+):\d+-\d+\([+-]\)")
 		self.rnammer_pattern = re.compile("^rRNA_(.+)_\d+-\d+_DIR[+-]")
 		self.binfastafile = contigfile
@@ -687,7 +704,7 @@ class gdata(object): #meant for gathering all contig/protein/marker info
 	
 	def _prep_contigsANDtotalprots(self, mincontiglength, threads):
 		subfastas, self.contigdict = split_fasta_for_parallelruns(self.binfastafile, minlength = mincontiglength, number_of_fractions = threads)
-		commandlist = [("getmarkers", "runprodigal", {"infasta" : subfastas[i], "prodigal" : self.settings["prodigal"], "outfilename" : os.path.join(self.bin_resultfolder, "tempfile_{}_prodigal_{}.faa".format(self.bin_tempname, i)) }) for i in range(len(subfastas))]
+		commandlist = [("getmarkers", "runprodigal", {"infasta" : subfastas[i], "prodigal" : self.configs.settings["prodigal"], "outfilename" : os.path.join(self.bin_resultfolder, "tempfile_{}_prodigal_{}.faa".format(self.bin_tempname, i)) }) for i in range(len(subfastas))]
 		tempprotfiles = misc.run_multiple_functions_parallel(commandlist, threads)
 		# ~ tempdict = get_trnas(subfastas, threads=threads) #todo: aragorn does not accept input from stdin. find a solution for mutiprocessing later!
 		# ~ self.trnadict = { trna[0]: contig for trna in tempdict[contig] for contig in tempdict} 
@@ -696,12 +713,12 @@ class gdata(object): #meant for gathering all contig/protein/marker info
 		self.totalprotsfile, self.markerdict = combine_multiple_fastas(tempprotfiles, outfilename = self.totalprotsfile, delete_original = True, contigdict = self.contigdict,return_markerdict = True)
 	
 	def _prep_protmarker(self):
-		self.protmarkerdictlist = get_markerprotnames(self.totalprotfile, hmmsearch = self.settings["hmmsearch"], outdir = self.bin_resultfolder, cmode = "moderate", level = "all", threads = "4") #todo: delete hmm_intermediate_results
+		self.protmarkerdictlist = get_markerprotnames(self.totalprotfile, hmmsearch = self.configs.settings["hmmsearch"], outdir = self.bin_resultfolder, cmode = "moderate", level = "all", threads = "4") #todo: delete hmm_intermediate_results
 		for pml in range(len(self.protmarkerdictlist)):
 			self.contigdict = parse_protmarkerdict(self.protmarkerdictlist[pml], self.contigdict, pml)	
 
 	def _prep_rRNAmarker(self):
-		self.rRNA_fasta_dict, self.rrnamarkerdict = runbarrnap_all(infasta=self.binfastafile, outfilebasename=os.path.join(self.bin_resultfolder, self.bin_tempname + "_rRNA"), barrnap=self.settings["barrnap"], output_directory = self.bin_resultfolder, threads=self.threads) #todo add option for rnammer (using the subdivided fastafiles)? #todo: parse resultfolder from basename. or rather basename from resultfolder!
+		self.rRNA_fasta_dict, self.rrnamarkerdict = runbarrnap_all(infasta=self.binfastafile, outfilebasename=os.path.join(self.bin_resultfolder, self.bin_tempname + "_rRNA"), barrnap=self.configs.settings["barrnap"], output_directory = self.bin_resultfolder, threads=self.threads) #todo add option for rnammer (using the subdivided fastafiles)? #todo: parse resultfolder from basename. or rather basename from resultfolder!
 		self.contigdict, self.markerdict = add_rrnamarker_to_contigdict_and_markerdict(self.rrnamarkerdict, self.contigdict, self.markerdict)
 				
 	def _prep_onlycontigs(self, mincontiglength, threads):
@@ -720,14 +737,14 @@ class gdata(object): #meant for gathering all contig/protein/marker info
 			_, self.markerdict = combine_multiple_fastas([self.totalprotsfile], outfilename = None, delete_original = False, contigdict = self.contigdict, return_markerdict = True)
 		else:
 			self._prep_contigsANDtotalprots(mincontiglength, threads)
-		protmarkerfiles, self.protmarkerdictlist = get_markerprots(self.totalprotsfile, hmmsearch = self.settings["hmmsearch"], outfile_basename = os.path.join(self.bin_resultfolder, self.bin_tempname + "_markerprots"), cmode = "moderate", level = "all", threads = threads) #todo: delete hmm_intermediate_results
+		protmarkerfiles, self.protmarkerdictlist = get_markerprots(self.totalprotsfile, hmmsearch = self.configs.settings["hmmsearch"], outfile_basename = os.path.join(self.bin_resultfolder, self.bin_tempname + "_markerprots"), cmode = "moderate", level = "all", threads = threads) #todo: delete hmm_intermediate_results
 		
 		#todo: protmarkerdictlists probably not needed in that form. just save a general markerdict and a contigdict
 
 		for pml in range(len(self.protmarkerdictlist)): #todo: contigdict is maybe not needed in this form. choose simpler dicts ?
 			self.contigdict = parse_protmarkerdict(self.protmarkerdictlist[pml], self.contigdict, pml, self.markerdict)
 		self._prep_rRNAmarker()
-		trna_list = get_trnas(self.binfastafile, aragorn=self.settings["aragorn"]) #todo: aragorn does not accept input from stdin (WHY!?) --> makes multithreading a bit more complicated. find a solution for mutiprocessing later, that does not break current workflow! --> probably switch to trnascanSE after all? (EDIT: trnascanSE ALSO does not accept input from stdin (WHY?!)
+		trna_list = get_trnas(self.binfastafile, aragorn=self.configs.settings["aragorn"]) #todo: aragorn does not accept input from stdin (WHY!?) --> makes multithreading a bit more complicated. find a solution for mutiprocessing later, that does not break current workflow! --> probably switch to trnascanSE after all? (EDIT: trnascanSE ALSO does not accept input from stdin (WHY?!)
 		trna_records = self.get_trna_sequences_from_contigs(trna_list)
 		SeqIO.write(trna_records, openfile(self.trnafastafile, "wt"), "fasta")
 
@@ -773,8 +790,9 @@ class gdata(object): #meant for gathering all contig/protein/marker info
 
 ########################
 class bindata(gdata): #meant for gathering all contig/protein/marker info
-	def __init__(self, contigfile, threads = 1, outbasedir = "mdmcleaner_results", mincontiglength = 0, cutofftable = cutofftablefile, settings = None): #todo: enable init with additional precalculated infos. #todo: cutofftablefile is actually decapricated (cutoffs are stated in the hmm-files themselves). kept here only to keep the option open to maybe use individual hmms instead...
-		super().__init__(contigfile, threads = threads, outbasedir = outbasedir, mincontiglength = mincontiglength, outprefix="", settings=settings)
+	def __init__(self, contigfile, threads = 1, outbasedir = "mdmcleaner_results", mincontiglength = 0, cutofftable = cutofftablefile, configs = None): #todo: enable init with additional precalculated infos. #todo: cutofftablefile is actually decapricated (cutoffs are stated in the hmm-files themselves). kept here only to keep the option open to maybe use individual hmms instead...
+		import review_refdbcontams
+		super().__init__(contigfile, threads = threads, outbasedir = outbasedir, mincontiglength = mincontiglength, outprefix="", configs=configs)
 		self.pickle_progressfile = os.path.join(self.bin_resultfolder, "bindata_progress.pickle") #todo: change to better system
 		self.trna_jsonfile = os.path.join(self.bin_resultfolder, "bindata_trna_progress.json.gz") #todo: REALLY start implementing a better system!
 		self.filteroutputfiles = { 	"keep" : os.path.join(self.bin_resultfolder, self.bin_tempname + "_filtered_kept_contigs.fasta.gz"),\
@@ -784,12 +802,13 @@ class bindata(gdata): #meant for gathering all contig/protein/marker info
 		self.krona_input = os.path.join(self.bin_resultfolder, self.bin_tempname + "_kronainput.tsv")
 		
 		self.ref_db_ambiguity_overview = {}
-					
+		# ~ self.blacklist = configs.blacklist
+		# ~ self.db_suspects = review_refdbcontams.suspicious_entries(db, configs)
 		self.taxondict = None
 		self.majortaxdict = None 
 		self.consensustax = None
 		sys.stderr.write("\n-->doing ORF-calling\n")
-		self._get_all_markers(threads, mincontiglength, cutofftable)
+		self._get_all_markers(self.threads, mincontiglength, cutofftable)
 	
 
 		
@@ -821,11 +840,12 @@ class bindata(gdata): #meant for gathering all contig/protein/marker info
 		if from_json and os.path.exists(self.trna_jsonfile):
 			trna_list = misc.from_json(self.trna_jsonfile)
 		else:
-			trna_list = get_trnas(self.binfastafile, aragorn=self.settings["aragorn"]) #todo: aragorn does not accept input from stdin (WHY!?) --> makes multithreading a bit more complicated. find a solution for mutiprocessing later, that does not break current workflow! --> probably switch to trnascanSE after all? (EDIT: trnascanSE ALSO does not accept input from stdin (WHY?!)
+			trna_list = get_trnas(self.binfastafile, aragorn=self.configs.settings["aragorn"]) #todo: aragorn does not accept input from stdin (WHY!?) --> makes multithreading a bit more complicated. find a solution for mutiprocessing later, that does not break current workflow! --> probably switch to trnascanSE after all? (EDIT: trnascanSE ALSO does not accept input from stdin (WHY?!)
 			trna_records = self.get_trna_sequences_from_contigs(trna_list)
 			SeqIO.write(trna_records, openfile(self.trnafastafile, "wt"), "fasta")
 			misc.to_json(trna_list, self.trna_jsonfile)
 		# ~ import pdb; pdb.set_trace()
+		self.completeness = trna_completeness(trna_list)
 		for trna in trna_list:
 			contig = self.marker2contig(trna)
 			self.trnadict[trna] = contig
@@ -855,17 +875,18 @@ class bindata(gdata): #meant for gathering all contig/protein/marker info
 		# ~ print("total lca time was : {}".format(stop -start))
 		# ~ sys.stdout.flush()
 
-	def add_lca2markerdict(self, blastdata, db): #todo: add multithreading!!!
+	def add_lca2markerdict(self, blastdata, db, contig=None, verbose=True): #todo: add multithreading!!!
 		# ~ import time
 		import lca
 		# ~ start=time.time()
 		counter = 0
-		for gene, hittuples in blastdata.get_best_hits_per_gene():
+		for gene, hittuples in blastdata.get_best_hits_per_gene(contig=contig):
 			counter += 1
-			if counter % 100 == 0:
+			if verbose and counter % 100 == 0:
 				sys.stderr.write("\r\tclassified {} records so far".format(counter))
-			self.markerdict[gene]["tax"] = lca.strict_lca(db, gene, hittuples)			
-		sys.stderr.write("\r\tfinished classifying {} records!\t\t\n".format(counter))
+			self.markerdict[gene]["tax"] = lca.strict_lca(db, gene, hittuples)
+		if verbose:		
+			sys.stderr.write("\r\tfinished classifying {} records!\t\t\n".format(counter))
 		# ~ stop = time.time()
 		# ~ print("total lca time was : {}".format(stop -start))
 		sys.stdout.flush()
@@ -890,7 +911,7 @@ class bindata(gdata): #meant for gathering all contig/protein/marker info
 					
 		import lca
 		sys.stderr.write("\n-->determining major taxon\n")
-		markerranking = [ "ssu_rRNA_tax", "lsu_rRNA_tax", "prok_marker_tax", "total_prots_tax" ]
+		markerranking = [ "ssu_rRNA_tax", "lsu_rRNA_tax", "prok_marker_tax", "totalprots_tax" ]
 		#taxlevels = ["root", "domain", "phylum", "class", "order", "family", "genus", "species"] # todo: change to lca.taxlevels
 		self.taxondict = { tl: {} for tl in lca.taxlevels }
 		#todo: taxlevels shoule be keys. values should be subdicts tuples of taxas as keys showing the lineage to each taxlevel (e.g.: ("bacteria", "proteobacteria", "alphaproteobacteria")
@@ -941,6 +962,7 @@ class bindata(gdata): #meant for gathering all contig/protein/marker info
 		if last_tax_entry != None:
 			self.consensus_tax = db.taxid2taxpath(last_tax_entry[0][-1])
 		sys.stderr.write("\tmajority tax-path: {}\n".format("; ".join(self.get_consensus_taxstringlist())))
+		sys.stderr.write("\tcompleteness: {} (based on universally required types of tRNA)\n".format(self.completeness))
 		
 		for contig in self.contigdict:
 			contradiction, contradiction_evidence = lca.contradict_taxasstuple_majortaxdict(self.contigdict[contig]["toplevel_tax"], self.majortaxdict, return_idents = True) #check each contigs if contradicts majortax
@@ -994,7 +1016,7 @@ class bindata(gdata): #meant for gathering all contig/protein/marker info
 		markerlevel_factors = {	'ssu_rRNA_tax' : 1, \
 								'lsu_rRNA_tax' : 0.9, \
 								'prok_marker_tax' : 0.8, \
-								'total_prots_tax' : 0.7, \
+								'totalprots_tax' : 0.7, \
 								None : 0 }	
 		
 		
@@ -1057,7 +1079,7 @@ class bindata(gdata): #meant for gathering all contig/protein/marker info
 		def check_lower_ranking_protein_markers(contigentry, filterflag = "delete", altflag = "evaluate_low"):
 			# ~ if self.contigdict[contig]["viral"]:
 				# ~ self.contigdict["tax_note"] == "probably viral; " + self.contigdict["tax_note"]
-			for protmarker in ["prok_marker_tax", "total_prots_tax"]:
+			for protmarker in ["prok_marker_tax", "totalprots_tax"]:
 				if self.contigdict[contig][protmarker] != None:
 					if not lca.contradict_taxasstuple_majortaxdict(self.contigdict[contig][protmarker], self.majortaxdict):
 						if lca.contradicting_taxasstuples(self.contigdict[contig][protmarker], self.contigdict[contig]["toplevel_tax"]):
@@ -1077,6 +1099,11 @@ class bindata(gdata): #meant for gathering all contig/protein/marker info
 			return filterflag, protmarker
 			
 		filterflag = "keep"	
+		# ~ print("aaaa")
+		# ~ print(contig)
+		# ~ print(self.contigdict[contig]["refdb_ambig"])
+		# ~ if contig == "CAJAHH010000097.1":
+			# ~ import pdb; pdb.set_trace()
 		if self.contigdict[contig]["info_flag"] == "non-coding":
 			return "delete" #non-coding contigs are automatically assumed eukaryotic contamination
 		if self.contigdict[contig]["info_flag"] and re.match("mismatch_[0-7]", self.contigdict[contig]["info_flag"]):
@@ -1107,22 +1134,86 @@ class bindata(gdata): #meant for gathering all contig/protein/marker info
 		return filterflag	 
 		#TODO: check how well the tax_notes are filled
 		
-	def evaluate_and_flag_all_contigs(self, *args, db, protblasts, nucblasts, filter_rankcutoff = "family", filter_viral = True, filter_unclassified = False): #args are unpacked only to enforce keyword aguments for protblasta and nucblasts (to prevent accidentally passing them in the wrong order) 
-		for contig in self.contigdict:
+	def evaluate_and_flag_all_contigs(self, *args, db, protblasts, nucblasts, filter_rankcutoff = "family", filter_viral = True, filter_unclassified = False, db_suspects = None, fast_run = False): #args are unpacked only to enforce keyword aguments for protblasta and nucblasts (to prevent accidentally passing them in the wrong order) 
+		'''
+		wrapper function for evaluating and flagging all contigs
+		per default, reference ambiguities are analyzed at this step, and contigs are reevaluated if necessary. However this may slow down runs
+		if "fast_run" is set, the analyses of detected potential reference ambiguities is skipped at this point, potentially speeding up the run but potentially causing less exact classifications  
+		'''
+
+		import review_refdbcontams
+		import lca
+		
+		def step1():
 			self._mark_ref_db_ambiguity(contig, ignore_viral = not filter_viral)
 			self.contigdict[contig]["trust_index"] = self.calc_contig_trust_score(contig, db)
+		
+		def step2():
+			ambiguityinfo = self._check_contig_refdb_ambiguity(contig, blastobj, db)
+			self.contigdict[contig]["refdb_ambig"] = ambiguityinfo["amb_type"]
+			self.contigdict[contig]["refdb_ambig_infotext"] = ambiguityinfo["amb_infotext"]
+			self.contigdict[contig]["refdb_ambig_evidence"] = ambiguityinfo["amb_evidence"]
+			# ~ print(ambiguityinfo["amb_type"])
+			if (not fast_run) and ambiguityinfo["amb_type"] and re.search(review_refdbcontams.sm_contam_pattern, ambiguityinfo["amb_type"]) != None:
+				sys.stderr.write("\r\t finished {:.0f}%. Currently analysing apparent reference database ambiguity".format(progress))
+				db_suspects.parse_evidence(ambiguityinfo["amb_evidence"], self.contigdict[contig]["toplevel_marker"])
+				# ~ print(contig)
+				# ~ import pdb; pdb.set_trace()
+				if db_suspects.last_checked_evaluations() == "OK":
+					self.contigdict[contig]["refdb_ambig"] = False
+					self.contigdict[contig]["refdb_ambig_infotext"] = ambiguityinfo["amb_infotext"]
+					self.contigdict[contig]["refdb_ambig_evidence"] = ambiguityinfo["amb_evidence"]
+				elif db_suspects.last_checked_evaluations() != "contamination": # --> if evaluation = "ambiguity" or "wtf". 'todo: get rid of "evaluate_high" and "evaluate_low" and just have "evaluate"!!!
+					self.ref_db_ambiguity_overview[contig] = ambiguityinfo
+					# ~ print("changing info for {}".format(contig))
+					# ~ print(ambiguityinfo)
+					# ~ print("#"*10)
+				else:
+					return True #returns true if evaluation = "contamination"
+			return False #returns false in all other cases
+				
+		contig_counter = 0
+		contam_counter = 0					
+		if db_suspects == None and not fast_run:
+			db_suspects = review_refdbcontams.suspicious_entries(db, self.configs)
+		
+		sys.stderr.write("\n-->evaluating contigs and setting filter-flags\n")
+
+		for contig in self.contigdict:
+			contig_counter += 1
+			progress = contig_counter/len(self.contigdict) *100
+			step1()
 			if self.contigdict[contig]["refdb_ambig"]:
-				if self.contigdict[contig]["toplevel_marker"] in ["ssu_rRNA_tax", "lsu_rRNA_tax", "tsu_rRNA_tax"]:
+				markerlevel = self.contigdict[contig]["toplevel_marker"]
+				if markerlevel in ["ssu_rRNA_tax", "lsu_rRNA_tax", "tsu_rRNA_tax"]:
 					blastobj = nucblasts
-				elif self.contigdict[contig]["toplevel_marker"] in ["prok_marker_tax", "total_prots_tax"]:
+				elif markerlevel in ["prok_marker_tax", "totalprots_tax"]:
 					blastobj = protblasts
-				ambiguityinfo = self._check_contig_refdb_ambiguity(contig, blastobj, db)
-				self.ref_db_ambiguity_overview[contig] = ambiguityinfo
-				self.contigdict[contig]["refdb_ambig"] = ambiguityinfo["amb_type"]
-				self.contigdict[contig]["refdb_ambig_infotext"] = ambiguityinfo["amb_infotext"]
-				self.contigdict[contig]["refdb_ambig_evidence"] = ambiguityinfo["amb_evidence"]
+				is_potential_refdb_contam = step2()
+				if is_potential_refdb_contam:
+					counter = 0
+					contam_counter += 1
+					sys.stderr.write("\r\t finished {:.0f}%. Currently evaluating reference database contamination".format(progress))
+					while is_potential_refdb_contam: #reclassify contig with new blacklist until evaluation is != "contamination"
+						counter +=1
+						if counter >= 50: # safety measure, in case his leads to an endless loop in some special cases
+							sys.stderr.write("\nTOO MANY RECURSIVE INSTANCES IDENTIFIED AS CONTAMINATION! Aborting refDB-contamination assessment based on {}\n".format(contig))
+							self.ref_db_ambiguity_overview[contig] = ambiguityinfo			
+						blastobj.filter_blacklist(db_suspects.blacklist_additions) # remove newly detected db-contaminations from blastlines (based on only the newly detected blacklist-entries...)
+						self.add_lca2markerdict(blastdata=blastobj, db=db, contig=contig, verbose=False) ## reclassify proteins with strict LCA
+						newtaxlist = [self.markerdict[x]["tax"] for x in self.contigdict[contig][markerlevel.replace("_tax","")] if self.markerdict[x]["tax"] != None]
+						self.contigdict[contig][markerlevel] = lca.weighted_lca(db, contig, newtaxlist, taxlevel=markerlevel) ## reclassify contig with weighted LCA
+						step1() ## re-evaluate contig
+						is_potential_refdb_contam = step2() ## re-evaluate refDB-ambiguity...
+			if progress % 1 == 0:
+				sys.stderr.write("\r"+"\t"*20)	
+				sys.stderr.write("\r\t finished {:.0f}%.".format(progress, contam_counter))
 			self.contigdict[contig]["filterflag"] = self.check_and_set_filterflags(contig, filter_rankcutoff = filter_rankcutoff, filter_viral = filter_viral, filter_unclassified = filter_unclassified) 
-			
+		sys.stderr.write("\r\t finished {:.0f}%. Reclassified {} contigs due to reference-database contaminations\n".format(progress, contam_counter))
+		sys.stderr.flush()
+		return db_suspects
+	
+		
 	def _mark_ref_db_ambiguity(self, contig, ignore_viral = True):
 		import lca
 		markerlevel = self.contigdict[contig]["toplevel_marker"]
@@ -1143,7 +1234,7 @@ class bindata(gdata): #meant for gathering all contig/protein/marker info
 		markername_dict = {	"ssu_rRNA_tax" : self.contigdict[contig]["ssu_rRNA"],\
 											"lsu_rRNA_tax" : self.contigdict[contig]["lsu_rRNA"],\
 											"prok_marker_tax" : self.contigdict[contig]["prok_marker"] + self.contigdict[contig]["arc_marker"] + self.contigdict[contig]["bac_marker"],\
-											"total_prots_tax": self.contigdict[contig]["totalprots"] }
+											"totalprots_tax": self.contigdict[contig]["totalprots"] }
 		markernames = markername_dict[markerlevel]
 		ambiguity_info = blastobj.get_contradicting_tophits(markernames, db, cutoffs, markerlevel) 
 		return ambiguity_info		
