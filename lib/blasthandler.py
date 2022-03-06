@@ -235,6 +235,7 @@ class blastdata_baseobject(object): #todo: define differently for protein or nuc
 		# ~ starttime = time.time()
 		for i in range(len(self.blastlinelist)):
 			if bindata_obj != None:
+				# ~ import pdb; pdb.set_trace()
 				self.blastlinelist[i]["contig"] = bindata_obj.marker2contig(self.blastlinelist[i]["query"])
 				self.blastlinelist[i]["stype"] = bindata_obj.markerdict[self.blastlinelist[i]["query"]]["stype"]
 			# ~ if self.seqtype != None:
@@ -322,6 +323,8 @@ class blastdata_baseobject(object): #todo: define differently for protein or nuc
 		will not assign taxids at this point yet, because this list is likely to be greatly reduced in later steps and assigning taxids is a relatively slow process  
 		"""
 		def string_or_int_or_float(teststring): #todo: consider moving this to misc.py (if ever needed somewhere else?)
+			if "_" in teststring:
+				return(teststring) # quickfix for unforseen problems caused by PEP 515
 			try:
 				testfloat = float(teststring)
 			except (TypeError, ValueError):
@@ -337,11 +340,15 @@ class blastdata_baseobject(object): #todo: define differently for protein or nuc
 		infile = openfile(infilename)
 		# ~ print("NOWHANDLINGFILE: {}".format(infilename))
 		for line in infile:
+			# ~ import pdb; pdb.set_trace()
 			tokens = line.strip().split("\t")
 			bl = { x : string_or_int_or_float(tokens[self._blasttsv_columnnames[x]]) if (type(self._blasttsv_columnnames[x]) == int and self._blasttsv_columnnames[x] < len(tokens)) else None for x in self._blasttsv_columnnames}
 			# ~ print(bl["contig"])
 			# ~ if bl["contig"] == "contam_NZ_JAHGVE010000025.1_15" or bl["subject"] in ["GCF_004341205.1_NZ_SLUL01000011.1", "GCA_002434245.1_DJJR01000029.1"]:
 				# ~ import pdb; pdb.set_trace()
+			# ~ import pdb; pdb.set_trace()
+			# ~ bl["query"] = str(bl["query"]) # quickfix for problems with contigs named as numbers# todo: find a more elegant fix!
+			# ~ bl["subject"] = str(bl["subject"]) # quickfix for problems with contigs named as numbers# todo: find a more elegant fix!
 			if max_evalue and bl["evalue"] > max_evalue: #bl.evalue > max_evalue:
 				continue
 			if min_ident and bl["ident"] < min_ident: #bl.ident < min_ident:
@@ -350,8 +357,8 @@ class blastdata_baseobject(object): #todo: define differently for protein or nuc
 				print("' {}' is on blacklist --> ignoring!".format(bl["subject"]))
 				continue
 			if bindata_obj != None:
-				bl["contig"] = bindata.marker2contig(bl["query"])
-				bl["stype"] = bindata.markerdict[bl["query"]]["stype"]
+				bl["contig"] = bindata_obj.marker2contig(bl["query"])
+				bl["stype"] = bindata_obj.markerdict[bl["query"]]["stype"]
 			self.blastlinelist.append(bl)
 
 	def get_blastlines_for_query(self, queryname):
