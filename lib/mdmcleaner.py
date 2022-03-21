@@ -176,7 +176,13 @@ def main():
 	get_marker_args.add_argument("-o", "--outdir", dest = "outdir", default = ".", help = "Output directory (will be created if it does not exist). Default = '.'")
 	get_marker_args.add_argument("-c", "--config", action = "store", dest = "configfile", default = find_local_configfile(), help = "provide a local config file with the target location to store database-files. default: looks for config files named 'mdmcleaner.config' in current working directory. settings in the local config file will override settings in the global config file '{}'".format(os.path.join(os.path.dirname(os.path.abspath(__file__)), "mdmcleaner.config")))
 	get_marker_args.add_argument("-t", "--threads", action="store", dest="threads", type = int, default = 1, help = "number of threads to use (default = 1)")
-	get_marker_args.add_argument("-M", "--mincontiglngth", action="store", dest="mincontiglength", type = int, default = 0, help = "minimum contig length (contigs shorter than this will be ignored)")	
+	get_marker_args.add_argument("-M", "--mincontiglength", action="store", dest="mincontiglength", type = int, default = 0, help = "minimum contig length (contigs shorter than this will be ignored)")	
+
+	completeness_args = subparsers.add_parser("completeness", help = "estimate completeness (roughly based on presence of universally required tRNA types). Results are printed directly to stdout")
+	completeness_args.add_argument("-i", "--input_fastas", action = "store", dest = "input_fastas", nargs = "+", help = "input fasta(s). May be gzip-compressed")
+	completeness_args.add_argument("-c", "--config", action = "store", dest = "configfile", default = find_local_configfile(), help = "provide a local config file with the target location to store database-files. default: looks for config files named 'mdmcleaner.config' in current working directory. settings in the local config file will override settings in the global config file '{}'".format(os.path.join(os.path.dirname(os.path.abspath(__file__)), "mdmcleaner.config")))
+	completeness_args.add_argument("-t", "--threads", action="store", dest="threads", type = int, default = 1, help = "number of threads to use (default = 1)")
+	completeness_args.add_argument("-M", "--mincontiglength", action="store", dest="mincontiglength", type = int, default = 0, help = "minimum contig length (contigs shorter than this will be ignored)")	
 
 	acc2taxpath = subparsers.add_parser("acc2taxpath", help = "Get full taxonomic path assorciated with a specific acession number")
 	acc2taxpath.add_argument("accessions", action = "store", nargs = "+", help = "(space seperated list of) input accessions. Or just pass \"interactive\" for interactive mode")
@@ -224,7 +230,7 @@ def main():
 		# ~ if args.command in ["clean", "get_markers", "refdb_contams"]:
 			# ~ configs["blacklist"] =  _read_blacklistfiles(configs["blacklistfile"])
 
-	if args.command in ["clean", "makedb", "show_configs", "get_markers", "acc2taxpath", "refdb_contams", "check_dependencies"]:
+	if args.command in ["clean", "makedb", "show_configs", "get_markers", "completeness", "acc2taxpath", "refdb_contams", "check_dependencies"]:
 		if args.command in ["clean", "get_markers", "refdb_contams"]:
 			configs = config_object(args, read_blacklist = True)
 		else:
@@ -244,8 +250,8 @@ def main():
 	if args.command == "makedb":
 		import read_gtdb_taxonomy
 		if args.outdir == None:
-			assert "db_basedir" in configs, ("\n\nERROR: either 'outdir' must be specified as argument or 'db_basedir' needs to be specified in config file!\n\n")
-			args.outdir = os.path.join(configs["db_basedir"][0], configs["db_type"][0])
+			assert "db_basedir" in configs.settings, ("\n\nERROR: either 'outdir' must be specified as argument or 'db_basedir' needs to be specified in config file!\n\n")
+			args.outdir = os.path.join(configs.settings["db_basedir"][0], configs.settings["db_type"][0])
 		else:
 			args.outdir = os.path.join(args.outdir, configs.settings["db_type"][0])
 		check_dependencies.check_dependencies("makeblastdb", "diamond", "wget", configs=configs)
@@ -254,6 +260,11 @@ def main():
 	if args.command == "get_markers":
 		import getmarkers
 		getmarkers.get_only_marker_seqs(args, configs)
+	
+	if args.command == "completeness":
+		import getmarkers
+		args.outdir = None
+		getmarkers.get_only_trna_completeness(args, configs)
 
 	if args.command == "set_configs":
 		args.configfile = None

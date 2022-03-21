@@ -631,21 +631,22 @@ class gdata(object): #meant for gathering all contig/protein/marker info
 				bin_tempname = bin_tempname[:-len(suffix)]
 		self.outbasedir = outbasedir		
 		self.bin_tempname = bin_tempname
-		self.bin_resultfolder = os.path.join(self.outbasedir, self.bin_tempname)
-		self.trnafastafile = os.path.join(self.bin_resultfolder, self.bin_tempname + "_tRNAs.fasta.gz")
-		self.totalprotsfile = os.path.join(self.bin_resultfolder, self.bin_tempname + "_totalprots.faa")
+		if outbasedir != None:
+			self.bin_resultfolder = os.path.join(self.outbasedir, self.bin_tempname)
+			self.trnafastafile = os.path.join(self.bin_resultfolder, self.bin_tempname + "_tRNAs.fasta.gz")
+			self.totalprotsfile = os.path.join(self.bin_resultfolder, self.bin_tempname + "_totalprots.faa")
 		sys.stderr.write("\n\n{}\nNow processing genome: {}\n".format("="*60, self.bin_tempname))
 		self.markerdict = {}
 		assert len(bin_tempname) <= 176, "ERROR: input-filename may not be longer than 176 characters (sorry)!" #todo: qucik and dirty fix for a stupid problem: can't produce outputfiles with filenames longer than 256 chars. considering the longest pre- and suffixes, the limit is for 176 chars for the input-filename (without path or suffix). Better long-term solution: shorten output-filenames if necessary (but ensure that tehy are unique)!
 		self.trnadict = {}
 
-	
-		for d in [self.outbasedir, self.bin_resultfolder]:
-			try:
-				if not os.path.exists(d):
-					os.mkdir(d)
-			except FileExistsError:
-					raise Exception("\nERROR: there seems to be a broken symlink present for the target output-folder: '{}' --> skipping this magsag\n".format(d))
+		if self.outbasedir != None:
+			for d in [self.outbasedir, self.bin_resultfolder]:
+				try:
+					if not os.path.exists(d):
+						os.mkdir(d)
+				except FileExistsError:
+						raise Exception("\nERROR: there seems to be a broken symlink present for the target output-folder: '{}' --> skipping this magsag\n".format(d))
 		
 	def get_contig_records(self, contiglist=None):
 		"""
@@ -845,7 +846,8 @@ class bindata(gdata): #meant for gathering all contig/protein/marker info
 			SeqIO.write(trna_records, openfile(self.trnafastafile, "wt"), "fasta")
 			misc.to_json(trna_list, self.trna_jsonfile)
 		# ~ import pdb; pdb.set_trace()
-		self.completeness = trna_completeness(trna_list)
+		self.completeness_before = trna_completeness(trna_list)
+		self.completeness_after = None
 		for trna in trna_list:
 			contig = self.marker2contig(trna)
 			self.trnadict[trna] = contig
@@ -962,7 +964,7 @@ class bindata(gdata): #meant for gathering all contig/protein/marker info
 		if last_tax_entry != None:
 			self.consensus_tax = db.taxid2taxpath(last_tax_entry[0][-1])
 		sys.stderr.write("\tmajority tax-path: {}\n".format("; ".join(self.get_consensus_taxstringlist())))
-		sys.stderr.write("\tcompleteness: {} (based on universally required types of tRNA)\n".format(self.completeness))
+		sys.stderr.write("\tcompleteness: {} (based on universally required types of tRNA)\n".format(self.completeness_before))
 		
 		for contig in self.contigdict:
 			contradiction, contradiction_evidence = lca.contradict_taxasstuple_majortaxdict(self.contigdict[contig]["toplevel_tax"], self.majortaxdict, return_idents = True) #check each contigs if contradicts majortax
@@ -1211,6 +1213,7 @@ class bindata(gdata): #meant for gathering all contig/protein/marker info
 			self.contigdict[contig]["filterflag"] = self.check_and_set_filterflags(contig, filter_rankcutoff = filter_rankcutoff, filter_viral = filter_viral, filter_unclassified = filter_unclassified) 
 		sys.stderr.write("\r\t finished {:.0f}%. Reclassified {} contigs due to reference-database contaminations\n".format(progress, contam_counter))
 		sys.stderr.flush()
+		self.completeness_after = trna_completeness([ trna for trna in self.trnadict if self.contigdict[self.trnadict[trna]]["filterflag"] == "keep" ])
 		return db_suspects
 	
 		
@@ -1392,7 +1395,7 @@ class bindata(gdata): #meant for gathering all contig/protein/marker info
 
 def get_only_marker_seqs(args, configs):
 	for infasta in args.input_fastas:
-		genomedata = gdata(infasta, args.threads, outbasedir = args.outdir, outprefix="args.outprefix", settings=configs.settings)
+		genomedata = gdata(infasta, args.threads, outbasedir = args.outdir, outprefix="args.outprefix", configs=configs)
 		if args.markertype in ["rrna", "trna"]:
 			genomedata._prep_onlycontigs(args.mincontiglength, args.threads)
 			if args.markertype == "rrna":
@@ -1409,7 +1412,15 @@ def get_only_marker_seqs(args, configs):
 				markerprotfiles, genomedata.protmarkerdictlist = get_markerprots(genomedata.totalprotsfile, hmmsearch = configs.settings["hmmsearch"], outfile_basename = os.path.join(genomedata.bin_resultfolder, genomedata.bin_tempname + "_markerprots"), cmode = "moderate", level = "all", threads = args.threads) #todo: delete hmm_intermediate_results
 		else:
 			raise Exception("\nERROR: markertype '{}' not implemented yet!\n".format(mtype))
-		
+
+def get_only_trna_completeness(args, configs):
+	sys.stderr.write("genome_file\tcompleteness\n")
+	for infasta in args.input_fastas:
+		genomedata = gdata(infasta, args.threads, outbasedir = args.outdir, outprefix="args.outprefix", configs=configs)
+		genomedata._prep_onlycontigs(args.mincontiglength, args.threads)
+		trna_list = get_trnas(genomedata.binfastafile, aragorn = configs.settings["aragorn"])
+		completeness = trna_completeness(trna_list)
+		sys.stdout.write("{}\t{:.0f}\n".format(infasta, completeness))
 ######################################################
 
 
