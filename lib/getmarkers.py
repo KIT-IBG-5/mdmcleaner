@@ -46,7 +46,8 @@ protmarkerlevel_dict = { 0 : "prok_marker", 1 : "bac_marker", 2 : "arc_marker" }
 _rnammerpattern = re.compile("^rRNA_(.+)_\d+-\d+_DIR[+-](\s.*)*$")
 _barrnappattern = re.compile("^[\d_]{1,3}S_rRNA::(.+):\d+-\d+\([+-]\)(\s.*)*$") #adjusted to also capture "5_8S_rRNA"
 _prodigalpattern = re.compile("^(.+)_\d+(\s.*)*")
-_trnapattern = re.compile('^trna_([\w\|\.-]+)__aragorn_([\w-]+)__(c?\[\d+,\d+\])')
+_trnapattern = re.compile('^trna_(.+)__aragorn_([\w-]+)__(c?\[\d+,\d+\])')
+
 
 universal_tRNA_species = [	"tRNA-Ala", "tRNA-Arg", "tRNA-Asn", "tRNA-Asp", "tRNA-Cys", "tRNA-Gln", "tRNA-Glu", "tRNA-Gly", "tRNA-His", "tRNA-Ile", \
 							"tRNA-Leu", "tRNA-Lys", "tRNA-Met", "tRNA-Phe", "tRNA-Pro", "tRNA-Ser", "tRNA-Thr", "tRNA-Trp", "tRNA-Tyr", "tRNA-Val" ]
@@ -175,7 +176,8 @@ def _parse_aragorn_output(outstringlist, verbose=False): #todo:implement verbosi
 	import re
 	sys.stdout.flush()
 	sys.stderr.flush()
-	trnapattern = " (tRNA-\w+)\s+(c?\[\d+,\d+\])" 
+	trnapattern = " (tRNA-\w+)\s+(c?\[\d+,\d+\])"
+	#trna_(2022920003.a:YNPsite05_CeleraDRAF_scf1119010633653)__aragorn_(tRNA-Lys__c[12719,12794])
 	# ~ locationpattern = "c?\[(\d+),(\d+)\]"
 	outlist = []
 	trnalist = []
@@ -204,7 +206,7 @@ def trna_completeness(trna_seqid_list):
 	trnaset = set()
 	for trna_seqid in trna_seqid_list:
 		trna_type_match = re.match(_trnapattern, trna_seqid)
-		assert trna_type_match != None, "\nError: not a recognized tRNA seqid: '{}'.format(trna_seqid)"
+		assert trna_type_match != None, "\nError: not a recognized tRNA seqid: '{}'".format(trna_seqid)
 		trna_type = trna_type_match.group(2)
 		if trna_type in universal_tRNA_species:
 			trnaset.add(trna_type)
