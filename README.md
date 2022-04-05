@@ -123,6 +123,7 @@ optional arguments:
   -b BLACKLISTFILE, --blacklistfile BLACKLISTFILE
                         File listing reference-DB sequence-names that should be ignored during blast-analyses (e.g. known refDB-contaminations...
   --no_filterfasta      Do not write filtered contigs to final output fastas (Default = False)
+  --fast_run            skips evaluation of reference-database-ambiguities. Runs will be faster but ambiguities will not be resolved on the go!
 ```
 
 ## OUTPUT FILES
