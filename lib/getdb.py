@@ -159,55 +159,58 @@ def _create_sorted_acc2taxid_lookup(acc2taxidfilelist, acc2taxid_outfilename):
 class taxdb(object):
 	def __init__(self, configs): # acc2taxid_lookupfile, taxdbfile = None, lca_pathsfile = None): #todo: create and read a "config file" to get file-locations from
 		#self.taxdict = self.read_taxddbfile(taxdbfile) #todo: write tis!
-		self.dbpath = os.path.join(configs.settings["db_basedir"][0], configs.settings["db_type"][0])
-
-		 
-		self.acc2taxid_lookupfile = os.path.join(self.dbpath, dbfiles[configs.settings["db_type"][0]]["mdmdbs"][0])
-		self.taxdbfile = os.path.join(self.dbpath, dbfiles[configs.settings["db_type"][0]]["mdmdbs"][1])
-		self.lca_pathsfile = os.path.join(self.dbpath, dbfiles[configs.settings["db_type"][0]]["mdmdbs"][2])
-		
-		self.nucdbs_ssu_rRNA = [os.path.join(self.dbpath, x) for x in dbfiles[configs.settings["db_type"][0]]["ssu_nucblastdbs"]]
-		self.nucdbs_lsu_rRNA = [os.path.join(self.dbpath, x) for x in dbfiles[configs.settings["db_type"][0]]["lsu_nucblastdbs"]]
-		self.nucdbs_genome = [os.path.join(self.dbpath, x) for x in dbfiles[configs.settings["db_type"][0]]["genome_nucblastdbs"]]
-		self.nucdbs_all = [os.path.join(self.dbpath, x) for x in dbfiles[configs.settings["db_type"][0]]["nucblastdbs"]]
-		
-		self.protdbs_all = [os.path.join(self.dbpath, x) for x in dbfiles[configs.settings["db_type"][0]]["protblastdbs"]]
-		
-		
-		self.versionfile = os.path.join(self.dbpath, "DB_versions.txt")
-		self.check_db_folder()
+		self.set_db_attributes(configs)
+		self.check_db_folder(configs)
 		self.read_db_versions()
 		self.acc_lookup_handle = misc.openfile(self.acc2taxid_lookupfile)
 		self.acc_lookup_handle_filesize = self.acc_lookup_handle.seek(0,2) #jump to end of file and give bytesize (alternative to "os.path.getsize()")
-		###the following was meant to provide more flexibility (allow users to use their own databases and taxonomic systems, and especially reuse preexisting KRONA lookup files when using ncbi) but scrapped now fow simplicity reasons
-		# ~ if taxdbfile != None:
-			# ~ assert lca_pathsfile, "Error: have to specify BOTH 'taxdbfile' and 'lca_pathsfile'"
-			# ~ try:
-				# ~ self.read_taxdb(taxdbfile)					
-			# ~ except Exception as e: #TODO: replace this with the specific exception throen when there was actually an problem parsing the file as json
-				# ~ sys.stderr.write("\n{}\n".format(e, traceback.print_exc()))
-				# ~ sys.stderr.write("\nperhabs the taxdbfile is not in json-format? Assuming a krona-taxonomydb and trying to covert it to json\n")
-				# ~ self.taxdbfile = json_taxdb_from_kronadb(taxdbfile)
-				# ~ self.read_taxdb(self.taxdbfile)
-			# ~ self.read_lca_paths(os.path.join(lca_pathsfile))
-		# ~ else:
-			# ~ self.taxdict = None
-			# ~ self.walk_list = None
-			# ~ self.depth_list = None
-		### end of scrapped part
 		self.read_taxdb(self.taxdbfile)
 		self.read_lca_paths(self.lca_pathsfile)
 
-	def check_db_folder(self):
+	def set_db_attributes(self, configs, db_basedir = None):
 		import read_gtdb_taxonomy #todo: after reimplementing optional ncbi taxonomy, put both into the same module and import THAT here
-		final_progress_marker = os.path.join(self.dbpath, "progress_step{}.json".format(read_gtdb_taxonomy._progress_steps["finished"][-1])) #todo: make a "get_progress_marker_filename()" function in read_gtdb_taxonomy.py?
+		if db_basedir != None:
+			self.db_basedir = db_basedir
+		else:
+			self.db_basedir = configs.settings["db_basedir"][0]
+		self.db_type = configs.settings["db_type"][0]
+		self.dbpath = os.path.join(self.db_basedir, self.db_type)
+		 
+		self.acc2taxid_lookupfile = os.path.join(self.dbpath, dbfiles[self.db_type]["mdmdbs"][0])
+		self.taxdbfile = os.path.join(self.dbpath, dbfiles[self.db_type]["mdmdbs"][1])
+		self.lca_pathsfile = os.path.join(self.dbpath, dbfiles[self.db_type]["mdmdbs"][2])
+		
+		self.nucdbs_ssu_rRNA = [os.path.join(self.dbpath, x) for x in dbfiles[self.db_type]["ssu_nucblastdbs"]]
+		self.nucdbs_lsu_rRNA = [os.path.join(self.dbpath, x) for x in dbfiles[self.db_type]["lsu_nucblastdbs"]]
+		self.nucdbs_genome = [os.path.join(self.dbpath, x) for x in dbfiles[self.db_type]["genome_nucblastdbs"]]
+		self.nucdbs_all = [os.path.join(self.dbpath, x) for x in dbfiles[self.db_type]["nucblastdbs"]]
+		
+		self.protdbs_all = [os.path.join(self.dbpath, x) for x in dbfiles[self.db_type]["protblastdbs"]]
+		
+		self.versionfile = os.path.join(self.dbpath, "DB_versions.txt")
+		self.final_progress_marker = os.path.join(self.dbpath, "progress_step{}.json".format(read_gtdb_taxonomy._progress_steps["finished"][-1]))#todo: make a "get_progress_marker_filename()" function in read_gtdb_taxonomy.py?
+
+	def check_db_folder(self, configs):
 		if not (os.path.exists(self.dbpath) and os.path.isdir(self.dbpath)):
-			raise IOException("\n\nERROR: can't find specified database folder '{dbpath}'!\nyou may need to download and create the database with 'mdmcleaner.py download_db -o {dbpath}'".format(dbpath=self.dbpath))
+			if self.db_basedir.endswith(self.db_type) and os.path.exists(self.db_basedir):
+				sys.stderr.write(	"\n"+"!"*150+"\n"
+									"WARNING: It seems that 'db_basedir' is specified up to the 'gtdb' subfolder!\n"
+					                "        in fact you should only specify the directory CONTAINING the 'gtdb' subfolder (and then specify 'gtdb' as 'db_type')\n"
+									"        assuming for now that the specified path to 'gtdb' is correct, but if it is you should correct your configuration with the following command\n"
+									"        for local config file:\n"
+									"            mdmcleaner.py set_configs --db_basedir {actualpath}\n"
+									"        for global config file:\n"
+									"            sudo mdmcleaner.py set_configs -s global --db_basedir {actualpath}\n".format(actualpath=os.path.dirname(self.db_basedir)) )
+				sys.stderr.write(	"!"*150+"\n")
+				self.set_db_attributes(configs, db_basedir = os.path.dirname(self.db_basedir))
+			else:
+				sys.exit("\n\nERROR: can't find specified database folder '{dbpath}'!\nyou may need to download and create the database with 'mdmcleaner.py download_db -o {dbpath}'".format(dbpath=self.db_basedir))
 		if not os.access(self.dbpath, os.R_OK):
-			raise PermissionError("\n\nERROR: insufficient permissions to read from db_dir: '{}'\n".format(self.dbpath))
-		assert os.path.exists(final_progress_marker),"\n\nERROR: Database creation is not complete! Please run 'mdmcleaner.py download_db -o {dbpath}' to finish it!\n"
+			sys.exit("\n\nERROR: insufficient permissions to read from db_dir: '{}'\n".format(self.dbpath))
+		if not os.path.exists(self.final_progress_marker):
+			sys.exit("\n\nERROR: Database creation is not complete! Please run 'mdmcleaner.py download_db -o {dbpath}' to finish it!\n".format(dbpath=self.dbpath))
 		for f in [self.acc2taxid_lookupfile, self.taxdbfile, self.lca_pathsfile, self.versionfile]:
-			assert os.path.exists(f), "\n\nERROR: can't find file '{}' in '{}'! Reference database is not complete! Please run 'mdmcleaner.py download_db -o {dbpath}' to finish it!\n".format(os.path.basename(f), self.dbpath)
+			assert os.path.exists(f), "\n\nERROR: can't find file '{}' in '{}'! Reference database is not complete! Please run 'mdmcleaner.py download_db -o {dbpath}' to finish it!\n".format(os.path.basename(f), self.db_basedir)
 	
 	def read_db_versions(self):
 		self.versions = {}
