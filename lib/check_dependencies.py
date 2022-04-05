@@ -124,7 +124,7 @@ def check_external_dependency(*toolnames, configs):
 		toolnames = [tool for tool in external_dependency_version_dict]
 	allisfine = True
 	for tool in toolnames:
-		sys.stderr.write("\t{}...".format(tool))
+		sys.stderr.write("\t\t{}...".format(tool))
 		isttool = version_object(get_external_dependency_version_string(tool))
 		sys.stderr.write(isttool.version_string)
 		solltool = version_object(external_dependency_version_dict[tool]["required_version"])
@@ -134,7 +134,7 @@ def check_external_dependency(*toolnames, configs):
 		else:
 			sys.stderr.write(" --> OK!\n")
 	if not allisfine:
-		sys.exit("\nERROR: Not all required dependencies for running MDMcleaner are met\n")
+		sys.exit("\n\tERROR: Not all required dependencies for running MDMcleaner are met\n")
 	sys.stderr.write("\t-->OK! All dependencies are being met!\n")
 
 # ~ for tool in external_dependency_version_dict:

@@ -1397,9 +1397,9 @@ class bindata(gdata): #meant for gathering all contig/protein/marker info
 
 def get_only_marker_seqs(args, configs):
 	for infasta in args.input_fastas:
-		genomedata = gdata(infasta, args.threads, outbasedir = args.outdir, outprefix="args.outprefix", configs=configs)
+		genomedata = gdata(infasta, configs.settings["threads"], outbasedir = args.outdir, outprefix="args.outprefix", configs=configs)
 		if args.markertype in ["rrna", "trna"]:
-			genomedata._prep_onlycontigs(args.mincontiglength, args.threads)
+			genomedata._prep_onlycontigs(args.mincontiglength, configs.settings["threads"])
 			if args.markertype == "rrna":
 				genomedata._prep_rRNAmarker()
 			elif args.markertype == "trna":
@@ -1407,19 +1407,19 @@ def get_only_marker_seqs(args, configs):
 				trna_records = genomedata.get_trna_sequences_from_contigs(trna_list)
 				SeqIO.write(trna_records, openfile(genomedata.trnafastafile, "wt"), "fasta")
 		elif args.markertype in ["totalprots", "markerprots", "all"]:
-			genomedata._prep_contigsANDtotalprots(args.mincontiglength, args.threads)
+			genomedata._prep_contigsANDtotalprots(args.mincontiglength, configs.settings["threads"])
 			if args.markertype == "all":
-				genomedata._get_all_markers(threads = args.threads, mincontiglength = args.mincontiglength)
+				genomedata._get_all_markers(threads = configs.settings["threads"], mincontiglength = args.mincontiglength)
 			elif args.markertype == "markerprots":
-				markerprotfiles, genomedata.protmarkerdictlist = get_markerprots(genomedata.totalprotsfile, hmmsearch = configs.settings["hmmsearch"], outfile_basename = os.path.join(genomedata.bin_resultfolder, genomedata.bin_tempname + "_markerprots"), cmode = "moderate", level = "all", threads = args.threads) #todo: delete hmm_intermediate_results
+				markerprotfiles, genomedata.protmarkerdictlist = get_markerprots(genomedata.totalprotsfile, hmmsearch = configs.settings["hmmsearch"], outfile_basename = os.path.join(genomedata.bin_resultfolder, genomedata.bin_tempname + "_markerprots"), cmode = "moderate", level = "all", threads = configs.settings["threads"]) #todo: delete hmm_intermediate_results
 		else:
 			raise Exception("\nERROR: markertype '{}' not implemented yet!\n".format(mtype))
 
 def get_only_trna_completeness(args, configs):
 	sys.stderr.write("genome_file\tcompleteness\n")
 	for infasta in args.input_fastas:
-		genomedata = gdata(infasta, args.threads, outbasedir = args.outdir, outprefix="args.outprefix", configs=configs)
-		genomedata._prep_onlycontigs(args.mincontiglength, args.threads)
+		genomedata = gdata(infasta, configs.settings["threads"], outbasedir = args.outdir, outprefix="args.outprefix", configs=configs)
+		genomedata._prep_onlycontigs(args.mincontiglength, configs.settings["threads"])
 		trna_list = get_trnas(genomedata.binfastafile, aragorn = configs.settings["aragorn"])
 		completeness = trna_completeness(trna_list)
 		sys.stdout.write("{}\t{:.0f}\n".format(infasta, completeness))

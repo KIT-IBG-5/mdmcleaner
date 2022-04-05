@@ -94,7 +94,11 @@ class config_object(object):
 			self.blacklist = self.read_blacklistfiles()	
 	
 	def print_settings(self):
-		pprint.pprint(self.settings)
+		sys.stderr.write("\n\tsettings:\n")
+		for key in self.settings:
+			if self.settings[key] != []:
+				sys.stderr.write("\t\t{} = '{}'\n".format(key, self.settings[key]))
+		sys.stderr.write("\n")	
 	
 	def read_configs(self, args): #todo: switch to config object instead of dictionary
 		"""
@@ -123,8 +127,8 @@ class config_object(object):
 						self.settings[tokens[0]] = tokens[1:]
 						self.settings_source[tokens[0]] = config
 					else:
-						sys.stderr.write("\nWARNING: unknown setting key \"{}\" --> ignoring it!\n".format(tokens[0]))
-		if "threads" in vars(args):
+						sys.stderr.write("\tWARNING: unknown setting key \"{}\" in config file '{}'--> ignoring it!\n".format(tokens[0], config))
+		if "threads" in vars(args) and args.threads:
 			self.settings["threads"] = args.threads
 		else:
 			self.settings["threads"] = int(self.settings["threads"][0])
@@ -154,7 +158,7 @@ def main():
 	cleansagmag_args.add_argument("--outblacklist", action="store", dest="outblacklist", default = "new_blacklist_additions.tsv", help = "Outputfile for new blacklist additions. If a preexisting file is selected, additions will be appended to end of that file")
 	cleansagmag_args.add_argument("-v", "--version", action = "version", version='%(prog)s {version}'.format(version=__version__))
 	cleansagmag_args.add_argument("-c", "--config", action = "store", dest = "configfile", default = find_local_configfile(), help = "provide a local config file with basic settings (such as the location of database-files). default: looks for config files named 'mdmcleaner.config' in current working directory. settings in the local config file will override settings in the global config file '{}'".format(os.path.join(os.path.dirname(os.path.abspath(__file__)), "mdmcleaner.config")))
-	cleansagmag_args.add_argument("-t", "--threads", action = "store", dest = "threads", type = int, default = None, help = "Number of threads to use. Can also be set in the  mdmcleaner.config file")
+	cleansagmag_args.add_argument("-t", "--threads", action = "store", dest = "threads", type = int, help = "Number of threads to use. (default = use setting from config file)")
 	cleansagmag_args.add_argument("-f", "--force", action = "store_true", dest = "force", default = False, help = "Force reclassification of pre-existing blast-results")
 	# ~ cleansagmag_args.add_argument("--blast2pass", action = "store_true", dest = "blast2pass", default = "False", help = "add a second-pass blastx blast-run for all contigs without any classification on blastp level (default: False)")
 	cleansagmag_args.add_argument("--overview_files_basename", action = "store", dest = "overview_basename", default = "overview", help = "basename for overviewfiles (default=\"overview\"")
@@ -175,13 +179,13 @@ def main():
 	get_marker_args.add_argument("-m", "--markertype", action = "store", dest = "markertype", default = "all", choices = ["rrna", "trna", "totalprots", "markerprots", "all"], help = "type of marker gene that should be extracted (default = 'all')")
 	get_marker_args.add_argument("-o", "--outdir", dest = "outdir", default = ".", help = "Output directory (will be created if it does not exist). Default = '.'")
 	get_marker_args.add_argument("-c", "--config", action = "store", dest = "configfile", default = find_local_configfile(), help = "provide a local config file with the target location to store database-files. default: looks for config files named 'mdmcleaner.config' in current working directory. settings in the local config file will override settings in the global config file '{}'".format(os.path.join(os.path.dirname(os.path.abspath(__file__)), "mdmcleaner.config")))
-	get_marker_args.add_argument("-t", "--threads", action="store", dest="threads", type = int, default = 1, help = "number of threads to use (default = 1)")
+	get_marker_args.add_argument("-t", "--threads", action="store", dest="threads", type = int, help = "number of threads to use (default = use setting from config file)")
 	get_marker_args.add_argument("-M", "--mincontiglength", action="store", dest="mincontiglength", type = int, default = 0, help = "minimum contig length (contigs shorter than this will be ignored)")	
 
 	completeness_args = subparsers.add_parser("completeness", help = "estimate completeness (roughly based on presence of universally required tRNA types). Results are printed directly to stdout")
 	completeness_args.add_argument("-i", "--input_fastas", action = "store", dest = "input_fastas", nargs = "+", help = "input fasta(s). May be gzip-compressed")
 	completeness_args.add_argument("-c", "--config", action = "store", dest = "configfile", default = find_local_configfile(), help = "provide a local config file with the target location to store database-files. default: looks for config files named 'mdmcleaner.config' in current working directory. settings in the local config file will override settings in the global config file '{}'".format(os.path.join(os.path.dirname(os.path.abspath(__file__)), "mdmcleaner.config")))
-	completeness_args.add_argument("-t", "--threads", action="store", dest="threads", type = int, default = 1, help = "number of threads to use (default = 1)")
+	completeness_args.add_argument("-t", "--threads", action="store", dest="threads", type = int, help = "number of threads to use (default = use setting from config file)")
 	completeness_args.add_argument("-M", "--mincontiglength", action="store", dest="mincontiglength", type = int, default = 0, help = "minimum contig length (contigs shorter than this will be ignored)")	
 
 	acc2taxpath = subparsers.add_parser("acc2taxpath", help = "Get full taxonomic path assorciated with a specific acession number")
@@ -191,7 +195,7 @@ def main():
 	evaluate_refdbcontam_args = subparsers.add_parser("refdb_contams", help = "EXPERIMENTAL: evaluate potentiel refDB-contaminations")
 	evaluate_refdbcontam_args.add_argument("ambiguity_report", nargs = "?", default = "./overview_refdb_ambiguities.tsv")
 	evaluate_refdbcontam_args.add_argument("-c", "--config", action = "store", dest = "configfile", default = find_local_configfile(), help = "provide a local config file with the target location to store database-files. default: looks for config files named 'mdmcleaner.config' in current working directory. settings in the local config file will override settings in the global config file '{}'".format(os.path.join(os.path.dirname(os.path.abspath(__file__)), "mdmcleaner.config")))
-	evaluate_refdbcontam_args.add_argument("-t", "--threads", action="store", dest="threads", type = int, default = 1, help = "number of threads to use (default = 1)")
+	evaluate_refdbcontam_args.add_argument("-t", "--threads", action="store", dest="threads", type = int, help = "number of threads to use (default = use setting from config file)")
 	evaluate_refdbcontam_args.add_argument("-o", "--outblacklist", action="store", dest="outblacklist", default = "new_blacklist_additions.tsv", help = "Outputfile for new blacklist additions. If a preexisting file is selected, additions will be appended to end of that file")
 	# ~ evaluate_refdbcontam_args.add_argument("--tempbasename", action="store", dest="tempbasename", default = "mdmtempfile", help = "basename for temporary files (default = 'mdmtempfile'")
 	
@@ -235,7 +239,7 @@ def main():
 			configs = config_object(args, read_blacklist = True)
 		else:
 			configs = config_object(args)
-		configs.print_settings
+		configs.print_settings()
 
 
 	# ~ import pdb; pdb.set_trace()

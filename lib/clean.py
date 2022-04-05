@@ -56,7 +56,6 @@ def main(args, configs):
 	
 	
 	progressdump = check_progressdump(args.output_folder, args.input_fastas) #todo: this is meant to implement a "major-progressdump", consisting of multiple "mini-progressdumps" (one for each input-fasta). for each input-fasta, it should list the current progress-state [None = not started yet, stepxx = currently unfinished, "Finished" = finished]
-	
 	db = getdb.taxdb(configs)
 	errorlistfile = openfile(args.overview_basename + "_errorlist.txt", "wt")
 

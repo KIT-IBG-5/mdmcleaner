@@ -210,7 +210,6 @@ class taxdb(object):
 			assert os.path.exists(f), "\n\nERROR: can't find file '{}' in '{}'! Reference database is not complete! Please run 'mdmcleaner.py download_db -o {dbpath}' to finish it!\n".format(os.path.basename(f), self.dbpath)
 	
 	def read_db_versions(self):
-		import pprint
 		self.versions = {}
 		with misc.openfile(self.versionfile) as infile:
 			for line in infile:
@@ -220,7 +219,13 @@ class taxdb(object):
 				db = tokens[0].strip()
 				version = tokens[1].strip()
 				self.versions[db] = version			
-		sys.stderr.write("\n\nDatabase versions:\n" + pprint.pformat(self.versions)+ "\n\n")
+		self.print_db_versions()
+	
+	def print_db_versions(self):
+		sys.stderr.write("\n\tDatabase versions:\n")
+		for db in self.versions:
+			sys.stderr.write("\t\t{} = {}\n".format(db, self.versions[db]))
+		sys.stderr.write("\n")	
 		
 	def read_lca_paths(self, lca_pathsfile):
 		infile = misc.openfile(lca_pathsfile)
