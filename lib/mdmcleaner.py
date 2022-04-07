@@ -100,7 +100,7 @@ class config_object(object):
 				sys.stderr.write("\t\t{} = '{}'\n".format(key, self.settings[key]))
 		sys.stderr.write("\n")	
 	
-	def read_configs(self, args): #todo: switch to config object instead of dictionary
+	def read_configs(self, args):
 		"""
 		Reads the config files in hierarchical order (first global, then local), with the later configs always overriding the previous in case of conflicts
 		Config files must be tab-seperated text files (may be compressed though), with setting names in the first column, and the corresponding setting value(s) in subsequent columns.
@@ -288,7 +288,10 @@ def main():
 				conf.settings[a] = [arg_settings[a]]
 		for c in conf.settings:
 			if c in conf.config_file_setting_keys and conf.settings[c]:
-				outfile.write("{}\t{}\n".format(c, conf.settings[c][0]))
+				if isinstance(conf.settings[c], list): #todo: this if statement is only necessary because of converting thread-entries to ints instead of lists. not sure why i did that. --> change it back to consistently sava all settings as lists, if possible
+					outfile.write("{}\t{}\n".format(c, conf.settings[c][0]))
+				else:
+					outfile.write("{}\t{}\n".format(c, conf.settings[c]))
 		outfile.close()
 		sys.stderr.write("wrote settings to 'mdmcleaner.config'\n")
 	
