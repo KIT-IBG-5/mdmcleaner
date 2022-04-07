@@ -169,8 +169,9 @@ def main():
 
 
 	makedb_args = subparsers.add_parser("makedb", help = "Download and create MDMcleaner database")
-	makedb_args.add_argument("-o", "--outdir", action = "store", dest = "outdir", default = None, help = "target base directory for reference-data. may not be the current working directory. Needs >100GB space! Default = './db/gtdb'")
+	makedb_args.add_argument("-o", "--outdir", action = "store", dest = "outdir", default = None, help = "target base directory for reference-data. may not be the current working directory. Needs >100GB space! Default = './db' (if downloading publication-dataset or if not already specified in config file)")
 	makedb_args.add_argument("-c", "--config", action = "store", dest = "configfile", default = find_local_configfile(), help = "provide a local config file with the target location to store database-files. default: looks for config files named 'mdmcleaner.config' in current working directory. settings in the local config file will override settings in the global config file '{}'".format(os.path.join(os.path.dirname(os.path.abspath(__file__)), "mdmcleaner.config")))
+	makedb_args.add_argument("--get_pub_data", action = "store_true", dest = "get_pub_data", default = False, help = "simply download the reference dataset from the MDMcleaner publication from zenodo (WARNING: this is outdated and therefore NOT optimal! Only meant for testing/verification purposes)")
 	makedb_args.add_argument("--verbose", action = "store_true", dest = "verbose", default = False, help = "verbose output (download progress etc)") #todo: finish implementing
 	makedb_args.add_argument("--quiet", action = "store_true", dest = "quiet", default = False, help = "quiet mode (suppress any status messages except Errors and Warnings)") #todo: implement
 	
@@ -254,10 +255,13 @@ def main():
 	if args.command == "makedb":
 		import read_gtdb_taxonomy
 		if args.outdir == None:
-			assert "db_basedir" in configs.settings, ("\n\nERROR: either 'outdir' must be specified as argument or 'db_basedir' needs to be specified in config file!\n\n")
-			args.outdir = os.path.join(configs.settings["db_basedir"][0], configs.settings["db_type"][0])
-		else:
-			args.outdir = os.path.join(args.outdir, configs.settings["db_type"][0])
+			if args.get_pub_data:
+				args.outdir = "./db"
+			else:
+				assert "db_basedir" in configs.settings, ("\n\nERROR: either 'outdir' must be specified as argument or 'db_basedir' needs to be specified in config file!\n\n")
+				args.outdir = os.path.join(configs.settings["db_basedir"][0], configs.settings["db_type"][0]) # todo: read_gtdb_taxonomy should only get basedir as target-dir and simply assume the gtdb part!
+		elif not args.get_pub_data:
+			args.outdir = os.path.join(args.outdir, configs.settings["db_type"][0]) # todo: read_gtdb_taxonomy should only get basedir as target-dir and simply assume the gtdb part!
 		check_dependencies.check_dependencies("makeblastdb", "diamond", "wget", configs=configs)
 		read_gtdb_taxonomy.main(args, configs)
 		

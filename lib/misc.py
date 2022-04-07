@@ -59,7 +59,7 @@ def unixzcat(*infilelist, outfilename): #my guess is, that this is probably much
 def untar(infilename, targetdir=".", filemode = None, removetar = False, verbose=False): #todo: make sure calling function passes verbose variable
 	""" a convenience function for unpacking compressed and ancompressed tar files.
 	accepts a filename(required) and an optional filemode (default = None) argument.
-	filemode may be any of ["r:", "r:gz", None ]. If filemode == None, it will try to determine filemode based on filename-extension
+	filemode may be any of ["r:", "r:gz", "r:bz2", None ]. If filemode == None, it will try to determine filemode based on filename-extension
 	".tar" = uncompressed tar --> filemode = "r:", ".tar.gz" = compressed tar --> filemode "r:gz"
 	unpacks tar to targetdir and returns a list of unpacked filenames
 	"""
@@ -73,12 +73,14 @@ def untar(infilename, targetdir=".", filemode = None, removetar = False, verbose
 				sys.stderr.flush()
 			yield filelist[f]
 		
-	assert filemode in ["r:", "r:gz", None], "\nERROR: filemode not allowed : '{}'\n".format(filemode)
+	assert filemode in ["r:", "r:gz", "r:bz2", None], "\nERROR: filemode not allowed : '{}'\n".format(filemode)
 	sys.stderr.write("\tassessing contents of '{}'\n".format(infilename))
 	sys.stderr.flush() 
 	if filemode == None:
 		if infilename.endswith(".tar.gz"):
 			filemode = "r:gz"
+		elif infilename.endswith(".tar.bz2"):
+			filemode = "r:bz2"
 		elif infilename.endswith(".tar"):
 			filemode = "r:"
 		else:
@@ -137,6 +139,26 @@ def run_multiple_functions_parallel(jobtuple_list, total_threads): #jobtuple_lis
 	jobpool.join()
 	return outfile_list
 	
+def check_md5file(md5file):
+	'''
+	assumes filenames/paths in md5file are relative to location of md5file
+	Returns a dictionary with filenames as keys and the expected and actual file-hashes as values as well as a bollean indicating a match (True) or mismatch (False)
+	'''
+	md5location = os.path.dirname(md5file)
+	filecheckdict
+	allfine = True
+	with openfile(md5file) as infile:
+		for line in infile:
+			tokens=line.strip().split("\t")
+			if len(tokens!=2):
+				continue
+			expected_md5 = tokens[0]
+			filename = os.path.join(md5location, tokens[1])
+			filehash = calculate_md5hash(filename)
+			doesmatch = filehash == expected_md5
+			filecheckdict[filename] = {"expected_hash" : expected_md5, "actual_hash" : filehash, "ok" : doesmatch}
+	return filecheckdict
+
 def calculate_md5hash(infile):
 	"""
 	calculate md5-hash of a file

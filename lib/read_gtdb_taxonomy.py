@@ -4,49 +4,9 @@ import re
 #todo: rename progress files to progess_getgtdb_..... (create own type of progressfile for different sections of pipeline, because download of dbs is only done once (and differently for gtdb and ncbi) but lca etc is done again and again for each analysis
 #todo: add a check for the correct wget version (1.19+) by calling "wget --version"
 #todo: in order to reduce protein-db size: cluster each protein based on 99% identity within each genome, to reduce paralogs. keep only longest copy per genome
-"""
-suggestion 1 for eukaryote part of taxtree:
-virus: domain=Viruses
-fungi: domain=Eukaryota; kingdom (between)= fungi;
-vertebrates: domain=Eukaryota; kingdom (between)=Metazoa; phylum=Chordata
-invertevrates: domain=Eukaryota; kingdom (between)=Metazoa
-plants: domain=Eukaryota; kingdom (between)= viridiplantae ??, 
-protozoa: domain=Eukaryota, kindom (netween) = "wt"f???
 
-suggestion 2 for eukaryote part of taxtree:
-virus: domain=Viruses
-fungi: domain=Eukaryota; euk_category (eukcat)= fungi;
-vertebrates: domain=Eukaryota; euk_category (eukcat)= vertebrates;
-invertevrates: domain=Eukaryota; euk_category (eukcat)=invertebrates
-plants: domain=Eukaryota; euk_category (eukcat) = plants
-protozoa: domain=Eukaryota; euk_category (eukcat) = protozoa
-
-
-basic structure of lca dicts
-taxdict[taxid] = { "parent" : parent, \
-					"rank" : rank, \
-					"taxname" : taxname }
-LCA_walktree[taxid] = { "level" : level, \
-						"children" : [] } 
-						
-						
-currently downloading the somewhat arbitrary subsets "fungi", "invertebrate", "plant" "protozoa", vertebrate_mammalian, vertebrate_other and viral from the ftp refseq RELEASE folder (btw: what about "red algae" where are they?)
-the folder structure there may well change in the foreseeable future, so i should keep an eye on that
-the more constant alternative would be to download all "Known" eukaryote entires from refseq usint entrez. BUT this is highly inefficient/slow (partially also because it downloads uncompressed fastas)
-Another (but more work intensive) posibility could be to download all protein files from the "complete" refseq release subfolder and filter only the eukaryotic and viral sequences from there.
-So rstri seemed the most efficient compromise for the time being.	
-
-notes for downloading SILVA: 
-The database releases are structured into two datasets for each gene: SILVA Parc and SILVA Ref. The Parc datasets comprise the entire SILVA databases for the respective gene, whereas the Ref datasets represent a subset of the Parc comprising only high-quality nearly full-length sequences.				
---> Download REF datasets, not Parc!
---> Download the NR (nonredundant) versions of each dataset!
- https://www.arb-silva.de/fileadmin/silva_databases/current/Exports/SILVA_138.1_LSURef_NR99_tax_silva.fasta.gz (65 Mb)
- https://www.arb-silva.de/fileadmin/silva_databases/current/Exports/SILVA_138.1_SSURef_NR99_tax_silva.fasta.gz (189 Mb)
---> Download taxonomy here:
-	https://www.arb-silva.de/fileadmin/silva_databases/current/Exports/taxonomy/taxmap_slv_lsu_ref_nr_138.1.txt.gz
-	https://www.arb-silva.de/fileadmin/silva_databases/current/Exports/taxonomy/taxmap_slv_ssu_ref_nr_138.1.txt.gz
-	
-"""
+zenodo_publication_db = "https://zenodo.org/record/5698995/files/MDMcleanerDB.tar.bz2"
+zenodo_publication_db_md5 = "b3862577d25000805cc5830f0b1d50e3"
 
 ncbi_ftp_server = "ftp://ftp.ncbi.nlm.nih.gov"
 ftp_adress_refseqrelease = "{}/refseq/release".format(ncbi_ftp_server) #when using ftp lib, ncbi_ftp_server adress needs to be seperate from actual subfolder path. when using wget, both should be supplied as one path/url. using the wget way here 
@@ -1118,8 +1078,37 @@ def cleanupwhenfinished(progressdump, targetdir, verbose=False):
 	os.remove(os.path.join(targetdir,lastprogressmarker))
 #todo: DROP download of ncbi2gtdb and vice versa mapping files will not use them anyway!
 
+def get_publication_set(args, configs):
+	import misc
+	sys.stderr.write("\nDownloading publicaton reference-dataset from Zenodo (Warning: this is definitively NOT the most recent reference dataset!)\n")
+	sys.stderr.flush()
+	if args.outdir == None:
+		args.outdir = "./db"
+	if os.path.exists(os.path.join(args.outdir,"gtdb")):
+		sys.exit("\ntargetfolder already exists: '{}'. will not overwrite! Please delete it if you want to use this destination, or choose another target-folder!\n")
+	tarfile = os.path.join(args.outdir, os.path.basename(zenodo_publication_db))
+	_download_unixwget(zenodo_publication_db, pattern=None, targetdir=args.outdir, verbose=False)
+	tar_hash = misc.calculate_md5hash(tarfile)
+	if zenodo_publication_db_md5 != tar_hash:
+		sys.exit("\nERROR during download: md5hash of downloaded tar ({}) does not match hash of zenodo link ({})\n".format(tar_hash, zenodo_publication_db_md5))
+	sys.stderr.write("unacking tar file")
+	sys.stderr.flush()
+	tar_contents = misc.untar(tarfile, targetdir=args.outdir, removetar = True)
+	checksumdict = misc.check_md5file(os.path.join(args.outdir, "gtdb", "md5sum.txt"))
+	if False in [ checksumdict[x]["ok"] for x in checksumdict ]:
+		sys.stderr.write("\nERROR: following files had mismatching md5-hashes: {}\n--> PLEASE DELETE AND TRY AGAIN!\n".format("\n\t-".join([ checksumdict[x] for x in checksumdict if checksumdict[x]["ok"] == False])))
+	sys.stderr.write("\npublication-reference dataset successfully downloaded! To use it as a reference dataset for mdmcleaner runs, specify it in a (local) mdmcleaner.config file via the following command:\n"
+	                  "mdmcleaner.py set_configs --db_basedir {}\n".format(os.path.abspath(args.outdir)))
+	
+	
+	
+	
+
 def main(args, configs): #todo: make option to read targetdir from configfile or to WRITE targetdir to configfile when finished
-	getNprepare_dbdata_nonncbi(args.outdir, verbose=args.verbose, settings=configs.settings)
+	if args.get_pub_data:
+		get_publication_set(args, configs)
+	else:
+		getNprepare_dbdata_nonncbi(args.outdir, verbose=args.verbose, settings=configs.settings)
 
 # ~ if __name__ == '__main__':
 	# ~ import argparse
