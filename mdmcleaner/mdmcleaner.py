@@ -341,6 +341,8 @@ def main():
 		blacklist_additions = review_refdbcontams.read_ambiguity_report(args.ambiguity_report, configs)
 		print("\n------> writing {} blacklist additions to {}".format(len(blacklist_additions), args.outblacklist))
 		write_blacklist(blacklist_additions, args.outblacklist)
-main()
+
+if __name__ == '__main__':
+	main()
 
 			

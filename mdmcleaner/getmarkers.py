@@ -1416,40 +1416,15 @@ def get_only_marker_seqs(args, configs):
 			raise Exception("\nERROR: markertype '{}' not implemented yet!\n".format(mtype))
 
 def get_only_trna_completeness(args, configs):
-	sys.stderr.write("genome_file\tcompleteness\n")
+
+	outdict = {}
 	for infasta in args.input_fastas:
 		genomedata = gdata(infasta, configs.settings["threads"], outbasedir = args.outdir, outprefix="args.outprefix", configs=configs)
 		genomedata._prep_onlycontigs(args.mincontiglength, configs.settings["threads"])
 		trna_list = get_trnas(genomedata.binfastafile, aragorn = configs.settings["aragorn"])
 		completeness = trna_completeness(trna_list)
-		sys.stdout.write("{}\t{:.0f}\n".format(infasta, completeness))
-######################################################
+		outdict[infasta] = completeness
+	sys.stdout.write("genome_file\tcompleteness\n")
+	for key in outdict:
+		sys.stdout.write("{}\t{:.0f}\n".format(key, outdict[key]))
 
-
-# ~ def main():
-	# ~ import argparse
-	# ~ myparser = argparse.ArgumentParser(prog=os.path.basename(sys.argv[0]), description= "extracts markers from input-fastas")
-	# ~ subparsers = myparser.add_subparsers(dest = "command")
-	# ~ get_trna_args = subparsers.add_parser("get_trnas", help = "extracts trna sequences using Aragorn")
-	# ~ get_trna_args.add_argument("infastas", nargs = "+", help = "input fasta(s). May be gzip-compressed")
-	# ~ get_trna_args.add_argument("--outdir", dest = "outdir", default = ".", help = "Output directory for temporary files, etc. Default = '.'")
-	# ~ get_trna_args.add_argument("-b", "--binary", default = "binary", help = "aragorn executable (with path if not in PATH). Default= assume aragorn is in PATH")
-	# ~ get_trna_args.add_argument("-t", "--threads", default = 1, type = int, help = "number of parallel threads. Is only used when multiple input files are passed")
-	# ~ get_rrnas_args = subparsers.add_parser("get_rrnas", help = "extract_rRNA sequences using barrnap")
-	# ~ get_rrnas_args.add_argument("infasta", help = "input fasta. May be gzip-compressed")
-	# ~ get_rrnas_args.add_argument("-o", "--outbasename", action="store", dest="outfilebasename", default = "rRNA_barrnap", help = "basename of output files (default = 'rRNA_barrnap')")
-	# ~ get_rrnas_args.add_argument("-t", "--threads", action="store", dest="threads", type = int, default = 1, help = "number of threads to use (default = 1)")
-	# ~ get_rrnas_args.add_argument("-b", "--binary", action="store", dest="barrnap", default = "barrnap", help = "path to barrnap binaries (if not in PATH)")
-	# ~ get_rrnas_args.add_argument("--outdir", dest = "outdir", default = ".", help = "Output directory for temporary files, etc. Default = '.'")
-	# ~ args = myparser.parse_args()
-	
-	# ~ if args.command == "get_trnas":
-		# ~ sys.stderr.write("extracting tRNAs:\n")
-		# ~ print(get_trnas(*args.infastas, outdirectory = args.outdir, aragorn = args.binary, threads = args.threads)) # todo: make a dedicated standalone funtion with a mini_bindata-object (inherited from bindata)
-	# ~ elif args.command == "get_rrnas":
-		# ~ sys.stderr.write("extracting rRNA genes:\n")
-		# ~ rRNA_fasta_dict, rrnamarkerdict = runbarrnap_all(infasta=args.infasta, outfilebasename=args.outfilebasename, barrnap=args.barrnap, output_directory = args.outdir, threads=args.threads)	
-		# ~ sys.stderr.write("created the following output-files:\n{}\n\n".format(",\n".join(list(rRNA_fasta_dict.values()))))
-
-# ~ if __name__ == '__main__':
-	# ~ main()
