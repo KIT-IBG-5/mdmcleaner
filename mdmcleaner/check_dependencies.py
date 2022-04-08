@@ -89,10 +89,10 @@ def get_external_dependency_version_string(toolname):
 				return versionhit.group(1)
 			loopcounter += 1
 	except FileNotFoundError:
-		sys.stderr.write("\n\tCould not find '{}'!\n".format(toolname))
+		sys.stderr.write("Could not find '{}'!".format(toolname))
 		return None
 	except OSError:
-		sys.stderr.write("\n\tCould not execute '{}' for dependency: '{}'!\n".format(cmd[0], toolname))
+		sys.stderr.write("Could not execute '{}' for dependency: '{}'!".format(cmd[0], toolname))
 		return None	
 
 def get_python_module_version(modulename):

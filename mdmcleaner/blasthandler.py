@@ -1043,7 +1043,7 @@ def test_multiblastjobs():
 	tool = "blastp"
 	jobtuplelist = []
 	for query in query_list:
-		jobtuplelist.append(("blasthandler", "_run_any_blast", {"query":query, "db":db, "path_appl": tool, "outname":"{}_{}_vs_{}.tab.tmp".format(tool, os.path.basename(query), os.path.basename(db))}))
+		jobtuplelist.append((".blasthandler", "_run_any_blast", {"query":query, "db":db, "path_appl": tool, "outname":"{}_{}_vs_{}.tab.tmp".format(tool, os.path.basename(query), os.path.basename(db))}))
 	run_multiple_functions_parallel(jobtuplelist, 8)
 	
 def main():

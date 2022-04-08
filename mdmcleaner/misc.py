@@ -101,8 +101,11 @@ def untar(infilename, targetdir=".", filemode = None, removetar = False, verbose
 	return [ os.path.join(targetdir, f.name) for f in contentlist ] #todo: add check if file or dir
 
 def _run_any_function(modulename, functionname, arg_dict, threads=1):
-	module = __import__(modulename)
+	import importlib
+	# ~ sys.stderr.write("\nimporting lib '{}'; function '{}'\n".format(modulename, functionname))
+	module = importlib.import_module(modulename, "mdmcleaner")
 	function = getattr(module, functionname)
+	# ~ sys.stderr.write("\n" + str(function) + "\n")
 	return function(**arg_dict, threads=threads) #all functions meant for multiprocessing must accept a threads argument (even if they are not really multiprocessing enabled!) and output an outputfilename
 
 def run_multiple_functions_parallel(jobtuple_list, total_threads): #jobtuple_list should be a list of tuples with the following [(module1, function1, {kwargs.dict1}), (module2, function2, {kwargs.dict1}),...] 

@@ -1,1 +1,4 @@
-include hmms/*
+graft mdmcleaner/hmms
+include hmms/cutofftable_combined.tsv
+include mdmcleaner/mdmcleaner.config
+include mdmcleaner/blacklist.list

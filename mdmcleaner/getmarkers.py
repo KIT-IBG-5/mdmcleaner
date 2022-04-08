@@ -30,7 +30,7 @@ import re
 #currently the marker-hmms only encompass universal SINGLE-COPY genes. It would be interesting to include the multicopy-universal genes as well! --> parse the COG-database for this...?
 
 libpath = os.path.dirname(os.path.realpath(__file__))
-hmmpath = os.path.realpath(os.path.join(libpath, "../hmms/"))
+hmmpath = os.path.realpath(os.path.join(libpath, "hmms/"))
 hmmpath_prok = os.path.realpath(os.path.join(hmmpath, "prok/"))
 hmmpath_bact = os.path.realpath(os.path.join(hmmpath, "bact/"))
 hmmpath_arch = os.path.realpath(os.path.join(hmmpath, "arch/"))
@@ -161,7 +161,7 @@ def get_trnas(*subfastas, outdirectory = ".", aragorn = "aragorn", threads = 1):
 			misc.unixzcat(subfastas[i], outfilename=tempfilename)
 			subfastas[i] = tempfilename
 			tempfilelist.append(tempfilename)
-	commandlist = [("getmarkers", "_get_trnas_single", {"infasta" : subfasta, "aragorn" : aragorn}) for subfasta in subfastas]
+	commandlist = [(".getmarkers", "_get_trnas_single", {"infasta" : subfasta, "aragorn" : aragorn}) for subfasta in subfastas]
 	outstringlistlist =misc.run_multiple_functions_parallel(commandlist, threads)
 	sys.stdout.flush()
 	sys.stderr.flush()
@@ -245,7 +245,7 @@ def runbarrnap_all(infasta, outfilebasename, barrnap="barrnap", output_directory
 	sys.stderr.write("\n-->scanning for rRNA genes...\n")
 	joblist = []
 	for kingdom in ["bac", "arc", "euk"]:
-		joblist.append(("getmarkers", "runbarrnap_single", {"infasta" : infasta, "barrnap" : barrnap, "kingdom" : kingdom, "output_directory" : output_directory }))
+		joblist.append((".getmarkers", "runbarrnap_single", {"infasta" : infasta, "barrnap" : barrnap, "kingdom" : kingdom, "output_directory" : output_directory }))
 	outputlist = misc.run_multiple_functions_parallel(joblist, threads)
 	tempfasta_list = [op[0] for op in outputlist]
 	gff_outputlist = [ op[1] for op in outputlist]
@@ -707,7 +707,7 @@ class gdata(object): #meant for gathering all contig/protein/marker info
 	
 	def _prep_contigsANDtotalprots(self, mincontiglength, threads):
 		subfastas, self.contigdict = split_fasta_for_parallelruns(self.binfastafile, minlength = mincontiglength, number_of_fractions = threads)
-		commandlist = [("getmarkers", "runprodigal", {"infasta" : subfastas[i], "prodigal" : self.configs.settings["prodigal"], "outfilename" : os.path.join(self.bin_resultfolder, "tempfile_{}_prodigal_{}.faa".format(self.bin_tempname, i)) }) for i in range(len(subfastas))]
+		commandlist = [(".getmarkers", "runprodigal", {"infasta" : subfastas[i], "prodigal" : self.configs.settings["prodigal"], "outfilename" : os.path.join(self.bin_resultfolder, "tempfile_{}_prodigal_{}.faa".format(self.bin_tempname, i)) }) for i in range(len(subfastas))]
 		tempprotfiles = misc.run_multiple_functions_parallel(commandlist, threads)
 		# ~ tempdict = get_trnas(subfastas, threads=threads) #todo: aragorn does not accept input from stdin. find a solution for mutiprocessing later!
 		# ~ self.trnadict = { trna[0]: contig for trna in tempdict[contig] for contig in tempdict} 
