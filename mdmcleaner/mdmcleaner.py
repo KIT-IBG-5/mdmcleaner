@@ -246,7 +246,7 @@ def main():
 	# ~ import pdb; pdb.set_trace()
 	if args.command == "clean":
 		from mdmcleaner import clean
-		check_dependencies.check_dependencies(configs=configs)
+		check_dependencies.check_dependencies("blastp", "blastn", "diamond", "aragorn", "barrnap", "hmmsearch", configs=configs)
 		blacklist_additions = clean.main(args, configs)
 		if not args.fast_run and blacklist_additions != None:
 			print("\n------> writing {} blacklist additions to {}".format(len(blacklist_additions), args.outblacklist))
@@ -267,9 +267,11 @@ def main():
 		
 	if args.command == "get_markers":
 		from mdmcleaner import getmarkers
+		check_dependencies.check_dependencies("aragorn", "barrnap", "hmmsearch", configs=configs)
 		getmarkers.get_only_marker_seqs(args, configs)
 	
 	if args.command == "completeness":
+		check_dependencies.check_dependencies("aragorn", "barrnap", configs=configs)
 		from mdmcleaner import getmarkers
 		args.outdir = None
 		getmarkers.get_only_trna_completeness(args, configs)
