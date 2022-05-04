@@ -67,9 +67,9 @@ def main(args, configs):
 		try:
 			
 			############### getting markers
-			bindata = getmarkers.bindata(contigfile=infasta, configs = configs)
+			bindata = getmarkers.bindata(contigfile=infasta, outbasedir=args.output_folder, configs = configs)
 			nucblastjsonfilename = os.path.join(bindata.bin_resultfolder, "nucblasts.json.gz")
-			protblastjsonfilename = os.path.join(bindata.bin_resultfolder, "protblasts.json") #todo: why is this not compressed? Fix!
+			protblastjsonfilename = os.path.join(bindata.bin_resultfolder, "protblasts.json.gz")
 
 			############### getting blast data for markers
 			##### first protein blasts

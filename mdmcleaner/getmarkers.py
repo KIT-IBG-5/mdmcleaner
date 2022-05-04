@@ -880,9 +880,7 @@ class bindata(gdata): #meant for gathering all contig/protein/marker info
 		# ~ sys.stdout.flush()
 
 	def add_lca2markerdict(self, blastdata, db, contig=None, verbose=True): #todo: add multithreading!!!
-		# ~ import time
 		from mdmcleaner import lca
-		# ~ start=time.time()
 		counter = 0
 		for gene, hittuples in blastdata.get_best_hits_per_gene(contig=contig):
 			counter += 1
@@ -891,8 +889,6 @@ class bindata(gdata): #meant for gathering all contig/protein/marker info
 			self.markerdict[gene]["tax"] = lca.strict_lca(db, gene, hittuples)
 		if verbose:		
 			sys.stderr.write("\r\tfinished classifying {} records!\t\t\n".format(counter))
-		# ~ stop = time.time()
-		# ~ print("total lca time was : {}".format(stop -start))
 		sys.stdout.flush()
 		
 	
