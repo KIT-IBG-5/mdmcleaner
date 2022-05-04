@@ -11,6 +11,8 @@ import pprint
 
 
 setting_keys = ["blacklistfile","blastp", "blastn", "blastdbcmd", "diamond", "barrnap", "rnammer", "hmmsearch", "aragorn", "prodigal", "db_basedir","db_type", "blastdb_diamond", "blastdb_blastp", "blastdb_blastn", "threads"] # todo: complete this list 
+MDMCLEANER_LIBPATH = os.path.dirname(os.path.realpath(misc.__file__))
+
 from mdmcleaner._version import __version__
 
 def write_blacklist(blacklist, outfilename):
@@ -19,10 +21,9 @@ def write_blacklist(blacklist, outfilename):
 			outfile.write("{}\n".format(b))
 
 def find_global_configfile():
-	moduledir = os.path.dirname(os.path.realpath(__file__))
-	if os.path.exists(os.path.join(moduledir, "mdmcleaner.config")) and os.path.isfile(os.path.join(moduledir, "mdmcleaner.config")):
-		return os.path.join(moduledir, "mdmcleaner.config")
-	sys.exit("\nError: a \"mdmcleaner.config\" file should exist under {}, but doesnt!\n".format(moduledir))
+	if os.path.exists(os.path.join(MDMCLEANER_LIBPATH, "mdmcleaner.config")) and os.path.isfile(os.path.join(MDMCLEANER_LIBPATH, "mdmcleaner.config")):
+		return os.path.join(MDMCLEANER_LIBPATH, "mdmcleaner.config")
+	sys.exit("\nError: a \"mdmcleaner.config\" file should exist under {}, but doesnt!\n".format(MDMCLEANER_LIBPATH))
 
 def find_local_configfile():
 	cwd = os.getcwd()
@@ -112,7 +113,7 @@ class config_object(object):
 		if "ignore_default_blacklist" in vars(args) and args.ignore_default_blacklist == True:
 			self.settings_source["blacklistfile"] = None
 		else:
-			self.mdmcleaner_lib_path = os.path.dirname(os.path.realpath(__file__))
+			self.mdmcleaner_lib_path = MDMCLEANER_LIBPATH
 			default_blacklist = os.path.join(self.mdmcleaner_lib_path, "blacklist.list")
 			self.settings["blacklistfile"].append(default_blacklist)
 			self.settings_source["blacklistfile"] = "default"
