@@ -28,6 +28,12 @@ testfiles/
 hmms/prok/cog/models/
 hmms/prok/cog/raw_prots/
 hmms/prok/cog/alignments/
+
+#pypi, wheel and egg stuff
+dist/
+build/
+mdmcleaner.egg-info/
+
 #pychache stuff
 __pycache__/
 *.py[cod]
