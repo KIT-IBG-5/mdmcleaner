@@ -30,42 +30,6 @@ def find_local_configfile():
 	if os.path.exists(os.path.join(cwd, "mdmcleaner.config")) and os.path.isfile(os.path.join(cwd, "mdmcleaner.config")):
 		return os.path.join(cwd, "mdmcleaner.config")
 
-# ~ def read_configs(configfilelist, args): #todo: switch to config object instead of dictionary
-	# ~ """
-	# ~ Reads the config files in hierarchical order (first global, then local), with the later configs always overriding the previous in case of conflicts
-	# ~ Config files must be tab-seperated text files (may be compressed though), with setting names in the first column, and the corresponding setting value(s) in subsequent columns.
-	# ~ Setting values are always read as lists
-	# ~ Unknown setting names will just be ignored. However, comments should optimally be marked with "#"
-	# ~ """
-	# ~ import os
-	# ~ settings, settings_source = {}, {}
-	# ~ settings["blacklistfile"] = []
-	# ~ if "ignore_default_blacklist" in vars(args) and args.ignore_default_blacklist == True:
-		# ~ settings_source["blacklistfile"] = None
-	# ~ else:
-		# ~ mdmcleaner_lib_path = os.path.dirname(os.path.realpath(__file__))
-		# ~ default_blacklist = os.path.join(mdmcleaner_lib_path, "blacklist.list")
-		# ~ settings["blacklistfile"].append(default_blacklist)
-		# ~ settings_source["blacklistfile"] = "default"
-	# ~ for config in configfilelist: #todo: maybe instead of replacing blacklist with that in config-file, just append it to the list of blacklists?
-		# ~ sys.stderr.write("\nreading settings from configfile: \"{}\"\n".format(config))
-		# ~ with openfile(config) as configfile:
-			# ~ for line in configfile:
-				# ~ tokens = line.strip().split("#",1)[0].strip().split()
-				# ~ if len(tokens) <= 1:
-					# ~ continue
-				# ~ if tokens[0] in setting_keys:
-					# ~ settings[tokens[0]] = tokens[1:]
-					# ~ settings_source[tokens[0]] = config
-				# ~ else:
-					# ~ sys.stderr.write("\nWARNING: unknown setting key \"{}\" --> ignoring it!\n")
-	# ~ if "threads" in vars(args):
-		# ~ settings["threads"] = args.threads
-	# ~ else:
-		# ~ settings["threads"] = int(settings["threads"][0])
-	# ~ if "blacklistfile" in vars(args) and args.blacklistfile != None:
-		# ~ settings["blacklistfile"].append(args.blacklistfile)
-	# ~ return settings, settings_source
 
 class config_object(object):
 	execs = {	"blastpath" : ["blastn", "blastp", "makeblastdb", "blastdbcmd"],\
@@ -177,7 +141,7 @@ def main():
 	makedb_args.add_argument("--quiet", action = "store_true", dest = "quiet", default = False, help = "quiet mode (suppress any status messages except Errors and Warnings)") #todo: implement
 	
 	get_marker_args = subparsers.add_parser("get_markers", help = "extracts protein coding and/or rRNA gene sequences from input genome(s)")
-	get_marker_args.add_argument("-i", "--input_fastas", action = "store", dest = "input_fastas", nargs = "+", help = "input fasta(s). May be gzip-compressed")
+	get_marker_args.add_argument("-i", "--input_fastas", action = "store", dest = "input_fastas", nargs = "+", required = True, help = "input fasta(s). May be gzip-compressed")
 	get_marker_args.add_argument("-m", "--markertype", action = "store", dest = "markertype", default = "all", choices = ["rrna", "trna", "totalprots", "markerprots", "all"], help = "type of marker gene that should be extracted (default = 'all')")
 	get_marker_args.add_argument("-o", "--outdir", dest = "outdir", default = ".", help = "Output directory (will be created if it does not exist). Default = '.'")
 	get_marker_args.add_argument("-c", "--config", action = "store", dest = "configfile", default = find_local_configfile(), help = "provide a local config file with the target location to store database-files. default: looks for config files named 'mdmcleaner.config' in current working directory. settings in the local config file will override settings in the global config file '{}'".format(os.path.join(os.path.dirname(os.path.abspath(__file__)), "mdmcleaner.config")))
@@ -185,7 +149,7 @@ def main():
 	get_marker_args.add_argument("-M", "--mincontiglength", action="store", dest="mincontiglength", type = int, default = 0, help = "minimum contig length (contigs shorter than this will be ignored)")	
 
 	completeness_args = subparsers.add_parser("completeness", help = "estimate completeness (roughly based on presence of universally required tRNA types). Results are printed directly to stdout")
-	completeness_args.add_argument("-i", "--input_fastas", action = "store", dest = "input_fastas", nargs = "+", help = "input fasta(s). May be gzip-compressed")
+	completeness_args.add_argument("-i", "--input_fastas", action = "store", dest = "input_fastas", nargs = "+", required = True, help = "input fasta(s). May be gzip-compressed")
 	completeness_args.add_argument("-c", "--config", action = "store", dest = "configfile", default = find_local_configfile(), help = "provide a local config file with the target location to store database-files. default: looks for config files named 'mdmcleaner.config' in current working directory. settings in the local config file will override settings in the global config file '{}'".format(os.path.join(os.path.dirname(os.path.abspath(__file__)), "mdmcleaner.config")))
 	completeness_args.add_argument("-t", "--threads", action="store", dest="threads", type = int, help = "number of threads to use (default = use setting from config file)")
 	completeness_args.add_argument("-M", "--mincontiglength", action="store", dest="mincontiglength", type = int, default = 0, help = "minimum contig length (contigs shorter than this will be ignored)")	

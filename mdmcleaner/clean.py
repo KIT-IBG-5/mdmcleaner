@@ -23,7 +23,10 @@ def check_progressdump(outfolder, infastas):
 		progressfile = os.path.join(outfolder, progressdump_filename)
 		return getdb.jsonfile2dict(progressfile)
 	return { os.path.basename(i) : None for i in infastas} 
-	
+
+class FastaFileNotFoundError(Exception):
+    pass
+
 def main(args, configs):
 	#todo: barrnap should be skipped if rRNA.fastas already exist
 	#todo: protein classification should be the fast version (AND multithreaded)
@@ -65,7 +68,9 @@ def main(args, configs):
 	db_suspects = None
 	for infasta in args.input_fastas:
 		try:
-			
+			if not os.path.exists(infasta) or not os.path.isfile(infasta):
+				raise FastaFileNotFoundError
+				
 			############### getting markers
 			bindata = getmarkers.bindata(contigfile=infasta, outbasedir=args.output_folder, configs = configs)
 			nucblastjsonfilename = os.path.join(bindata.bin_resultfolder, "nucblasts.json.gz")
@@ -208,13 +213,17 @@ def main(args, configs):
 			if not args.fast_run:
 				sys.stderr.write("reference-database contaminations detected during this run: {}".format(len(db_suspects.blacklist_additions)))
 			
+		except FastaFileNotFoundError:
+			sys.stderr.write("\nERROR: Input File {} does not exist! --> skipping it!\n".format(infasta))
+			errorlistfile.write(infasta + "\n")
+		
 		except Exception as e:
 			sys.stderr.write("\nTHERE WAS A EXCEPTION WHILE HANDLING {}\n".format(infasta))
 			sys.stderr.write("\n{}\n".format(e))
 			traceback.print_exc()
 			errorlistfile.write(infasta + "\n")
 
-	if not args.fast_run:
+	if not args.fast_run and db_suspects != None:
 		if "contamination" in db_suspects.collective_diamondblast():
 			sys.stderr.write("\nWARNING: potential eukaryotic contaminants were determined in reference genomes. some classifications may need to be ajdjusted.\nIt is recommended to run the pipeline again (as is), with the updated blacklist to correct that (most intermediate results can be reused, so this will be faster than the original run)\n\n")
 		if len(db_suspects.blacklist_additions) > 0:

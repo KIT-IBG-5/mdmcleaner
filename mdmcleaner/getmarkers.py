@@ -1393,6 +1393,9 @@ class bindata(gdata): #meant for gathering all contig/protein/marker info
 
 def get_only_marker_seqs(args, configs):
 	for infasta in args.input_fastas:
+		if not os.path.exists(infasta) or not os.path.isfile(infasta):
+			sys.stderr.write("\nERROR: Input File {} does not exist! --> skipping it!\n".format(infasta))
+			continue
 		genomedata = gdata(infasta, configs.settings["threads"], outbasedir = args.outdir, outprefix="args.outprefix", configs=configs)
 		if args.markertype in ["rrna", "trna"]:
 			genomedata._prep_onlycontigs(args.mincontiglength, configs.settings["threads"])
@@ -1412,9 +1415,11 @@ def get_only_marker_seqs(args, configs):
 			raise Exception("\nERROR: markertype '{}' not implemented yet!\n".format(mtype))
 
 def get_only_trna_completeness(args, configs):
-
 	outdict = {}
 	for infasta in args.input_fastas:
+		if not os.path.exists(infasta) or not os.path.isfile(infasta):
+			sys.stderr.write("\nERROR: Input File {} does not exist! --> skipping it!\n".format(infasta))
+			continue
 		genomedata = gdata(infasta, configs.settings["threads"], outbasedir = args.outdir, outprefix="args.outprefix", configs=configs)
 		genomedata._prep_onlycontigs(args.mincontiglength, configs.settings["threads"])
 		trna_list = get_trnas(genomedata.binfastafile, aragorn = configs.settings["aragorn"])
