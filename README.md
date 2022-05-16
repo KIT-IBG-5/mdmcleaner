@@ -17,15 +17,15 @@ It is based on the GTDB taxonomic system and uses GTDB representative genomes, a
 This repository is hosted at [github]( https://github.com/KIT-IBG-5/mdmcleaner) and mirrored at [gitlab](https://git.scc.kit.edu/ww5070/mdmcleaner).
 
 ## Installation:
-The MDMcleaner is now installable via **pip** (without dependencies), full availability via **Bioconda** recipe will follow shortly!
-Until then, a convinient way to install all needed dependencies is to create a conda environment using [bioconda](http://www.ddocent.com//bioconda/) and the following command:
-```
-conda create -n mdmcleaner_env python=3.10 biopython blast=2.12.0 diamond hmmer barrnap aragorn prodigal
-```
-you can then always activate this environment with the command ```conda activate mdmcleaner.env```
+The MDMcleaner is now installable via **pip** (without dependencies), and **Bioconda**. In case of pip, all dependencies listed above need to be installed seperately.
 
-After activating that environment you can then install mdmcleaner into it by using the command
+to install via pip:
+[![PyPI version](https://badge.fury.io/py/mdmcleaner.svg)](https://badge.fury.io/py/mdmcleaner)
 ```pip install mdmcleaner```
+
+to install via conda:
+[![Anaconda-Server Badge](https://anaconda.org/bioconda/mdmcleaner/badges/installer/conda.svg)](https://conda.anaconda.org/bioconda)
+```conda install -c bioconda mdmcleaner```
 
 ## Configuration
 Several options can be passed directly as commandline arguments (see usage below), but basic settings, such as database location, should be provided in the form of ```mdmcleaner.config``` config files. The pipeline distinguishes between global (system/environment-wide settings) and local (individual) config files.
