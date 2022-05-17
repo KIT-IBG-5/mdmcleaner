@@ -160,9 +160,7 @@ Additionally, general overview files are written to the current working director
 - overview_errorlist.txt --> list of genomes that yielded errors during MDMcleaner assessments and may need to be rerun
 
 ## How to cite:
-look out for our publication which has been submitted to Nucleic acids research and will hopefully be available soon.
-
-Vollmers et al. ***How clear is our current view on microbial dark-matter? (Re-)assessing public MAG & SAG-datasets with “MDMcleaner”*** (submitted)
+please cite our publication: [**Vollmers, John, et al. "How clear is our current view on microbial dark matter?(Re-) assessing public MAG & SAG datasets with MDMcleaner." Nucleic Acids Research (2022)**](https://doi.org/10.1093/nar/gkac294)
 
 ## For help or feedback:
 please write an issue on the [github repository](https://github.com/KIT-IBG-5/mdmcleaner/issues) or send us an [email](mailto:ibg5-support@lists.kit.edu?subject=[MDMcleaner%20support])
