@@ -27,6 +27,13 @@ to install via conda:
 [![Anaconda-Server Badge](https://anaconda.org/bioconda/mdmcleaner/badges/installer/conda.svg)](https://conda.anaconda.org/bioconda)
 ```conda install -c bioconda mdmcleaner```
 
+to install directly from this repository:
+
+ - either clone this repository or download and extract the latest release.
+ - enter the repository folder: ```cd mdmcleaner```
+ - create wheel: ```python setup.py bdist_wheel``´
+ - install from local wheel file: ```pip install dist/*.whl```
+
 ## Configuration
 Several options can be passed directly as commandline arguments (see usage below), but basic settings, such as database location, should be provided in the form of ```mdmcleaner.config``` config files. The pipeline distinguishes between global (system/environment-wide settings) and local (individual) config files.
 
