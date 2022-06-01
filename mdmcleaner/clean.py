@@ -51,7 +51,10 @@ def main(args, configs):
 	# ~ print(configfile_hierarchy)
 	# ~ configs = read_configs(configfile_hierarchy, args) #todo finish this
 	#initialize blastdbs
-	assert "db_basedir" in configs.settings and "db_type" in configs.settings and len(configs.settings["db_basedir"]) != 0, "\n\nERROR: 'db_basedir' and 'db_type' need to be specified in the configs file!\n" 
+	if not "db_basedir" in configs.settings or len(configs.settings["db_basedir"]) == 0:
+		sys.exit("\n\nERROR: No Path to reference database given! 'db_basedir' needs to be specified in the configs file!\n")
+	if not "db_type" in configs.settings or len(configs.settings["db_type"]) == 0:
+		sys.exit("\n\nERROR: 'db_type' needs to be specified in the configs file (even if currently 'gtdb' is still the only option...!\n")
 	ssu_nucblastdblist = [os.path.join(configs.settings["db_basedir"][0], configs.settings["db_type"][0], nbdb) for nbdb in getdb.dbfiles[configs.settings["db_type"][0]]["ssu_nucblastdbs"]]
 	lsu_nucblastdblist = [os.path.join(configs.settings["db_basedir"][0], configs.settings["db_type"][0], nbdb) for nbdb in getdb.dbfiles[configs.settings["db_type"][0]]["lsu_nucblastdbs"]] #used for lsu and "tsu" rRNAs
 	# ~ trna_nucblastdblist = [os.path.join(configs.settings["db_basedir"][0], configs.settings["db_type"][0], nbdb) for nbdb in getdb.dbfiles[configs.settings["db_type"][0]]["genome_nucblastdbs"]]		#todo: implement tRNA_blasts		
