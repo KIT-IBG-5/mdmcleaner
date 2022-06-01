@@ -200,6 +200,8 @@ def main():
 		# ~ if args.command in ["clean", "get_markers", "refdb_contams"]:
 			# ~ configs["blacklist"] =  _read_blacklistfiles(configs["blacklistfile"])
 
+	sys.stderr.write("You are running the following MDMcleaner command:\n\t '{}'".format(" ".join(sys.argv)))
+
 	if args.command in ["clean", "makedb", "show_configs", "get_markers", "completeness", "acc2taxpath", "refdb_contams", "check_dependencies"]:
 		if args.command in ["clean", "get_markers", "refdb_contams"]:
 			configs = config_object(args, read_blacklist = True)

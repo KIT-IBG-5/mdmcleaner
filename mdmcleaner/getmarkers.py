@@ -809,7 +809,7 @@ class bindata(gdata): #meant for gathering all contig/protein/marker info
 		# ~ self.db_suspects = review_refdbcontams.suspicious_entries(db, configs)
 		self.taxondict = None
 		self.majortaxdict = None 
-		self.consensustax = None
+		self.consensus_tax = None
 		sys.stderr.write("\n-->doing ORF-calling\n")
 		self._get_all_markers(self.threads, mincontiglength, cutofftable)
 	
@@ -976,7 +976,7 @@ class bindata(gdata): #meant for gathering all contig/protein/marker info
 	def get_consensus_taxstringlist(self):
 		if self.consensus_tax != None:
 			return [ taxtuple[0] for taxtuple in self.consensus_tax ]
-		return [None]
+		return ["None"]
 
 
 	def calc_contig_trust_score(self, contig, db):#todo: virals are not ignored here, but just at the filtering step. will get low trust regardless
@@ -1019,7 +1019,9 @@ class bindata(gdata): #meant for gathering all contig/protein/marker info
 								'totalprots_tax' : 0.7, \
 								None : 0 }	
 		
-		
+		if self.consensus_tax is None: # temporary workaround for cases in which NO contig yielded ANY blast-hits --> set trust to lower than those of unknown contigs/bins
+			return 4
+
 		consensus_taxlevel = [ key for key in self.majortaxdict.keys() if self.majortaxdict[key] != None][-1] #TODO: these should be instance attributes
 		consensus_taxid = self.majortaxdict[consensus_taxlevel][0][-1] #TODO: these should be instance attributes
 		consensus_taxpath = db.taxid2taxpath(consensus_taxid)[1:] #root is skipped

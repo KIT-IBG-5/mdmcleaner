@@ -19,7 +19,7 @@ progressdump_filename = "mdmprogress.json"
 
 def check_progressdump(outfolder, infastas):
 	if os.path.exists(outfolder):
-		assert os.path.isdir(outfolder), "\nError: specified output-folder name cannot be used, because there already is a file with the same name!\n"
+		assert os.path.isdir(outfolder), "\nError: specified output-folder name cannot be used, because there already is a folder with the same name!\n"
 		progressfile = os.path.join(outfolder, progressdump_filename)
 		return getdb.jsonfile2dict(progressfile)
 	return { os.path.basename(i) : None for i in infastas} 
@@ -51,14 +51,14 @@ def main(args, configs):
 	# ~ print(configfile_hierarchy)
 	# ~ configs = read_configs(configfile_hierarchy, args) #todo finish this
 	#initialize blastdbs
-	assert "db_basedir" in configs.settings and "db_type" in configs.settings, "\n\nERROR: 'db_basedir' and 'db_type' need to be specified in the configs file!\n" 
+	assert "db_basedir" in configs.settings and "db_type" in configs.settings and len(configs.settings["db_basedir"]) != 0, "\n\nERROR: 'db_basedir' and 'db_type' need to be specified in the configs file!\n" 
 	ssu_nucblastdblist = [os.path.join(configs.settings["db_basedir"][0], configs.settings["db_type"][0], nbdb) for nbdb in getdb.dbfiles[configs.settings["db_type"][0]]["ssu_nucblastdbs"]]
 	lsu_nucblastdblist = [os.path.join(configs.settings["db_basedir"][0], configs.settings["db_type"][0], nbdb) for nbdb in getdb.dbfiles[configs.settings["db_type"][0]]["lsu_nucblastdbs"]] #used for lsu and "tsu" rRNAs
 	# ~ trna_nucblastdblist = [os.path.join(configs.settings["db_basedir"][0], configs.settings["db_type"][0], nbdb) for nbdb in getdb.dbfiles[configs.settings["db_type"][0]]["genome_nucblastdbs"]]		#todo: implement tRNA_blasts		
 	protblastdblist = [os.path.join(configs.settings["db_basedir"][0], configs.settings["db_type"][0], pbdb) for pbdb in getdb.dbfiles[configs.settings["db_type"][0]]["protblastdbs"]]
 	
 	
-	progressdump = check_progressdump(args.output_folder, args.input_fastas) #todo: this is meant to implement a "major-progressdump", consisting of multiple "mini-progressdumps" (one for each input-fasta). for each input-fasta, it should list the current progress-state [None = not started yet, stepxx = currently unfinished, "Finished" = finished]
+	#progressdump = check_progressdump(args.output_folder, args.input_fastas) #todo: this is meant to implement a "major-progressdump", consisting of multiple "mini-progressdumps" (one for each input-fasta). for each input-fasta, it should list the current progress-state [None = not started yet, stepxx = currently unfinished, "Finished" = finished]
 	db = getdb.taxdb(configs)
 	errorlistfile = openfile(args.overview_basename + "_errorlist.txt", "wt")
 
