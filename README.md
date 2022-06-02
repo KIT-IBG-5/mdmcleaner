@@ -27,7 +27,7 @@ to install via conda:
 [![Anaconda-Server Badge](https://anaconda.org/bioconda/mdmcleaner/badges/installer/conda.svg)](https://conda.anaconda.org/bioconda)
 ```conda install -c bioconda mdmcleaner```
 
-to install directly from this repository:
+to install directly from this repository: [![GitHub version](https://badge.fury.io/gh/KIT-IBG-5%2Fmdmcleaner.svg)](https://badge.fury.io/gh/KIT-IBG-5%2Fmdmcleaner)
 
  - either clone this repository or download and extract the latest release.
  - enter the repository folder: ```cd mdmcleaner```
