@@ -8,7 +8,6 @@
 delme*
 *.gz
 *.dmp
-*.tsv
 *.md5
 .*
 *.domtblout
