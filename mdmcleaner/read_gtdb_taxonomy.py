@@ -20,9 +20,13 @@ gtdb_source_dict = { "gtdb_taxfiles" : { "url": "{}/".format(gtdb_server), "patt
 					 "gtdb_vs_ncbi_lookup" : { "url" : "{}/auxillary_files".format(gtdb_server), "pattern" : "*_vs_*.xlsx" } } #todo: remove gtdb_vs_ncbi_lookuptables
 
 silva_server = "https://www.arb-silva.de/fileadmin/silva_databases/current"
-silva_source_dict = { "silva_version" : { "url" : "{}/".format(silva_server), "wishlist" : [ "VERSION.txt" ]}, \
-					  "silva_taxfiles" : { "url" : "{}/Exports/taxonomy/".format(silva_server), "wishlist" : ["taxmap_slv_lsu_ref_nr_{}.txt.gz", "taxmap_slv_lsu_ref_nr_{}.txt.gz.md5", "taxmap_slv_ssu_ref_nr_{}.txt.gz", "taxmap_slv_ssu_ref_nr_{}.txt.gz.md5"] }, \
-					  "silva_fastas" : { "url" : "{}/Exports/".format(silva_server), "wishlist" : ["SILVA_{}_LSURef_NR99_tax_silva.fasta.gz", "SILVA_{}_LSURef_NR99_tax_silva.fasta.gz.md5", "SILVA_{}_SSURef_NR99_tax_silva.fasta.gz", "SILVA_{}_SSURef_NR99_tax_silva.fasta.gz.md5"] } } #currently, silva does not seem to allow recursive downloads based on filename-patterns --> Using this workaround instead. format function will need to replace '{}' with the database version later
+ALT_silva_server = "ftp://arb-silva.de/current" # apparently sometimes one or the other of the silva servers is not reachable. therefore always trying both alternately
+
+silva_source_dict = { "silva_version" : { "url" : "{}/".format(silva_server), "alturl" : "{}/".format(ALT_silva_server), "wishlist" : [ "VERSION.txt" ]}, \
+					  "silva_taxfiles" : { "url" : "{}/Exports/taxonomy/".format(silva_server), "alturl" : "{}/Exports/taxonomy/".format(ALT_silva_server), "wishlist" : ["taxmap_slv_lsu_ref_nr_{}.txt.gz", "taxmap_slv_lsu_ref_nr_{}.txt.gz.md5", "taxmap_slv_ssu_ref_nr_{}.txt.gz", "taxmap_slv_ssu_ref_nr_{}.txt.gz.md5"] }, \
+					  "silva_fastas" : { "url" : "{}/Exports/".format(silva_server), "alturl" : "{}/Exports/".format(ALT_silva_server), "wishlist" : ["SILVA_{}_LSURef_NR99_tax_silva.fasta.gz", "SILVA_{}_LSURef_NR99_tax_silva.fasta.gz.md5", "SILVA_{}_SSURef_NR99_tax_silva.fasta.gz", "SILVA_{}_SSURef_NR99_tax_silva.fasta.gz.md5"] } } #currently, silva does not seem to allow recursive downloads based on filename-patterns --> Using this workaround instead. format function will need to replace '{}' with the database version later
+
+
 #    --> Consider Grepping and filtering only EUkaryote sequences from these --> merge with gtdb dataset OR merge them all (if not too large) and make sure taxonomy is updated!'accordingly!
 
 taxdb_outfilebasename = "gtdb_taxonomy_br.json.gz" #todo: "_br" still stands for "binrefiner". change that!
@@ -328,12 +332,17 @@ def download_silva_stuff(sourcedict = silva_source_dict, targetfolder=None, verb
 		#if os.path.exists(versionfilename):
 		#	sys.stderr.write("\nDeleting pre-existing {}\n".format(versionfilename))
 		#	os.remove(versionfilename)
-		_download_unixwget(urldict["url"] + urldict["wishlist"][0], targetdir=targetfolder, verbose=verbose)
-		
+		url = "url"
+		returncode = _download_unixwget(urldict[url] + urldict["wishlist"][0], targetdir=targetfolder, verbose=verbose)
+		if returncode != 0:
+			sys.stderr.write("\thttps url not reachable. trying ftp-url\n")
+			url = "alturl"
+			returncode = _download_unixwget(urldict[url] + urldict["wishlist"][0], targetdir=targetfolder, verbose=verbose)
+			if returncode != 0:
+				sys.exit("\n\tERROR: can't reach silva database. please try again later\n")	
 		with open(versionfilename) as versionfile:
 			version = versionfile.read().strip()
-			#print("wtf")
-		return version
+		return version, url
 	# end of nested subfunctions
 	
 	def get_download_dict(prelim_downloadlist, wishdict):
@@ -345,7 +354,7 @@ def download_silva_stuff(sourcedict = silva_source_dict, targetfolder=None, verb
 			download_dict[x] = okdownloadlist
 		return download_dict
 	
-	version = getsilvaversion(sourcedict["silva_version"], targetfolder)
+	version , url = getsilvaversion(sourcedict["silva_version"], targetfolder)
 	prelim_downloadlist = [os.path.join(targetfolder, sourcedict["silva_version"]["wishlist"][0])]
 	wishdict = {silvacat : [ w.format(version) for w in sourcedict[silvacat]["wishlist"] ] for silvacat in sourcedict }
 	download_dict = None
@@ -356,7 +365,8 @@ def download_silva_stuff(sourcedict = silva_source_dict, targetfolder=None, verb
 		for silvacat in ["silva_taxfiles", "silva_fastas"]:
 			for wish in wishdict[silvacat]:
 				sys.stderr.write("\n\tNow downloading from silva: \"{}\" (attempt {})...\n".format(wish, trycounter +1))
-				returncode = _download_unixwget(sourcedict[silvacat]["url"] + wish, pattern = None, targetdir=targetfolder, verbose=verbose)
+				# ~ sys.stderr.write(sourcedict[silvacat][url] + wish + "\n")
+				returncode = _download_unixwget(sourcedict[silvacat][url] + wish, pattern = None, targetdir=targetfolder, verbose=verbose)
 				if returncode != 0:
 					sys.stderr.write("\nWARNING: wget returned non-zero returncode '{}' after downloading {} \n".format(returncode, wish))
 				prelim_downloadlist.append(os.path.join(targetfolder, wish))

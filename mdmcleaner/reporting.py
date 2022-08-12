@@ -174,30 +174,19 @@ def gather_extended_bin_metrics(bindata, outfile, cutoff=5): #todo: make a simpl
 		total_proteins = 0
 
 	print_dict = {  "binname" : binname, \
-							"completeness_before" : trna_completeness_before,\
-							"completeness_after" : trna_completeness_after,\
+							"completeness_before[%]" : trna_completeness_before,\
+							"contamination_before[%]" : round(fraction_delete * 100, 2),\
+							"completeness_after[%]" : trna_completeness_after,\
 							"totalbincontigs" : totalbincontigs,\
 							"totalbinbp" : totalbinbp,\
 							"majortaxpath" : majortaxpath,\
 							
-							"fraction_trustedbp" : fraction_trustedbp, \
-							"fraction_unknownbp" : fraction_unknownbp, \
-							"fraction_untrustedbp" : fraction_untrustedbp, \
 							"fraction_keep" : fraction_keep, \
 							"fraction_evaluate_low" : fraction_evaluate_low	, \
 							"fraction_evaluate_high" : fraction_evaluate_high, \
 							"fraction_delete" : fraction_delete, \
 							"bin_trust" : bin_trust, \
 							"bin_trust_ignoring_viral":bin_trust_ignoring_viral, \
-							
-							"fraction_different_species":fraction_different_species, \
-							"fraction_different_genus":fraction_different_genus, \
-							"fraction_different_family":fraction_different_family, \
-							"fraction_different_order":fraction_different_order, \
-							"fraction_different_class":fraction_different_class, \
-							"fraction_different_phylum":fraction_different_phylum, \
-							"fraction_different_domain":fraction_different_domain, \
-							"fraction_viral":fraction_viral, \
 							
 							"fraction_refdb_ambiguity" : fraction_refdb_ambiguity, \
 							"fraction_ignored_refdb_ambiguity" : fraction_ignored_refdb_ambiguity, \
@@ -210,18 +199,6 @@ def gather_extended_bin_metrics(bindata, outfile, cutoff=5): #todo: make a simpl
 							"sum_fraction_different_family" : sum_fraction_different_family, \
 							"sum_fraction_different_genus" : sum_fraction_different_genus, \
 							"sum_fraction_different_species" : sum_fraction_different_species, \
-									
-							"fraction_trust0":fraction_trust0, \
-							"fraction_trust1":fraction_trust1, \
-							"fraction_trust2":fraction_trust2, \
-							"fraction_trust3":fraction_trust3, \
-							"fraction_trust4":fraction_trust4, \
-							"fraction_trust5":fraction_trust5, \
-							"fraction_trust6":fraction_trust6, \
-							"fraction_trust7":fraction_trust7, \
-							"fraction_trust8":fraction_trust8, \
-							"fraction_trust9":fraction_trust9, \
-							"fraction_trust10":fraction_trust10, \
 							
 							"total_16SrRNA":total_16SrRNA, \
 							"total_23SrRNA":total_23SrRNA, \
