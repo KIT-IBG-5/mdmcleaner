@@ -26,10 +26,10 @@ def openfile(infilename, filemode = "rt"):
 		filehandle = open(infilename, filemode)
 	return filehandle 
 
-def read_fasta(infilename):
+def read_fasta(infilename, mincontiglen=0):
 	from Bio import SeqIO
 	infile = openfile(infilename)
-	return list(SeqIO.parse(infile, "fasta"))
+	return [record for record in SeqIO.parse(infile, "fasta") if len(record) >= mincontiglen ]
 
 def write_fasta(outrecords, outfilename):
 	from Bio import SeqIO

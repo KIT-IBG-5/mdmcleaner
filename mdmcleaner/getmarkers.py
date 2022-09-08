@@ -143,7 +143,7 @@ def _get_trnas_single(infasta,  aragorn="aragorn", threads=1):
 	outlinelist = aragorn_proc.stdout.split("\n")
 	return  outlinelist
 
-def get_trnas(*subfastas, outdirectory = ".", aragorn = "aragorn", threads = 1):
+def get_trnas(*subfastas, outdirectory = ".", aragorn = "aragorn", contigset = None, threads = 1):
 	"""
 	runs aragorn on each provided genomic (sub)fasta, to identify tRNA sequences.
 	if multiple subfastas and multiple threads are given, it will run several instances of aragorn in parallel
@@ -165,14 +165,14 @@ def get_trnas(*subfastas, outdirectory = ".", aragorn = "aragorn", threads = 1):
 	outstringlistlist =misc.run_multiple_functions_parallel(commandlist, threads)
 	sys.stdout.flush()
 	sys.stderr.flush()
-	outlist = _parse_aragorn_output(list(chain(*outstringlistlist)))
+	outlist = _parse_aragorn_output(list(chain(*outstringlistlist)), contigset=contigset)
 	sys.stdout.flush()
 	sys.stderr.flush()
 	for t in tempfilelist:
 		os.remove(t)
 	return outlist
 	
-def _parse_aragorn_output(outstringlist, verbose=False): #todo:implement verbosity option!
+def _parse_aragorn_output(outstringlist, contigset=None, verbose=False): #todo:implement verbosity option!
 	import re
 	sys.stdout.flush()
 	sys.stderr.flush()
@@ -192,6 +192,8 @@ def _parse_aragorn_output(outstringlist, verbose=False): #todo:implement verbosi
 			trna = trnahit.group(1)
 			location = trnahit.group(2)
 			genename = "trna_{}__aragorn_{}__{}".format(contig, trna, location)
+			if contigset  and not contig in contigset: #silently drop hits on contigs that are smaller than mincontiglength
+				continue
 			if trna not in full_tRNA_species:
 				sys.stderr.write("\nAttention: non-standard trna: {}\n".format(trna))
 				sys.stderr.flush()
@@ -213,13 +215,13 @@ def trna_completeness(trna_seqid_list):
 	completeness = len(trnaset)/len(universal_tRNA_species)*100
 	return completeness	
 		
-def runbarrnap_single(infasta, barrnap="barrnap", kingdom = "bac", output_directory = ".", threads=1): 
+def runbarrnap_single(infasta, barrnap="barrnap", kingdom = "bac", output_directory = ".", mincontiglen=0, threads=1): 
 	#todo: the following hack is to circumvent the problem of barrnap not handling compressed files. A better way to do this would to just assume files are sent via pipe?
 	tempfasta = os.path.join(output_directory, "temp_barrnap_{}.fasta".format(kingdom))
 	barrnap_cmd = [barrnap, "--kingdom", kingdom, "--outseq", tempfasta, "--threads", str(threads), "--quiet"] #todo: enable piping via stdin 
 	if type(infasta) == str and os.path.isfile(infasta): #todo: this is convoluted. maybe just always read the fasta if provided as file and pass it as fasta-string?
-		if infasta.endswith(".gz"):
-			inputarg = "\n".join([record.format("fasta") for record in misc.read_fasta(infasta)])
+		if infasta.endswith(".gz") or mincontiglen > 0:
+			inputarg = "\n".join([record.format("fasta") for record in misc.read_fasta(infasta, mincontiglen)])
 		else:
 			barrnap_cmd += [infasta]
 			inputarg = None
@@ -239,13 +241,13 @@ def runbarrnap_single(infasta, barrnap="barrnap", kingdom = "bac", output_direct
 	#todo: need to parse barrnap results from stdout (gff-output) rather than output-fasta-headers
 	return (tempfasta, gff_output) #todo: make sure these results are then collected for each kingdom and run through deduplicate_barrnap_results()
 
-def runbarrnap_all(infasta, outfilebasename, barrnap="barrnap", output_directory = ".", threads=3): #todo: parse resultfolder from basename. or rather basename from resultfolder!
+def runbarrnap_all(infasta, outfilebasename, barrnap="barrnap", output_directory = ".", mincontiglen=0, threads=3): #todo: parse resultfolder from basename. or rather basename from resultfolder!
 	from Bio import SeqIO
 	from mdmcleaner import misc
 	sys.stderr.write("\n-->scanning for rRNA genes...\n")
 	joblist = []
 	for kingdom in ["bac", "arc", "euk"]:
-		joblist.append((".getmarkers", "runbarrnap_single", {"infasta" : infasta, "barrnap" : barrnap, "kingdom" : kingdom, "output_directory" : output_directory }))
+		joblist.append((".getmarkers", "runbarrnap_single", {"infasta" : infasta, "barrnap" : barrnap, "kingdom" : kingdom, "output_directory" : output_directory, "mincontiglen" : mincontiglen}))
 	outputlist = misc.run_multiple_functions_parallel(joblist, threads)
 	tempfasta_list = [op[0] for op in outputlist]
 	gff_outputlist = [ op[1] for op in outputlist]
@@ -720,8 +722,8 @@ class gdata(object): #meant for gathering all contig/protein/marker info
 		for pml in range(len(self.protmarkerdictlist)):
 			self.contigdict = parse_protmarkerdict(self.protmarkerdictlist[pml], self.contigdict, pml)	
 
-	def _prep_rRNAmarker(self):
-		self.rRNA_fasta_dict, self.rrnamarkerdict = runbarrnap_all(infasta=self.binfastafile, outfilebasename=os.path.join(self.bin_resultfolder, self.bin_tempname + "_rRNA"), barrnap=self.configs.settings["barrnap"], output_directory = self.bin_resultfolder, threads=self.threads) #todo add option for rnammer (using the subdivided fastafiles)? #todo: parse resultfolder from basename. or rather basename from resultfolder!
+	def _prep_rRNAmarker(self, mincontiglen=0):			 
+		self.rRNA_fasta_dict, self.rrnamarkerdict = runbarrnap_all(infasta=self.binfastafile, outfilebasename=os.path.join(self.bin_resultfolder, self.bin_tempname + "_rRNA"), barrnap=self.configs.settings["barrnap"], output_directory = self.bin_resultfolder, mincontiglen=mincontiglen, threads=self.threads) #todo add option for rnammer (using the subdivided fastafiles)? #todo: parse resultfolder from basename. or rather basename from resultfolder!
 		self.contigdict, self.markerdict = add_rrnamarker_to_contigdict_and_markerdict(self.rrnamarkerdict, self.contigdict, self.markerdict)
 				
 	def _prep_onlycontigs(self, mincontiglength, threads):
@@ -746,8 +748,11 @@ class gdata(object): #meant for gathering all contig/protein/marker info
 
 		for pml in range(len(self.protmarkerdictlist)): #todo: contigdict is maybe not needed in this form. choose simpler dicts ?
 			self.contigdict = parse_protmarkerdict(self.protmarkerdictlist[pml], self.contigdict, pml, self.markerdict)
-		self._prep_rRNAmarker()
-		trna_list = get_trnas(self.binfastafile, aragorn=self.configs.settings["aragorn"]) #todo: aragorn does not accept input from stdin (WHY!?) --> makes multithreading a bit more complicated. find a solution for mutiprocessing later, that does not break current workflow! --> probably switch to trnascanSE after all? (EDIT: trnascanSE ALSO does not accept input from stdin (WHY?!)
+		self._prep_rRNAmarker(mincontiglength)
+		contigset = None
+		if mincontiglength >= 0:
+			contigset = set(self.contigdict.keys())
+		trna_list = get_trnas(self.binfastafile, aragorn=self.configs.settings["aragorn"], contigset=contigset) #todo: aragorn does not accept input from stdin (WHY!?) --> makes multithreading a bit more complicated. find a solution for mutiprocessing later, that does not break current workflow! --> probably switch to trnascanSE after all? (EDIT: trnascanSE ALSO does not accept input from stdin (WHY?!)
 		trna_records = self.get_trna_sequences_from_contigs(trna_list)
 		SeqIO.write(trna_records, openfile(self.trnafastafile, "wt"), "fasta")
 
@@ -1402,9 +1407,12 @@ def get_only_marker_seqs(args, configs):
 		if args.markertype in ["rrna", "trna"]:
 			genomedata._prep_onlycontigs(args.mincontiglength, configs.settings["threads"])
 			if args.markertype == "rrna":
-				genomedata._prep_rRNAmarker()
-			elif args.markertype == "trna":
-				trna_list = get_trnas(genomedata.binfastafile, aragorn = configs.settings["aragorn"]) #todo: aragorn does not accept input from stdin (WHY!?) --> makes multithreading a bit more complicated. find a solution for mutiprocessing later, that does not break current workflow! --> probably switch to trnascanSE after all? (EDIT: trnascanSE ALSO does not accept input from stdin (WHY?!)
+				genomedata._prep_rRNAmarker(mincontiglen=args.mincontiglength)
+			elif args.markertype == "trna":		
+				contigset = None
+				if args.mincontiglength >= 0:
+					contigset = set(genomedata.contigdict.keys())
+				trna_list = get_trnas(genomedata.binfastafile, aragorn = configs.settings["aragorn"], contigset=contigset) #todo: aragorn does not accept input from stdin (WHY!?) --> makes multithreading a bit more complicated. find a solution for mutiprocessing later, that does not break current workflow! --> probably switch to trnascanSE after all? (EDIT: trnascanSE ALSO does not accept input from stdin (WHY?!)
 				trna_records = genomedata.get_trna_sequences_from_contigs(trna_list)
 				SeqIO.write(trna_records, openfile(genomedata.trnafastafile, "wt"), "fasta")
 		elif args.markertype in ["totalprots", "markerprots", "all"]:
@@ -1424,6 +1432,9 @@ def get_only_trna_completeness(args, configs):
 			continue
 		genomedata = gdata(infasta, configs.settings["threads"], outbasedir = args.outdir, outprefix="args.outprefix", configs=configs)
 		genomedata._prep_onlycontigs(args.mincontiglength, configs.settings["threads"])
+		contigset = None
+		if args.mincontiglength >= 0:
+			contigset = set(genomedata.contigdict.keys())
 		trna_list = get_trnas(genomedata.binfastafile, aragorn = configs.settings["aragorn"])
 		completeness = trna_completeness(trna_list)
 		outdict[infasta] = completeness
