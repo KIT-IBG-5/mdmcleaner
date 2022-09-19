@@ -302,7 +302,7 @@ class suspicious_entries(object):
 			blastrecords = [self.blastxjobs[x].seqrecord[0] for x in self.blastxjobs if len(self.blastxjobs[x].seqrecord[0]) < 100000] #for now skipping reference contigs larger than 100 kb (takes too long to blastx). TODO: in such cases, search for ribosomal & other markergenes to verify classification!
 			sys.stderr.write("\nblasting {} entries with blastx against reference proteins (another {} entries were too long to blastx efficiently\n".format(len(blastrecords), len(self.blastxjobs) - len(blastrecords)))
 			if len(blastrecords) == 0:
-				return
+				return [None] # Be sure to return a list
 			basic_blastarglist = [ (blastrecords, blastdb, "diamond blastx") for blastdb in self.blastxdbs ]
 			# ~ import pdb; pdb.set_trace()
 			import time
