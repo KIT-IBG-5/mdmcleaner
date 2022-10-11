@@ -225,7 +225,8 @@ def main():
 			if args.get_pub_data:
 				args.outdir = "./db"
 			else:
-				assert "db_basedir" in configs.settings and len(configs.settings["db_basedir"]) != 0, ("\n\nERROR: either 'outdir' must be specified as argument or 'db_basedir' needs to be specified in config file!\n\n")
+				if not ("db_basedir" in configs.settings and len(configs.settings["db_basedir"]) != 0): 
+					makedb_args.error("either 'outdir' must be specified as argument or 'db_basedir' needs to be specified in config file")
 				args.outdir = os.path.join(configs.settings["db_basedir"][0], configs.settings["db_type"][0]) # todo: read_gtdb_taxonomy should only get basedir as target-dir and simply assume the gtdb part!
 		elif not args.get_pub_data:
 			args.outdir = os.path.join(args.outdir, configs.settings["db_type"][0]) # todo: read_gtdb_taxonomy should only get basedir as target-dir and simply assume the gtdb part!
