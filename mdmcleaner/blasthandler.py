@@ -14,11 +14,11 @@ import sys
 import os
 assert sys.version_info >= (3, 7), "This module requires python 3.7+! You, however, are running '{}'".format(sys.version)
 from collections import namedtuple
-from mdmcleaner import misc
+import misc
 hit = namedtuple('hit', 'accession taxid identity score')
 supported_outfmts = ["6", "6 std", "6 std qlen", "6 std qlen slen"] 
 
-from mdmcleaner.misc import openfile, run_multiple_functions_parallel
+from misc import openfile, run_multiple_functions_parallel
 
 def read_lookup_table(lookup_table, table_format = None): #should be able to read tsv, csv and gff. should output a simple dict with locus_tags as keys and contignames as values
 	#consider putting this under "lookup_handler.py"? Probably naaaw...
@@ -424,7 +424,7 @@ class blastdata_baseobject(object): #todo: define differently for protein or nuc
 		#				- rRNA-based silva taxon not backed by genomic data in gtdb
 		# 			- keep a lookput for more...
 		
-		from mdmcleaner import lca, getdb
+		import lca, getdb
 		cutoff_taxlevels =  ["species", "genus", "order"]
 		
 		def get_singlehit_domain_phylum_counts(db, markernames, singlemarkerlcadict): #todo: this could be interesting also for general contigdict info? consider putting this in reporting/mdmcleaner...

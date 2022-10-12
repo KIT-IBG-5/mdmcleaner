@@ -2,8 +2,8 @@
 """ 
 creating carious overview- and report-files for mdm_cleaner
 """
-from mdmcleaner import misc
-from mdmcleaner.misc import openfile
+import misc
+from misc import openfile
 import sys
 
 def dict2tsvline(indictionary, lineprefix = "", key_header = "contig", onlyheader=False):
@@ -45,7 +45,7 @@ def write_full_bindata(bindata, outfilename):
 
 
 def gather_extended_bin_metrics(bindata, outfile, cutoff=5): #todo: make a simple_binmetrics function
-	from mdmcleaner import getmarkers
+	import getmarkers
 	def write_dictlines(indict, outfile):
 		import io
 		if isinstance(outfile, str):

@@ -1,7 +1,7 @@
 import pathlib
 import sys
 from setuptools import find_packages, setup
-from mdmcleaner import _version
+import _version
 
 cwd = pathlib.Path(__file__).parent
 readme = (cwd / "README.md").read_text()

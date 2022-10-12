@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 from Bio import SeqIO
-from mdmcleaner import misc
-from mdmcleaner.misc import openfile
+import misc
+from misc import openfile
 import sys
 import os
-from mdmcleaner import blasthandler
+import blasthandler
 import re
 import tempfile
 '''
@@ -58,7 +58,7 @@ class comparison_hit(object):
 			self.extractdb = self.db.nucdbs_genome[0]
 	
 	def get_seqrecord(self, blastdbcmd = "blastdbcmd"):
-		from mdmcleaner import blasthandler
+		import blasthandler
 		self.seqrecord = blasthandler.get_contig_from_blastdb(self.seqid, self.extractdb, blastdbcmd)
 
 	def blast_contigs(self, threads = 1, blacklist=None, outfileprefix = ""):
@@ -356,7 +356,7 @@ class suspicious_entries(object):
 
 def read_ambiguity_report(ambiguity_report, configs):
 	import os
-	from mdmcleaner import getdb
+	import getdb
 	import re
 	
 	# ~ outdir, outfileprefix = os.path.split(outbasename)

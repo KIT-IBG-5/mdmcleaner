@@ -4,7 +4,7 @@ import sys
 import os
 import argparse
 
-from mdmcleaner.misc import openfile
+from misc import openfile
 
 myparser=argparse.ArgumentParser("adds threshold cutoffs to hmm files for easier hmmsearch")
 myparser.add_argument("-cot", "--cutofftable", action = "store", dest = "cutofftable", default = None, help = "cutofftable")
