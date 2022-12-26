@@ -14,8 +14,9 @@ _refseq_vireukcat_list = ["fungi", "invertebrate", "plant", "protozoa", "vertebr
 refseq_dbsource_dict = { refseq_vireukcat : {"url":"{}/{}/".format(ftp_adress_refseqrelease, refseq_vireukcat), "pattern" : "*.protein.faa.gz"} for refseq_vireukcat in _refseq_vireukcat_list }
 refseq_dbsource_dict["crc"] = { "url": "{}/release-catalog/".format(ftp_adress_refseqrelease), "pattern" : "release*.files.installed" } #TODO: add eukaryotic 18S/28S + ITS seqeunces to this! either silva or ncbi?
 
+MD5FILEPATTERN_GTDB = "MD5SUM*"
 gtdb_server = "https://data.ace.uq.edu.au/public/gtdb/data/releases/latest"
-gtdb_source_dict = { "gtdb_taxfiles" : { "url": "{}/".format(gtdb_server), "pattern" : "*_taxonomy.tsv,MD5SUM" }, \
+gtdb_source_dict = { "gtdb_taxfiles" : { "url": "{}/".format(gtdb_server), "pattern" : "{}".format(",".join(["*_taxonomy.tsv", MD5FILEPATTERN_GTDB]))}, \
 					 "gtdb_fastas" : { "url": "{}/genomic_files_reps".format(gtdb_server), "pattern" : "gtdb_genomes_reps.tar.gz,gtdb_proteins_aa_reps.tar.gz" }, \
 					 "gtdb_vs_ncbi_lookup" : { "url" : "{}/auxillary_files".format(gtdb_server), "pattern" : "*_vs_*.xlsx" } } #todo: remove gtdb_vs_ncbi_lookuptables
 
@@ -120,6 +121,12 @@ def calculate_crc32hash(infile): # TODO: probably move to "misc.py"?
 			crcvalue = zlib.crc32(data, crcvalue) & 0xffffffff
 	return crcvalue
 
+def is_md5(inhash): #ncbi keeps switching between md5 and crc (or actually rather cksum) file-hashes (and does not always explicitely document this) --> need simple check to verify if a hash might be md5.
+	pattern = r"([a-fA-F\d]{32})"
+	if re.match(pattern, inhash):
+		return True
+	return False
+	
 def get_cksum(infile): #Contrary to the docs on the ftp server, the refseq-checksums are equivalent to cksum results rather than md5-checksums (or even crc32)! Need to call cksum for this!
 	"""
 	calculate cksum-hash of a binary file
@@ -140,20 +147,23 @@ def download_refseq_eukaryote_prots(sourcedict=refseq_dbsource_dict, targetfolde
 	"""
 	#TODO: consider the following: Refseq only provides downloads for about one representative per species. probably that is a good thing, because it prevents overinterpreting results from overrepresented species. but possibly I should also consider downloading the sequence data for the other examples too?
 	# start ot nested subfunctions
-	def check_crcfile(crc_file, targetdir, patternstring):  # TODO: merge with check_md5file() to ONE function (not that hard)!
+	def check_hashfile(hash_file, targetdir, patternstring):  # TODO: merge with check_md5file() to ONE function (not that hard)!
 		"""
 		as with _download_unixwget(), 'pattern' can be a comma seperated list of patterns (concatenated to a single string)
 		raises AssertionException if something is wrong with the downloaded files, returns a list of downloaded filenames in everything is fine
 		"""
 		import re
 		import fnmatch
+		hashismd5=False # ncbi seems to keep switching beween file hash types. this now verifies is hash is actually md5...
 		patternlist = patternstring.split(",")
-		infile = openfile(crc_file)
+		infile = openfile(hash_file)
 		allisfine = True
 		ok_filelist, bad_filelist, missing_filelist = [], [], []
 		for line in infile:
 			tokens = line.strip().split()
 			checksum = tokens[0]
+			if is_md5(checksum):
+				hashismd5 = True
 			filename = tokens[1]
 			for pattern in patternlist:
 				if fnmatch.fnmatch(filename, pattern):
@@ -162,7 +172,10 @@ def download_refseq_eukaryote_prots(sourcedict=refseq_dbsource_dict, targetfolde
 						allisfine = False
 						missing_filelist.append(filename)
 						break
-					actualhash = get_cksum(expectedfile)
+					if hashismd5:
+						actualhash = calculate_md5hash(expectedfile)
+					else:
+						actualhash = get_cksum(expectedfile)
 					if not str(actualhash) == checksum:
 						allisfine = False
 						sys.stderr.write("\n\tERROR FILE NOT MATCHING CHECKSUM: {}! {} != {}\n".format(expectedfile, actualhash, checksum))
@@ -207,7 +220,7 @@ def download_refseq_eukaryote_prots(sourcedict=refseq_dbsource_dict, targetfolde
 			returncode = _download_unixwget(sourcedict[vireukcat]["url"], sourcedict[vireukcat]["pattern"], targetdir=targetfolder)
 			if returncode != 0:
 				sys.stderr.write("\nWARNING: wget returned non-zero returncode '{}' after downloading {} \n".format(returncode, vireukcat))
-		download_list, allisfine = check_crcfile(crcfile, targetfolder, ",".join(["{}*.protein.faa.gz".format(x) for x in sourcedict if x != "crc"]))
+		download_list, allisfine = check_hashfile(crcfile, targetfolder, ",".join(["{}*.protein.faa.gz".format(x) for x in sourcedict if x != "crc"]))
 		trycounter += 1
 	#TODO: create a flag file to indicate that this has already run
 	assert allisfine, "\nERROR: Still incomplete download or mismatching MD5sums after {} download-attempts. Please check connection and try again later...\n".format(trycounter+1)
@@ -222,7 +235,14 @@ def download_gtdb_stuff(sourcedict = gtdb_source_dict, targetfolder=None, verbos
 	"""
 	#TODO: check for a flag file, indicating that this already ran successfully
 	# start of nested subfunctions
-	def check_gtdbmd5file(md5_file, targetdir, patternstring): # TODO: merge with check_crcfile() to ONE function (not that hard)!
+	def which_md5filename(targetdir):
+		"""
+		on the gtdb downloadserver md5files sometimes have '.txt' suffix and sometimes not. check which one it is this time...
+		"""
+		import glob
+		return glob.glob(targetdir + "/" + MD5FILEPATTERN_GTDB)[0] # --> assumes there is only one hit, therefore takes only the first of the list returned by glob.glob(); todo: make sure md5sum file is always deleted after db-setup! otherwise there may be problems if preexisting dbs are updated
+	
+	def check_gtdbmd5file(md5_file, targetdir, patternstring): # TODO: merge with check_hashfile() to ONE function (not that hard)!
 		"""
 		as with _download_unixwget(), 'pattern' can be a comma seperated list of patterns (concatenated to a single string)
 		raises AssertionException if something is wrong with the downloaded files, returns a list of downloaded filenames in everything is fine
@@ -277,7 +297,7 @@ def download_gtdb_stuff(sourcedict = gtdb_source_dict, targetfolder=None, verbos
 	def get_download_dict(sourcedict, targetfolder):
 		download_dict = {}
 		for x in sourcedict:
-			okdownloadfilelist, allisfine = check_gtdbmd5file(os.path.join(targetfolder, "MD5SUM"), targetfolder, sourcedict[x]["pattern"])
+			okdownloadfilelist, allisfine = check_gtdbmd5file(which_md5filename(targetfolder), targetfolder, sourcedict[x]["pattern"])
 			if not allisfine:
 				return
 			download_dict[x] = okdownloadfilelist
@@ -296,7 +316,7 @@ def download_gtdb_stuff(sourcedict = gtdb_source_dict, targetfolder=None, verbos
 		download_dict = get_download_dict(sourcedict, targetfolder)
 		trycounter += 1
 	assert download_dict, "\nERROR: Still incomplete download or mismatching MD5sums after {} download-attempts. Please check connection and try again later...\n".format(trycounter +1)
-	version = get_gtdbversion_from_MD5SUM(os.path.join(targetfolder, "MD5SUM"))
+	version = get_gtdbversion_from_MD5SUM(which_md5filename(targetfolder))
 	return download_dict, version
 
 def download_silva_stuff(sourcedict = silva_source_dict, targetfolder=None, verbose=False, maxtries = 3):
@@ -1038,7 +1058,8 @@ def cleanupwhenfinished(progressdump, targetdir, verbose=False):
 			# ~ sys.stdout.flush()		
 			if os.path.exists(stuff) and os.path.isfile(stuff):
 				os.remove(stuff)
-				sys.stderr.write("\tdeleted {}\n".format(stuff)) #todo: only when verbose
+				if verbose:
+					sys.stderr.write("\tdeleted {}\n".format(stuff))
 			else:
 				restlist.append(stuff)
 				
@@ -1120,7 +1141,9 @@ def main(args, configs): #todo: make option to read targetdir from configfile or
 	else:
 		getNprepare_dbdata_nonncbi(args.outdir, verbose=args.verbose, settings=configs.settings)
 
-# ~ if __name__ == '__main__':
+if __name__ == '__main__':
+	sys.stderr.write("testing gtdb_download\n")
+	download_gtdb_stuff(sourcedict = gtdb_source_dict, targetfolder=".", verbose=True, maxtries=3)
 	# ~ import argparse
 	# ~ myparser = argparse.ArgumentParser(prog=os.path.basename(sys.argv[0]), description = "Download and prepare GTDB- and SILVA-data for MDMcleaner")
 	# ~ myparser.add_argument("-o", "--outdir", action = "store", dest = "outdir", default = "./db/gtdb", help = "target directory for gtdb-/silva-data. may not be the current working directory. Default = './db/gtdb'")
@@ -1128,3 +1151,4 @@ def main(args, configs): #todo: make option to read targetdir from configfile or
 	# ~ myparser.add_argument("--quiet", action = "store_true", dest = "quiet", default = False, help = "quiet mode (suppress any status messages except Errors and Warnings)") #todo: implement
 	# ~ args = myparser.parse_args()
 	# ~ main(args)
+
