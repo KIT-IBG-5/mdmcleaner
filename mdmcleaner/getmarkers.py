@@ -18,8 +18,7 @@ import subprocess
 import sys
 import os
 from Bio import SeqIO
-from mdmcleaner import misc
-from mdmcleaner.misc import openfile
+from misc import openfile
 import re
 #import Bio.SearchIO.HmmerIO.hmmer3_domtab.Hmmer3DomtabHmmhitParser #probably better to parse it my self
 
@@ -799,7 +798,7 @@ class gdata(object): #meant for gathering all contig/protein/marker info
 ########################
 class bindata(gdata): #meant for gathering all contig/protein/marker info
 	def __init__(self, contigfile, threads = 1, outbasedir = "mdmcleaner_results", mincontiglength = 0, cutofftable = cutofftablefile, configs = None): #todo: enable init with additional precalculated infos. #todo: cutofftablefile is actually decapricated (cutoffs are stated in the hmm-files themselves). kept here only to keep the option open to maybe use individual hmms instead...
-		from mdmcleaner import review_refdbcontams
+		import review_refdbcontams
 		super().__init__(contigfile, threads = threads, outbasedir = outbasedir, mincontiglength = mincontiglength, outprefix="", configs=configs)
 		self.pickle_progressfile = os.path.join(self.bin_resultfolder, "bindata_progress.pickle") #todo: change to better system
 		self.trna_jsonfile = os.path.join(self.bin_resultfolder, "bindata_trna_progress.json.gz") #todo: REALLY start implementing a better system!
@@ -885,7 +884,7 @@ class bindata(gdata): #meant for gathering all contig/protein/marker info
 		# ~ sys.stdout.flush()
 
 	def add_lca2markerdict(self, blastdata, db, contig=None, verbose=True): #todo: add multithreading!!!
-		from mdmcleaner import lca
+		import lca
 		counter = 0
 		for gene, hittuples in blastdata.get_best_hits_per_gene(contig=contig):
 			counter += 1
@@ -914,7 +913,7 @@ class bindata(gdata): #meant for gathering all contig/protein/marker info
 			checklevel=min([len(taxa), len(taxb)]) - 1
 			return taxa[checklevel] != taxb[checklevel]
 					
-		from mdmcleaner import lca
+		import lca
 		sys.stderr.write("\n-->determining major taxon\n")
 		markerranking = [ "ssu_rRNA_tax", "lsu_rRNA_tax", "prok_marker_tax", "totalprots_tax" ]
 		#taxlevels = ["root", "domain", "phylum", "class", "order", "family", "genus", "species"] # todo: change to lca.taxlevels
@@ -1010,7 +1009,7 @@ class bindata(gdata): #meant for gathering all contig/protein/marker info
 		contigs that show reference-db ambiguities of the category "ref-db-contamination" typically retain a trust-score of 5, since despite the contamination affecting the database, additional validations are required to determine if it also affecte the bin itself (i.e. despite the contig representing a contamination in the reference-database, is it perhaps nonetheless correctly assigned in THIS bin?)  
 		EXCEPTION: if a contig contains no detectable coding features, it is assumed eukaryotic
 		"""
-		from mdmcleaner import lca
+		import lca
 		levels = ["domain", "phylum", "class", "order", "family", "genus", "species"]
 		level_penalties = [8.0,4.0,2.0,1.0,0.5,0.25,0.125] #penalties for domain, phylum, class, order, family, genus & species differences, respectively (root is ignored. viral contigs get same penalty as eukaryotic contigs)
 		level_boni = list(reversed(level_penalties))
@@ -1082,7 +1081,7 @@ class bindata(gdata): #meant for gathering all contig/protein/marker info
 		
 	def check_and_set_filterflags(self, contig, filter_rankcutoff = "family", filter_viral = True, filter_unclassified = False): #args are unpacked only to enforce keyword aguments for protblasta and nucblasts (to prevent accidentally passing them in the wrong order) 
 		import re
-		from mdmcleaner import lca
+		import lca
 		def check_lower_ranking_protein_markers(contigentry, filterflag = "delete", altflag = "evaluate_low"):
 			# ~ if self.contigdict[contig]["viral"]:
 				# ~ self.contigdict["tax_note"] == "probably viral; " + self.contigdict["tax_note"]
@@ -1148,8 +1147,8 @@ class bindata(gdata): #meant for gathering all contig/protein/marker info
 		if "fast_run" is set, the analyses of detected potential reference ambiguities is skipped at this point, potentially speeding up the run but potentially causing less exact classifications  
 		'''
 
-		from mdmcleaner import review_refdbcontams
-		from mdmcleaner import lca
+		import review_refdbcontams
+		import lca
 		
 		def step1():
 			self._mark_ref_db_ambiguity(contig, ignore_viral = not filter_viral)
@@ -1223,7 +1222,7 @@ class bindata(gdata): #meant for gathering all contig/protein/marker info
 	
 		
 	def _mark_ref_db_ambiguity(self, contig, ignore_viral = True):
-		from mdmcleaner import lca
+		import lca
 		markerlevel = self.contigdict[contig]["toplevel_marker"]
 		if markerlevel:
 			species_cutoff = lca.species_identity_cutoffs[markerlevel]
@@ -1236,7 +1235,7 @@ class bindata(gdata): #meant for gathering all contig/protein/marker info
 				self.contigdict[contig]["tax_note"] += " refDB-ambiguity; "
 		
 	def _check_contig_refdb_ambiguity(self, contig, blastobj, db):
-		from mdmcleaner import lca
+		import lca
 		markerlevel = self.contigdict[contig]["toplevel_marker"]
 		cutoffs = [ x[markerlevel] for x in [ lca.species_identity_cutoffs, lca.genus_identity_cutoffs, lca.order_identity_cutoffs ] ]
 		markername_dict = {	"ssu_rRNA_tax" : self.contigdict[contig]["ssu_rRNA"],\

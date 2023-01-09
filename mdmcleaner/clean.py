@@ -2,18 +2,18 @@
 import sys
 import os
 import argparse
-from mdmcleaner import getdb
-from mdmcleaner import misc
-from mdmcleaner.misc import openfile
-from mdmcleaner import getdb
-from mdmcleaner import getmarkers
-from mdmcleaner import blasthandler
+import getdb
+import misc
+from misc import openfile
+import getdb
+import getmarkers
+import blasthandler
 
-from mdmcleaner import lca
-from mdmcleaner import reporting
+import lca
+import reporting
 import itertools
 
-from mdmcleaner._version import __version__
+from _version import __version__
 
 progressdump_filename = "mdmprogress.json"
 

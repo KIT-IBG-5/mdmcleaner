@@ -43,7 +43,7 @@ lcawalkdb_outfilebasename = "ncbi_lcawalkdb_br.db"
 
 def _download_ncbidb3(dbtype, targetdir="."): #TODO: TEMPORARY! should be replaced by the version used to download the silva, refseq and gtdb datasets
 	import wget
-	from mdmcleaner import misc
+	import misc
 	if dbtype not in _dbsource_dict: #usage help
 		raise KeyError("\nERROR: unknown dbtype '{}'!\nMust be one of {}\n".format(dbtype, ", ".join(sorted(_dbsource_dict.keys()))))
 	
