@@ -1010,14 +1010,14 @@ def _prepare_dbdata_nonncbi(targetdir, progressdump, verbose=False, settings=Non
 
 def test_or_create_targetdir(targetdir):
 	try:
-		if os.path.exists(targetdir) and os.path.isdir(targetdir):
-			if not os.access(targetdir, os.W_OK):
-				raise PermissionError
-		else:
-			os.makedirs(targetdir)
+		os.makedirs(targetdir, exist_ok=True)
+		if not os.access(targetdir, os.W_OK):
+			raise PermissionError
+	except FileExistsError as e:
+		raise FileExistsError("\n{}\n\nERROR: File '{}' should be a directory but is a file! Please choose a target directory and try again\n".format(e, targetdir))
 	except PermissionError as e:
-		# ~ sys.stderr.write("\nERROR: insufficient write permissions for '{}'! Please choose a different target directory and try again\n".format(targetdir))
-		raise PermissionError("\n\nERROR: insufficient write permissions for '{}'! Please choose a different target directory and try again\n".format(targetdir))
+		raise PermissionError("\n{}\n\nERROR: insufficient write permissions for '{}'! Please choose a different target directory and try again\n".format(e, targetdir))
+
 
 def getNprepare_dbdata_nonncbi(targetdir, verbose=False, settings=None):
 	if settings == None:
