@@ -152,8 +152,8 @@ class comparison_hit(object):
 		for pc in [domain_counts, phylum_counts]:
 			if len(pc) == 2 and None in pc.keys():
 				if "rRNA" in self.markerlevel:
-					note = " --> '{}' represents a contradiction between Silva and GTDB taxonomies! Ignoring Silva taxonomy for purpose of contamination detection in this case!".format(self.seqid)
-					return "silva_conflict", note
+					note = " --> '{}' represents a contradiction between Silva and GTDB taxonomies!".format(self.seqid)
+					return "ambiguity", note # SHOULD RETURN "silva_conflict"!  only TEMPORARY FIX for Iss #37! Still need to implement preferrence of gtdb annotation in such cases!
 				else:
 					note = " --> there appear to be references similar to {} that are not annotated up to phylum level! This is likely an error in the reference DB!".format(self.seqid)
 					return "wtf", note
