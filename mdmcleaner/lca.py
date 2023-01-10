@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 import sys
 from collections import namedtuple
-from misc import openfile
+from mdmcleaner import misc
+from mdmcleaner.misc import openfile
 
 taxlevels = ["root", "domain", "phylum", "class", "order", "family", "genus", "species"]
 taxasstuple = namedtuple("taxasstuple", "seqid taxid identity score") #use exact same syntax as for input, to enable lca of lca annotations

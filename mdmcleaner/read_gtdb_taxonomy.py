@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from _version import __version__
+from mdmcleaner._version import __version__
 import re
 #todo: rename progress files to progess_getgtdb_..... (create own type of progressfile for different sections of pipeline, because download of dbs is only done once (and differently for gtdb and ncbi) but lca etc is done again and again for each analysis
 #todo: add a check for the correct wget version (1.19+) by calling "wget --version"
@@ -44,9 +44,9 @@ import os
 import sys
 import traceback
 import time
-import misc
-from misc import openfile
-import getdb #TODO: obsolete when i integrate this all into getdb.py
+from mdmcleaner import misc
+from mdmcleaner.misc import openfile
+from mdmcleaner import getdb #TODO: obsolete when i integrate this all into getdb.py
 
 
 
@@ -633,7 +633,7 @@ def gtdb_contignames2taxids(contig_fastalist, acc2taxidinfilelist, acc2taxidoutf
 	import re
 	assemblyIDpattern = re.compile("GC._\d+\.\d")
 	headerdict = _concat_fastas(contig_fastalist, outfastahandle, return_headerdict = True, remove_prodigalIDs = False, remove_descriptions = True)
-	import getdb #todo: delete this. is only for debuggung
+	from mdmcleaner import getdb #todo: delete this. is only for debuggung
 	getdb.dict2jsonfile(headerdict, "delme_headerdict.json.gz") #todo: delete this. is only for debuggung (or keep it as additional progress saving point
 	outaccfile = openfile(acc2taxidoutfilename, "wt")
 	linecounter = contigcounter = 0
@@ -784,8 +784,8 @@ def _check_progressmarker(targetdir):
 	
 	
 def _prepare_dbdata_nonncbi(targetdir, progressdump, verbose=False, settings=None): #Todo:add continueflag argument #todo: make sure verbosity is implemented
-	import blasthandler
-	import getdb #todo: for using dict2jsonthis will be obsolete, when this is moved there #edit: no it won't. keeping download for gttdb and ncbi data seperate. common stuff goes to misc or getdb
+	from mdmcleaner import blasthandler
+	from mdmcleaner import getdb #todo: for using dict2jsonthis will be obsolete, when this is moved there #edit: no it won't. keeping download for gttdb and ncbi data seperate. common stuff goes to misc or getdb
 	import time #todo probably not needed anymore
 
 	if settings == None:
@@ -1049,7 +1049,7 @@ def cleanupwhenfinished(progressdump, targetdir, verbose=False):
 	deletes remaining intermediary files and logs component database versions
 	'''
 	import re
-	import getdb
+	from mdmcleaner import getdb
 	sys.stderr.write("\n--CLEANING UP--\n")
 	def deletefiles(stufflist):
 		restlist = []
@@ -1110,7 +1110,7 @@ def cleanupwhenfinished(progressdump, targetdir, verbose=False):
 #todo: DROP download of ncbi2gtdb and vice versa mapping files will not use them anyway!
 
 def get_publication_set(args, configs):
-	import misc
+	from mdmcleaner import misc
 	sys.stderr.write("\nDownloading publicaton reference-dataset from Zenodo (Warning: this is definitively NOT the most recent reference dataset!)\n")
 	sys.stderr.flush()
 	if args.outdir == None:

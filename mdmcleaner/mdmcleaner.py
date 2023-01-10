@@ -2,12 +2,12 @@
 import sys
 if sys.version_info[0] < 3:
 	sys.exit("\nERROR: python 3 or higher required!\n")
-import check_dependencies
+from mdmcleaner import check_dependencies
 import os
 import argparse
-import misc
-from misc import openfile
-from _version import __version__
+from mdmcleaner import misc
+from mdmcleaner.misc import openfile
+from mdmcleaner._version import __version__
 
 setting_keys = ["blacklistfile","blastp", "blastn", "blastdbcmd", "diamond", "barrnap", "rnammer", "hmmsearch", "aragorn", "prodigal", "db_basedir","db_type", "blastdb_diamond", "blastdb_blastp", "blastdb_blastn", "threads"] # todo: complete this list 
 MDMCLEANER_LIBPATH = os.path.dirname(os.path.realpath(misc.__file__))
@@ -209,7 +209,7 @@ def main():
 
 	# ~ import pdb; pdb.set_trace()
 	if args.command == "clean":
-		import clean
+		from mdmcleaner import clean
 		check_dependencies.check_dependencies("blastp", "blastn", "diamond", "aragorn", "barrnap", "hmmsearch", configs=configs)
 		blacklist_additions = clean.main(args, configs)
 		if not args.fast_run and blacklist_additions != None:
@@ -217,7 +217,7 @@ def main():
 			write_blacklist(blacklist_additions, args.outblacklist)
 	
 	if args.command == "makedb":
-		import read_gtdb_taxonomy
+		from mdmcleaner  import read_gtdb_taxonomy
 		if args.outdir == None:
 			if args.get_pub_data:
 				args.outdir = "./db"
@@ -231,13 +231,13 @@ def main():
 		read_gtdb_taxonomy.main(args, configs)
 		
 	if args.command == "get_markers":
-		import getmarkers
+		from mdmcleaner import getmarkers
 		check_dependencies.check_dependencies("aragorn", "barrnap", "hmmsearch", configs=configs)
 		getmarkers.get_only_marker_seqs(args, configs)
 	
 	if args.command == "completeness":
 		check_dependencies.check_dependencies("aragorn", "barrnap", configs=configs)
-		import getmarkers
+		from mdmcleaner import getmarkers
 		args.outdir = None
 		getmarkers.get_only_trna_completeness(args, configs)
 
@@ -271,7 +271,7 @@ def main():
 			sys.stderr.write("{}\t{}\t{}\n".format(c,configs.settings[c],configs.settings_source[c]))
 
 	if args.command == "acc2taxpath":
-		import getdb
+		from mdmcleaner import getdb
 		db = getdb.taxdb(configs)
 		if args.accessions[0] == "interactive":
 			# ~ import pdb; pdb.set_trace()
@@ -303,7 +303,7 @@ def main():
 		sys.stderr.write("\nSUCCESS: all dependencies are being met\n")
 
 	if args.command == "refdb_contams":
-		import review_refdbcontams
+		from mdmcleaner import review_refdbcontams
 		check_dependencies.check_dependencies("blastp", "blastn", "diamond", "wget", configs=configs)
 		blacklist_additions = review_refdbcontams.read_ambiguity_report(args.ambiguity_report, configs)
 		print("\n------> writing {} blacklist additions to {}".format(len(blacklist_additions), args.outblacklist))

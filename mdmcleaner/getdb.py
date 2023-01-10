@@ -5,9 +5,9 @@ import os
 import sys
 import time
 import traceback
-import misc
+from mdmcleaner import misc
 import subprocess
-from misc import openfile
+from mdmcleaner.misc import openfile
 import locale #hopefully this ensures that sorts and string comparisons behave like during lookuptable-generation
 locale.setlocale(locale.LC_ALL, "C") #hopefully this ensures that sorts and string comparisons behave like during lookuptable-generation
 
@@ -168,7 +168,7 @@ class taxdb(object):
 		self.read_lca_paths(self.lca_pathsfile)
 
 	def set_db_attributes(self, configs, db_basedir = None):
-		import read_gtdb_taxonomy #todo: after reimplementing optional ncbi taxonomy, put both into the same module and import THAT here
+		from mdmcleaner import read_gtdb_taxonomy #todo: after reimplementing optional ncbi taxonomy, put both into the same module and import THAT here
 		if db_basedir != None:
 			self.db_basedir = db_basedir
 		else:
@@ -349,7 +349,7 @@ class taxdb(object):
 		looks up the taxpath for the given taxid and returns the ("sub-")taxid or taxname at the given taxlevel (default="domain"), if present.
 		If the taxpath does not contain the given taxlevel (e.g. when requesting a "subtaxid" at genus level, but giving a taxid of a phylum), None is returned
 		"""
-		import lca
+		from mdmcleaner import lca
 		assert taxlevel in lca.taxlevels, "\nERROR: taxlevel must be one of {}\n".format(lca.taxlevels[:2] + ["superkingdom"] + lca.taxlevels[2:])
 		assert returnvalue in ["taxid", "taxname"], "ERROR: returnvalue mist bei either \"taxid\" or \"taxname\"\n"
 		outtaxid = None

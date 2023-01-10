@@ -2,15 +2,15 @@
 import sys
 import os
 import argparse
-import getdb
-import misc
-from misc import openfile
-import getdb
-import getmarkers
-import blasthandler
+from mdmcleaner import getdb
+from mdmcleaner import misc
+from mdmcleaner.misc import openfile
+from mdmcleaner import getdb
+from mdmcleaner import getmarkers
+from mdmcleaner import blasthandler
 
-import lca
-import reporting
+from mdmcleaner import lca
+from mdmcleaner import reporting
 import itertools
 
 from _version import __version__

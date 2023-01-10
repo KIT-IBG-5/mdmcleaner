@@ -1,4 +1,7 @@
-graft mdmcleaner/hmms
+#graft mdmcleaner/hmms
+#graft mdmcleaner/hmms/arch
+#graft mdmcleaner/hmms/bact
+#graft mdmcleaner/hmms/prok
 include mdmcleaner/hmms/cutofftable_combined.tsv
 include mdmcleaner/mdmcleaner.config
 include mdmcleaner/blacklist.list
