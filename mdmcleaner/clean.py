@@ -13,7 +13,7 @@ from mdmcleaner import lca
 from mdmcleaner import reporting
 import itertools
 
-from _version import __version__
+from mdmcleaner._version import __version__
 
 progressdump_filename = "mdmprogress.json"
 
