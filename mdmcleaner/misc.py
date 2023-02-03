@@ -141,7 +141,38 @@ def run_multiple_functions_parallel(jobtuple_list, total_threads): #jobtuple_lis
 	jobpool.close()
 	jobpool.join()
 	return outfile_list
-	
+
+def string_or_int_or_float(teststring): #todo: consider moving this to misc.py (if ever needed somewhere else?)
+	"""
+	checks if teststring represents a number and returns it as float or int, as appropriate.
+	If teststring represents neither a float or an integer, it is simply returned as string.
+	In case 'teststring' is of any other type than "str", it is simply cast as string before checking
+	Does NOT check if teststring represents a boolean type --> boolean values will be returned as string!
+	"""
+	if "_" in teststring:
+		return(teststring) # quickfix for unforseen problems caused by PEP 515
+	try:
+		testfloat = float(teststring)
+	except (TypeError, ValueError):
+		return teststring
+	else:
+		try:
+			testint = int(teststring)
+		except (TypeError, ValueError):
+			return testfloat
+		else:
+			return testint
+
+def is_number(inputvariable):
+	"""
+	returns True if the inputvariable is or represents a float or integer, otherwise False.
+	Does NOT consider values of type boolean as numbers!
+	"""
+	returnval = string_or_int_or_float(str(inputvariable))
+	if type(returnval) in [ float, int ]:
+		return True
+	return False 
+
 def check_md5file(md5file):
 	'''
 	assumes filenames/paths in md5file are relative to location of md5file

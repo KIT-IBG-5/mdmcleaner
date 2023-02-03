@@ -338,33 +338,13 @@ class blastdata_baseobject(object): #todo: define differently for protein or nuc
 		already associated query contig and markertype to each query marker if a bindata-object is passed
 		will not assign taxids at this point yet, because this list is likely to be greatly reduced in later steps and assigning taxids is a relatively slow process  
 		"""
-		def string_or_int_or_float(teststring): #todo: consider moving this to misc.py (if ever needed somewhere else?)
-			if "_" in teststring:
-				return(teststring) # quickfix for unforseen problems caused by PEP 515
-			try:
-				testfloat = float(teststring)
-			except (TypeError, ValueError):
-				return teststring
-			else:
-				try:
-					testint = int(teststring)
-				except (TypeError, ValueError):
-					return testfloat
-				else:
-					return testint
-
 		infile = openfile(infilename)
-		# ~ print("NOWHANDLINGFILE: {}".format(infilename))
 		for line in infile:
 			# ~ import pdb; pdb.set_trace()
 			tokens = line.strip().split("\t")
-			bl = { x : string_or_int_or_float(tokens[self._blasttsv_columnnames[x]]) if (type(self._blasttsv_columnnames[x]) == int and self._blasttsv_columnnames[x] < len(tokens)) else None for x in self._blasttsv_columnnames}
-			# ~ print(bl["contig"])
-			# ~ if bl["contig"] == "contam_NZ_JAHGVE010000025.1_15" or bl["subject"] in ["GCF_004341205.1_NZ_SLUL01000011.1", "GCA_002434245.1_DJJR01000029.1"]:
-				# ~ import pdb; pdb.set_trace()
-			# ~ import pdb; pdb.set_trace()
-			# ~ bl["query"] = str(bl["query"]) # quickfix for problems with contigs named as numbers# todo: find a more elegant fix!
-			# ~ bl["subject"] = str(bl["subject"]) # quickfix for problems with contigs named as numbers# todo: find a more elegant fix!
+			bl = { x : misc.string_or_int_or_float(tokens[self._blasttsv_columnnames[x]]) if (type(self._blasttsv_columnnames[x]) == int and self._blasttsv_columnnames[x] < len(tokens)) else None for x in self._blasttsv_columnnames}
+			bl["query"] = str(bl["query"]) # quickfix for problems with contigs named as numbers# todo: find a more elegant fix!
+			bl["subject"] = str(bl["subject"]) # quickfix for problems with contigs named as numbers# todo: find a more elegant fix!
 			if max_evalue and bl["evalue"] > max_evalue: #bl.evalue > max_evalue:
 				continue
 			if min_ident and bl["ident"] < min_ident: #bl.ident < min_ident:
@@ -775,10 +755,53 @@ def _add_stype2blasthits_later(blastlinelist, markersetdict): #todo: probably ob
 				blastlinelist[bl]["stype"] = ms
 	return blastlinelist
 
-def _add_taxid2blasthits_later(blastlinelist, db_obj): #todo: probably obsolte...
+def _add_taxid2blasthits_later(blastlinelist, db_obj): #todo: probably obsolete...
 	for blindex in range(len(blastlinelist)):
 		blastlinelist[bl]["taxid"] = db_obj.acc2taxid(blastlinelist[bl]["taxid"]["subject"])
 	return blastlinelist
+
+
+def blast_align_two_or_more_seqs(query, subject, blast, outfmt = "6", outname = None, threads = 1):
+	"""
+	compares all sequences in 'query' to all sequences in 'subject'. 'query' and 'subject' may be the same file but must be  fasta files of the same sequence type (protein or nucleotide). 
+	The selected blast program (i.e. "blastn" or "blastp") must be compatible with the sequence type of each input file.
+	output format
+	if outname is a valid filename: returns an output filename with the blast results in the specified output format.
+	if outname is "" or None or "-": returns stdout of blast command
+	"""
+	import subprocess
+	command_arglist=[blast, "-query", query, "-subject", subject, "-evalue", "1e-10", "-outfmt", outfmt, "-out", outname, "-num_threads", str(int(threads))]
+	blastcmd = subprocess.run(command_arglist, stdout = subprocess.PIPE, stderr = subprocess.PIPE, text = True)
+	try:
+		blastcmd.check_returncode()
+	except Exception:
+		sys.stderr.write("\nAn error occured when running {} with query '{}'\n".format(blast, query))
+		sys.stderr.write("{}\n".format(blastcmd.stderr))
+		raise RuntimeError
+	if outname in ["", "-", None]:
+		return blastcmd.stdout
+	return outname
+		
+
+def get_min_ident_nucleotide(query, subject, threads = 1):
+	"""
+	compares all sequences in 'query' to all sequences in 'subject'. 'query' and 'subject' may be the same file but must be nucleotide fasta files
+	returns a tuple contianing alignment identity (in percent 0-100), alignment length (in bp) and subject and query names of the sequence pair with the lowest alignment identity
+	"""
+	outfmt = "6 ident, length qacc sacc"
+	numfields=[2,3] #length and identity fields (numerical) are at indices 2 & 3 of each result line
+	results = blast_align_two_or_more_seqs(query, subject, blast, outfmt = "6", outname = "-", threads = threads)
+	outlines = results.split("\n")
+	if len(outlines) == 0:
+		return None
+	outtable=[}
+	for line in outlines:
+		outtable.append(line.split("\t"))
+		for index in numfields: # converting length and identity values to floats
+			outtable[-1][index] = float(outtable[-1][index])
+	outtable.sort(key = lambda x: x[3])
+	return tuple(outtable[0])
+	
 
 def run_single_blast(query, db, blast, outfmt = "6", outname = None, threads = 1): #todo: add 'max_target_seqs" to optinal arguments (with 500 as default value)
 	import subprocess
@@ -792,16 +815,45 @@ def run_single_blast(query, db, blast, outfmt = "6", outname = None, threads = 1
 		query = "-"
 	else:
 		raise IOError("\nERROR: don't recognize query argument\n")
-	blastcmd = subprocess.run([blast, "-query", query, "-db", db, "-evalue", "1e-10",\
-							   "-outfmt", outfmt, "-num_threads", str(int(threads)), "-out", outname + ".tmp"], \
-							  input = inputarg, stdout = subprocess.PIPE, stderr = subprocess.PIPE, text = True)
+	blastcmd = [blast, "-query", query, "-db", db, "-evalue", "1e-10", "-outfmt", outfmt, "-num_threads", str(int(threads)), "-out", outname + ".tmp"]
+	return _run_any_blastjob(blastcmd, sdtinput = inputarg)
+
+def _run_any_blastjob(blastcmd, stdinput = None):
+	"""
+	runs whatever blastjob needs to be run.
+	If stdinput is set to anything other than None, it is used as query. In that case, stdinput needs to be a string representing a (set of) sequence(s) in fasta format and query needs to be set as "-" in blastcmd
+	"""
+	threadsarg = None
+	outfile = None
+	program = os.path.basename(blastcmd[0])
+	if program == "diamond":
+		if stdinput is not None:
+			assert "--query" not in blastcmd or blastcmd[blastcmd.index("--query") + 1] == "-", "\nError: for ncbi-blast if query records are piped from stdin, ’-query' argument must omitted or must be '-' (instead it is given as: ' {})'\n".format(blastcmd[blastcmd.index("--query") + 1])
+		threadsarg = blastcmd[blastcmd.index("--threads") + 1]
+		if "--out" in blastcmd:
+			outfile = blastcmd[blastcmd.index("--out") + 1]
+	elif program in ["blastn", "blastp", "blastx", "tblastn"] :
+		if stdinput is not None:
+			assert "-query" not in blastcmd or blastcmd[blastcmd.index("-query") + 1] == "-", "\nError: for ncbi-blast if query records are piped from stdin, ’-query' argument must omitted or must be '-' (instead it is given as: ' {})'\n".format(blastcmd[blastcmd.index("-query") + 1])
+		threadsarg = blastcmd[blastcmd.index("-num_threads") + 1]
+		if "-out" in blastcmd:
+			outfile = blastcmd[blastcmd.index("--out") + 1]
+	else:
+		raise IOError("\nError: unknown program for blasting: '{}'\n".format(program))
+	assert threadsarg is not None, ("\nERROR: threads not provided for blastcmd: '{}'\n".format(blastcmd))
+	assert misc.is_number(threadsarg), "\nError: invalid value for threads argument: '{}'\n".format(threadsarg)
+	if outfile == "-":
+		outfile = None
+	blastjob = subprocess.run(blastcmd, input = stdinput, stdout = subprocess.PIPE, stderr = subprocess.PIPE, text = True)
 	try:
-		blastcmd.check_returncode()
+		blastjob.check_returncode()
 	except Exception:
-		sys.stderr.write("\nAn error occured during blastp run with query '{}'\n".format(query))
+		sys.stderr.write("\nAn error occured during diamond blastp run with query '{}'\n".format(query))
 		sys.stderr.write("{}\n".format(blastcmd.stderr))
 		raise RuntimeError
-	return outname
+	if outfile:
+		return outfile
+	return blastjob.stdout
 
 def run_single_blastp(query, db, blast, outfmt = "6", outname = None, threads = 1):
 	assert os.path.basename(blast) == "blastp" 
@@ -819,58 +871,45 @@ def run_single_diamondblastp(query, db, diamond, outfmt = "6", outname = None, t
 	#TODO: add a maxmem arguemt that states how much memory can be used. use this to determine optimal blocksize and chunks for more efficient blasting. BLOCKSIZE=INT(MEMORY/6) CHUNKS=4/2/1 IF MEMORY >=12/24/48
 	#todo: increase default number of max_target hits stored to ~ 500 (and make it an optional argument)
 	import subprocess
-	assert outname, "\n\tERROR: must supply an outfilename!\n"
+	# ~ assert outname, "\n\tERROR: must supply an outfilename!\n" # ACTUALLY if outname is omitted, results will be returned via stdout. maybe that is useful sometimes so commnting this out for now...
 	assert outfmt in supported_outfmts, "\n\tError: outfmt '{}' not supported! can only be one of : {}".format(outfmt, ", ".join(supported_outfmts))
-	blastcmd = subprocess.run([diamond, "blastp", "--query", query, "--db", db, "--evalue", "1e-10",\
-							   "--outfmt", outfmt, "--threads", str(int(threads)), "--out", outname + ".tmp"], \
-							   stdout = subprocess.PIPE, stderr = subprocess.PIPE, text = True)
-	try:
-		# ~ print(" ".join(blastcmd.args))
-		blastcmd.check_returncode()
-	except Exception:
-		sys.stderr.write("\nAn error occured during diamond blastp run with query '{}'\n".format(query))
-		sys.stderr.write("{}\n".format(blastcmd.stderr))
-		raise RuntimeError
-	return outname
+	import re
+	outfmt = re.sub(" std ", " qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore ", outfmt).strip().split() #blast allows "std" keyword in outfmt, diamond doesn't
+	inputarg = None
+	queryarg = ["--query", query] 
+	outarg = []
+	if outname:
+		outarg = ["--out", outname + ".tmp"]
+	if type(query) == list: #list indicates a list of seqrecords
+		inputarg =  "\n".join([record.format("fasta") for record in query])
+		queryarg = []
+	blastcmd = [diamond, "blastp", *queryarg, "--db", db, "--evalue", "1e-10", "--outfmt", *outfmt, "--threads", str(int(threads)), *outarg]
+	return _run_any_blastjob(blastcmd, sdtinput = inputarg)
 
 def run_single_diamondblastx(query, db, diamond, outfmt = "6", outname = None, threads = 1): #TODO: currently not setting "--tmpdir" & "--parallel-tmpdir" here! figure something out if this turns out to be problematic on hpc systems
 	#TODO: add a maxmem arguemt that states how much memory can be used. use this to determine optimal blocksize and chunks for more efficient blasting. BLOCKSIZE=INT(MEMORY/6) CHUNKS=4/2/1 IF MEMORY >=12/24/48
 	import subprocess
-	assert outname, "\n\tERROR: must supply an outfilename!\n"
+	# ~ assert outname, "\n\tERROR: must supply an outfilename!\n" # ACTUALLY if outname is omitted, results will be returned via stdout. maybe that is useful sometimes so commnting this out for now...
 	assert outfmt in supported_outfmts, "\n\tError: outfmt '{}' not supported! can only be one of : {}".format(outfmt, ", ".join(supported_outfmts))
-	tempname = None
 	import re
 	outfmt = re.sub(" std ", " qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore ", outfmt).strip().split() #blast allows "std" keyword in outfmt, diamond doesn't
+	inputarg = None
+	queryarg = ["--query", query] 
+	outarg = []
+	if outname:
+		outarg = ["--out", outname + ".tmp"]
 	if type(query) == list: #list indicates a list of seqrecords
-		# ~ print("QUERY IS A LIST")
-		tempname="delme_tempinput_mdmcleaner_diamondblastx.faa" # todo: figure out a better solution until a future diamond version hopefully may accept input from stdin...
-		misc.write_fasta(query, tempname)
-		query = tempname
-	# ~ else:
-		# ~ print("QUERY IS OF TYPE '{}'".format(type(query)))
-	cmdlist = [diamond, "blastx", "--query", query, "--db", db, "--evalue", "1e-10",\
-			"--outfmt", *outfmt, "--threads", str(int(threads)), "--out", outname + ".tmp"]
-	# ~ print(cmdlist)
-	blastcmd = subprocess.run(cmdlist, stdout = subprocess.PIPE, stderr = subprocess.PIPE, text = True)
-	try:
-		# ~ print(" ".join(blastcmd.args))
-		blastcmd.check_returncode()
-		if tempname:
-			os.remove(tempname)
-	except Exception:
-		sys.stderr.write("\nAn error occured during diamond blastp run with query '{}'\n".format(query))
-		sys.stderr.write("{}\n".format(blastcmd.stderr))
-		if tempname:
-			os.remove(tempname)
-		raise RuntimeError
-	return outname
+		inputarg =  "\n".join([record.format("fasta") for record in query])
+		queryarg = []
+	blastcmd = [diamond, "blastx", *queryarg, "--db", db, "--evalue", "1e-10", "--outfmt", *outfmt, "--threads", str(int(threads)), *outarg]
+	return _run_any_blastjob(blastcmd, sdtinput = inputarg)
 
 def _run_any_blast(query, db, path_appl, outfmt = "6",outname = None ,threads = 1, force = False):
 	#TODO: fix stupid problem that blast (unfortunately) cannot handle gzipped query files. solution read in compressed fastas, pipe records to blast-functions via stdin (TODO: add this function also to diamond (already present in ncbi-blast)
 	appl = os.path.basename(path_appl)
 	appl_onlypath = os.path.dirname(path_appl)
 	#print("\nblasting --> {}".format(outname))
-	assert outname, "\n\tERROR: must supply an outfilename!\n" 
+	# ~ assert outname, "\n\tERROR: must supply an outfilename!\n" # ACTUALLY if outname is omitted, results will be returned via stdout. maybe that is useful sometimes so commnting this out for now...
 	assert outfmt in supported_outfmts, "\n\tError: outfmt '{}' not supported! can only be one of : {}".format(outfmt, ", ".join(supported_outfmts))
 	if os.path.isfile(outname) and force == False:
 		sys.stderr.write("\n\tWARNING: blast result file '{}' already exists and 'force' not set to True --> skipping this blast\n".format(outname))
@@ -878,15 +917,17 @@ def _run_any_blast(query, db, path_appl, outfmt = "6",outname = None ,threads = 
 	assert appl in ["blastp", "blastn", "diamond", "diamond blastp", "diamond blastx"], "\nError: unknown aligner '{}'\n".format(appl)
 	_command_available(command=path_appl)
 	if appl == "blastp":
-		outname = run_single_blastp(query, db, path_appl, outfmt, outname,  threads)
+		result = run_single_blastp(query, db, path_appl, outfmt, outname,  threads)
 	elif appl == "blastn":
-		outname = run_single_blastn(query, db, path_appl, outfmt, outname, threads)
+		result = run_single_blastn(query, db, path_appl, outfmt, outname, threads)
 	elif appl in ["diamond", "diamond blastp"]:
-		outname = run_single_diamondblastp(query, db, os.path.join(appl_onlypath, "diamond"), outfmt, outname, threads)
+		result = run_single_diamondblastp(query, db, os.path.join(appl_onlypath, "diamond"), outfmt, outname, threads)
 	elif appl == "diamond blastx":
-		outname = run_single_diamondblastx(query, db, os.path.join(appl_onlypath, "diamond"), outfmt, outname, threads)
-	os.rename(outname + ".tmp", outname)
-	return outname
+		result = run_single_diamondblastx(query, db, os.path.join(appl_onlypath, "diamond"), outfmt, outname, threads)
+	if outname:
+		os.rename(result + ".tmp", outname)
+		return outname
+	return result
 
 def _distribute_threads_over_jobs(total_threads, num_jobs): # to distribute N threads over M groups as evenly as possible, put (N/M) +1 in (N mod M) groups, and (N/M) in the rest
 	##TODO: test using misc.run_multiple_functions_parallel() for this instead! DELETE THIS IF MISC VERSION WORKS!
@@ -907,12 +948,8 @@ def run_multiple_blasts_parallel(basic_blastarg_list, *, outfmt = "6", outbasena
 	from multiprocessing import Pool
 	thread_args, no_processes = _distribute_threads_over_jobs(total_threads, len(basic_blastarg_list))
 	arglist = []
-	# ~ print("---")
-	# ~ print(outfmt)
 	for i in range(len(basic_blastarg_list)):
-		# ~ print(basic_blastarg_list[i])
 		if type(basic_blastarg_list[i][0]) == list:
-			# ~ print("blast input is a list with {} entries".format(len(basic_blastarg_list[i][0])))
 			querystring = "auxblasts"
 		else:
 			querystring = os.path.basename(basic_blastarg_list[i][0])
@@ -920,13 +957,8 @@ def run_multiple_blasts_parallel(basic_blastarg_list, *, outfmt = "6", outbasena
 					appl = os.path.basename(basic_blastarg_list[i][2]).replace(" ", "_"), query = querystring, \
 					db = os.path.basename(basic_blastarg_list[i][1]))
 		arglist.append(tuple(bba for bba in basic_blastarg_list[i]) + (outfmt, outname, thread_args[i]))
-		# ~ print(arglist[-1])
-	# ~ print(arglist)
 	masterblaster = Pool(processes = no_processes)
-	# ~ import pdb; pdb.set_trace()
 	outfile_list = masterblaster.starmap(_run_any_blast, arglist)
-	#print("finished blasting all")
-	#print(outfile_list)
 	masterblaster.close()
 	masterblaster.join()
 	return outfile_list
