@@ -80,7 +80,7 @@ def get_external_dependency_version_string(toolname):
 	cmd = external_dependency_version_dict[toolname]["executable"] + external_dependency_version_dict[toolname]["version_option"]
 	versionpattern = external_dependency_version_dict[toolname]["vpattern"]
 	try:
-		proc = subprocess.Popen(cmd, stdout = subprocess.PIPE, stderr = subprocess.STDOUT, text = True, universal_newlines=True)
+		proc = subprocess.Popen(cmd, stdout = subprocess.PIPE, stderr = subprocess.STDOUT, text = True, universal_newlines=True, encoding='utf8')
 		loopcounter = 0
 		while loopcounter < 10: #expecting version to be mentioned within the first 10 lines...		
 			output = proc.stdout.readline().strip()
